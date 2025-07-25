@@ -14,6 +14,8 @@ class RoutePaths {
   static const String createeventspage = '/create_event';
   static const String eventDetails = '/event-details';
   static var ridesharingpage = '/ride_share';
+  static const String onetooneconversationpage = '/one-to-one-conversation';
+
 
   }
 

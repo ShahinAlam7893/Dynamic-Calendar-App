@@ -29,7 +29,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   List<Widget> _buildOnboardingPages(BuildContext context) {
     return [
-      // ONBOARDING PAGE 1 (Welcome to CircleSlate) - Still uses OnboardingPageContent directly
       OnboardingPageContent(
         illustrationPath: AppAssets.onboardingIllustration1,
         imageHeight: 150,
@@ -60,7 +59,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // >>>>>>>>>>>>>>>>>> START OF BACK BUTTON CODE ADDITION <<<<<<<<<<<<<<<<<<<<
             Align(
               alignment: Alignment.topLeft,
               child: Padding(
@@ -126,12 +124,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       width: 100,
                       height: 45,
                       text: AppStrings.next,
-                      // You might have a textColor and backgroundColor property in your PrimaryButton
-                      // Make sure your PrimaryButton widget supports these if you want to use them.
-                      // If not, you'll need to update PrimaryButton or remove these lines.
-                      // textColor: AppColors.buttonPrimary,
-                      // backgroundColor: AppColors.secondaryBlue, // Assuming secondaryBlue exists in AppColors
-                      onPressed: () {
+                       onPressed: () {
                         _pageController.nextPage(
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeIn,

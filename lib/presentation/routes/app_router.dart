@@ -82,10 +82,10 @@ class AppRouter {
         builder: (context, state)=>
         const UpcomingEventsPage(),
       ),
-      // GoRoute(path: RoutePaths.createeventspage,
-      //   builder: (context, state)=>
-      //   const CreateEventPage(),
-      // ),
+      GoRoute(path: RoutePaths.onetooneconversationpage,
+        builder: (context, state)=>
+        const OneToOneConversationPage(),
+      ),
       //
       // GoRoute(path: RoutePaths.eventdetailspage,
       //   builder: (context, state)=>

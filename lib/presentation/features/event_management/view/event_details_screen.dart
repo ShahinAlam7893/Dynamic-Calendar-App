@@ -1,7 +1,8 @@
-import 'package:circleslate/main.dart';
+import 'package:circleslate/main.dart' hide AppAssets;
 import 'package:circleslate/presentation/routes/route_paths.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:circleslate/core/constants/app_assets.dart';
 
 // --- AppColors (Copied for self-containment) ---
 class AppColors {
@@ -44,22 +45,6 @@ class AppColors {
   static const Color rideRequestCardBackground = Color(0xFFE3F2FD); // Light blue for ride request card
   static const Color rideRequestCardBorder = Color(0xFF90CAF9); // Slightly darker blue for card border
 }
-
-// --- AppAssets (Copied for self-containment) ---
-class AppAssets {
-  static const String calendarIcon = 'assets/images/calendar_icon.png'; // Placeholder
-  static const String profilePicture = 'assets/images/profile_picture.png'; // Placeholder for profile picture
-  static const String emailIcon = 'assets/images/email_icon.png'; // Placeholder for email envelope icon
-  static const String plusIcon = 'assets/images/plus.png'; // Assuming this asset exists
-  static const String eventCalendarIcon = 'assets/images/event_calendar.png'; // Assuming this asset exists
-  // Add specific profile pictures for each person if available, otherwise use a generic one.
-  static const String sarahMartinezMom = 'assets/images/sarah.jpg'; // Placeholder
-  static const String peterJohnson = 'assets/images/peter-johnson.jpg'; // Placeholder
-  static const String mikeWilson = 'assets/images/mike.jpg'; // Placeholder
-  static const String jenniferDavis = 'assets/images/jennifer.jpg';
-  static const String sarahMartinez = 'assets/images/sarah_notgoing.jpg';// Placeholder
-}
-
 
 // --- CustomBottomNavigationBar (Copied for self-containment) ---
 class CustomBottomNavigationBar extends StatelessWidget {
@@ -135,32 +120,32 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   int _selectedIndex = 1; // Assuming Events tab is selected
   bool _isJoining = true; // State for "I'm Joining" / "Decline" buttons
 
-  final List<Participant> participants = const [
+  final List<Participant> participants = [
     Participant(
       name: 'Sarah Martinez',
       description: 'Emma’s Mom',
       status: 'Host',
-      imageUrl: AppAssets.sarahMartinezMom, // Assuming asset path
+      imageUrl: AppAssets.sarahMartinezMom,
     ),
-    Participant(
+    const Participant(
       name: 'Peter Johnson',
       description: 'Ella (10 years old)',
       status: 'Going',
       imageUrl: AppAssets.peterJohnson, // Assuming asset path
     ),
-    Participant(
+    const Participant(
       name: 'Mike Wilson',
       description: 'Jake (9 years old)',
       status: 'Going',
       imageUrl: AppAssets.mikeWilson, // Assuming asset path
     ),
-    Participant(
+    const Participant(
       name: 'Sarah Martinez',
       description: 'Mia (10 years old)',
       status: 'Not Going',
       imageUrl: AppAssets.sarahMartinez, // Assuming asset path
     ),
-    Participant(
+    const Participant(
       name: 'Jennifer Davis',
       description: 'Sophia (9 years old)',
       status: 'Going',
@@ -612,7 +597,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
             CircleAvatar(
               radius: 20,
               backgroundImage: Image.asset(
-                participant.imageUrl ?? AppAssets.profilePicture, // Use generic if null
+                participant.imageUrl ?? AppAssets.profilePicture,
                 errorBuilder: (context, error, stackTrace) => const Icon(Icons.person),
               ).image,
             ),

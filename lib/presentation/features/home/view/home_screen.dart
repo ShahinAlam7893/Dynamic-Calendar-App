@@ -405,6 +405,7 @@ class _HomePageState extends State<HomePage> {
                           icon: Image.asset('assets/images/plus.png', width: 25, height: 25,),
                           title: 'Add Event',
                           onTap: () {
+                            context.push('/create_event');
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Add Event Tapped')),
                             );
@@ -417,6 +418,7 @@ class _HomePageState extends State<HomePage> {
                           icon: Image.asset('assets/images/event_calendar.png', width: 25, height: 25,),
                           title: 'View Events',
                           onTap: () {
+                            context.push('/up_coming_events');
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('View Events Tapped')),
                             );

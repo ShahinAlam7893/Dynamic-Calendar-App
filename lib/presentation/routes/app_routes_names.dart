@@ -12,7 +12,7 @@ class AppRoutes {
   static const String createeventpage = 'createeventpage';
   static const String eventdetailspage = 'eventdetailspage';
   static const String ridesharingpage = 'ridesharingpage';
-
+  static const String onetooneconversationpage = 'onetooneconversationpage';
 
 
 

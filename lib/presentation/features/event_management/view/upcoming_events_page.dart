@@ -240,11 +240,11 @@ class UpcomingEventsPage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12.0),
-              _buildInfoRow(Icons.calendar_month ,event.date),
+              _buildInfoRow(Icons.calendar_month ,event.date, iconColor: Color(0xFF5A8DEE)),
               const SizedBox(height: 8.0),
-              _buildInfoRow(Icons.access_time, event.time),
+              _buildInfoRow(Icons.access_time, event.time, iconColor: Color(0xFFFFE082)),
               const SizedBox(height: 8.0),
-              _buildInfoRow(Icons.location_on_outlined, event.location),
+              _buildInfoRow(Icons.location_on_outlined, event.location, iconColor: Color(0xFFF87171)),
             ],
           ),
         ),
@@ -252,10 +252,10 @@ class UpcomingEventsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text) {
+  Widget _buildInfoRow(IconData icon, String text, {Color? iconColor}) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppColors.accentBlue), // Icon color changed to accentBlue
+        Icon(icon, size: 18, color: iconColor), // Icon color changed to accentBlue
         const SizedBox(width: 8.0),
         Text(
           text,
@@ -308,21 +308,23 @@ class UpcomingEventsPage extends StatelessWidget {
               ),
             ),
           ),
-          // const SizedBox(width: 16.0), // Spacing between the centered button and the right-aligned button
-          SizedBox( // This will naturally be on the right after the Expanded
-            width: 40,
-            height: 40,
-            child: FloatingActionButton(
-              heroTag: "addEventFab", // Unique tag for hero animation
-              onPressed: () {
-                // Navigate to CreateEventPage
-                context.go(RoutePaths.createeventspage);
-              },
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20.0),
+          // const SizedBox(width: 0.0), // Spacing between the centered button and the right-aligned button
+          Center(
+            child: SizedBox( // This will naturally be on the right after the Expanded
+              width: 40,
+              height: 40,
+              child: FloatingActionButton(
+                heroTag: "addEventFab", // Unique tag for hero animation
+                onPressed: () {
+                  // Navigate to CreateEventPage
+                  context.go(RoutePaths.createeventspage);
+                },
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.0),
+                ),
+                child: const Icon(Icons.add, color: Colors.blue),
               ),
-              child: const Icon(Icons.add, color: Colors.blue),
             ),
           ),
         ],

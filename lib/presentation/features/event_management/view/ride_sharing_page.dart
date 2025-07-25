@@ -1,27 +1,9 @@
+import 'package:circleslate/core/constants/app_assets.dart';
+import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:circleslate/presentation/routes/route_paths.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-// --- AppColors (Copied for self-containment) ---
-class AppColors {
-  static const Color primaryBlue = Color(0xFF5A8DEE);
-
-}
-
-// --- AppAssets (Copied for self-containment) ---
-class AppAssets {
-  static const String calendarIcon = 'assets/images/calendar_icon.png'; // Placeholder
-  static const String profilePicture = 'assets/images/profile_picture.png'; // Placeholder for generic profile picture
-  static const String emailIcon = 'assets/images/email_icon.png'; // Placeholder for email envelope icon
-  static const String plusIcon = 'assets/images/plus.png'; // Assuming this asset exists
-  static const String eventCalendarIcon = 'assets/images/event_calendar.png'; // Assuming this asset exists
-  static const String sarahMartinez = 'assets/images/sarah_martinez.png'; // Placeholder for Sarah Martinez
-  static const String peterJohnson = 'assets/images/peter_johnson.png'; // Placeholder for Peter Johnson
-  static const String mikeWilson = 'assets/images/mike_wilson.png'; // Placeholder for Mike Wilson
-  static const String jenniferDavis = 'assets/images/jennifer_davis.png'; // Placeholder for Jennifer Davis
-  static const String ellaProfile = 'assets/images/ella_profile.png'; // Placeholder for Ella's profile
-  static const String jennyProfile = 'assets/images/jenny_profile.png'; // Placeholder for Jenny's profile
-}
 // --- CustomBottomNavigationBar (Copied for self-containment) ---
 class CustomBottomNavigationBar extends StatelessWidget {
   final int selectedIndex;
@@ -103,7 +85,7 @@ class RideSharingPage extends StatefulWidget {
 class _RideSharingPageState extends State<RideSharingPage> {
   int _selectedIndex = 0; // Default selected index for bottom nav bar
 
-  final List<RideRequest> rideRequests = const [
+  final List<RideRequest> rideRequests = [
     RideRequest(
       requesterName: 'Ella needs a ride',
       requestedBy: 'Peter',
@@ -171,7 +153,7 @@ class _RideSharingPageState extends State<RideSharingPage> {
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
             onPressed: () {
-              // Handle chat button tap
+
             },
           ),
         ],
@@ -216,9 +198,9 @@ class _RideSharingPageState extends State<RideSharingPage> {
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xFFD8EC),
+          backgroundColor: Color(0xFFD8ECFF),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
+            borderRadius: BorderRadius.circular(30.0),
           ),
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
@@ -260,7 +242,7 @@ class _RideSharingPageState extends State<RideSharingPage> {
                       style: const TextStyle(
                         fontSize: 16.0,
                         fontWeight: FontWeight.w600,
-                        color: Colors.red,
+                        color: Color(0xE51B1D2A),
                         fontFamily: 'Poppins',
                       ),
                     ),
@@ -268,7 +250,7 @@ class _RideSharingPageState extends State<RideSharingPage> {
                       'Requested by ${request.requestedBy}',
                       style: const TextStyle(
                         fontSize: 12.0,
-                        color: Colors.red,
+                        color: Color(0x991B1D2A),
                         fontFamily: 'Poppins',
                       ),
                     ),
@@ -277,7 +259,7 @@ class _RideSharingPageState extends State<RideSharingPage> {
               ],
             ),
             const SizedBox(height: 16.0),
-            const Divider(color: Colors.yellow, thickness: 1), // Divider
+            const Divider(color: Colors.blue, thickness: 1), // Divider
             const SizedBox(height: 16.0),
             Text(
               request.eventTitle,
@@ -289,11 +271,11 @@ class _RideSharingPageState extends State<RideSharingPage> {
               ),
             ),
             const SizedBox(height: 8.0),
-            _buildInfoRow(Icons.calendar_month, request.eventDate),
+            _buildInfoRow(Icons.calendar_month,  request.eventDate, iconColor: Color(0xFF5A8DEE)),
             const SizedBox(height: 8.0),
-            _buildInfoRow(Icons.access_time, request.eventTime),
+            _buildInfoRow(Icons.access_time, request.eventTime, iconColor: Color(0xFFFFE082)),
             const SizedBox(height: 8.0),
-            _buildInfoRow(Icons.location_on_outlined, request.eventLocation),
+            _buildInfoRow(Icons.location_on, request.eventLocation, iconColor: Color(0xFFF87171)),
             const SizedBox(height: 16.0),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -323,16 +305,16 @@ class _RideSharingPageState extends State<RideSharingPage> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text) {
+  Widget _buildInfoRow(IconData icon, String text, {Color? iconColor}) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.yellow),
+        Icon(icon, size: 16, color: iconColor),
         const SizedBox(width: 8.0),
         Text(
           text,
           style: const TextStyle(
             fontSize: 12.0,
-            color: Colors.blue,
+            color: Color(0xB21B1D2A),
             fontFamily: 'Poppins',
           ),
         ),

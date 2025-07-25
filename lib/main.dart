@@ -18,66 +18,6 @@ import 'package:circleslate/presentation/features/onboarding/view/onboarding_scr
 import 'package:circleslate/presentation/features/home/view/home_screen.dart';
 
 
-// Kept here for self-containment in Canvas. In your project, import this.
-class AppColors {
-  static const Color primaryBlue = Color(0xFF4285F4);
-  static const Color inputBorderColor = Colors.grey;
-  static const Color textColorSecondary = Color(0xFF333333);
-  static const Color inputHintColor = Colors.grey;
-  static const Color lightBlueBackground = Color(0x1AD8ECFF);
-  static const Color textDark = Color(0xE51B1D2A);
-  static const Color textMedium = Color(0x991B1D2A);
-  static const Color textLight = Color(0xB21B1D2A);
-  static const Color accentBlue = Color(0xFF5A8DEE);
-  static const Color inputOutline = Color(0x1A101010);
-  static const Color emailIconBackground = Color(0x1AD8ECFF);
-  static const Color otpInputFill = Color(0xFFF9FAFB);
-  static const Color successIconBackground = Color(0x1AD8ECFF);
-  static const Color successIconColor = Color(0xFF4CAF50);
-  static const Color headerBackground = Color(0xFF4285F4);
-  static const Color availableGreen = Color(0xFF4CAF50);
-  static const Color unavailableRed = Color(0xFFF44336);
-  static const Color dateBackground = Color(0xFFE0E0E0);
-  static const Color dateText = Color(0xFF616161);
-  static const Color quickActionCardBackground = Color(0xFFE3F2FD);
-  static const Color quickActionCardBorder = Color(0xFF90CAF9);
-  // Added colors specific to the events page status tags
-  static const Color openStatusColor = Color(0xFFE0F7FA); // Light cyan for 'Open' status
-  static const Color openStatusText = Color(0xFF00BCD4); // Darker cyan for 'Open' text
-  static const Color rideNeededStatusColor = Color(0xFFFFEBEE); // Light red for 'Ride Needed' status
-  static const Color rideNeededStatusText = Color(0xFFF44336); // Darker red for 'Ride Needed' text
-  static const Color toggleButtonActiveBg = Color(0xFF4285F4);
-  static const Color toggleButtonActiveText = Colors.white;
-  static const Color toggleButtonInactiveBg = Colors.white;
-  static const Color toggleButtonInactiveText = Color(0xFF4285F4);
-  static const Color toggleButtonBorder = Color(0xFFE0E0E0);
-  static const Color goingButtonColor = Color(0xFF4CAF50); // Green for "Going"
-  static const Color notGoingButtonColor = Color(0xFFF44336); // Red for "Not Going"
-  static const Color chatButtonColor = Color(0xFFE3F2FD); // Light blue for chat button background
-  static const Color chatButtonTextColor = Color(0xFF4285F4); // Blue for chat button text
-  static const Color requestRideButtonColor = Color(0xFF5A8DEE); // Accent blue for Request Ride
-  static const Color requestRideButtonTextColor = Colors.white;
-  static const Color rideRequestCardBackground = Color(0xFFE3F2FD); // Light blue for ride request card
-  static const Color rideRequestCardBorder = Color(0xFF90CAF9); // Slightly darker blue for card border
-}
-
-// --- AppAssets (Ideally from lib/core/constants/app_assets.dart) ---
-// Defined here for self-containment in Canvas.
-class AppAssets {
-  static const String calendarIcon = 'assets/images/calendar_icon.png'; // Placeholder
-  static const String profilePicture = 'assets/images/profile_picture.png'; // Placeholder for profile picture
-  static const String emailIcon = 'assets/images/email_icon.png'; // Placeholder for email envelope icon
-  static const String plusIcon = 'assets/images/plus.png'; // Assuming this asset exists
-  static const String eventCalendarIcon = 'assets/images/event_calendar.png'; // Assuming this asset exists
-  static const String sarahMartinez = 'assets/images/sarah_martinez.png'; // Placeholder for Sarah Martinez
-  static const String peterJohnson = 'assets/images/peter_johnson.png'; // Placeholder for Peter Johnson
-  static const String mikeWilson = 'assets/images/mike_wilson.png'; // Placeholder for Mike Wilson
-  static const String jenniferDavis = 'assets/images/jennifer_davis.png'; // Placeholder for Jennifer Davis
-}
-
-
-
-
 void main() {
   runApp(MyApp());
 }
@@ -140,6 +80,10 @@ class MyApp extends StatelessWidget {
         path: RoutePaths.ridesharingpage, // New route for EventDetailsPage
         builder: (context, state) => const RideSharingPage(),
       ),
+      GoRoute(
+        path: RoutePaths.onetooneconversationpage, // New route for EventDetailsPage
+        builder: (context, state) => const OneToOneConversationPage(),
+      ),
       // GoRoute(
       //   path: RoutePaths.groups, // New route for GroupsPage
       //   builder: (context, state) => const GroupsPage(),
@@ -154,7 +98,6 @@ class MyApp extends StatelessWidget {
       // ),
     ],
   );
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
