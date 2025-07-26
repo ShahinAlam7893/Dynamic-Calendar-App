@@ -1,5 +1,4 @@
 import 'package:circleslate/presentation/features/event_management/view/create_edit_event_screen.dart';
-import 'package:circleslate/presentation/routes/route_paths.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart'; // Import go_router for navigation
 import 'package:intl/intl.dart'; // For date formatting
@@ -138,54 +137,6 @@ class _AuthInputFieldState extends State<AuthInputField> {
   }
 }
 
-// --- CustomBottomNavigationBar ---
-// Defined here for self-containment. In a real project, this would be a shared widget.
-class CustomBottomNavigationBar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemTapped;
-
-  const CustomBottomNavigationBar({
-    Key? key,
-    required this.selectedIndex,
-    required this.onItemTapped,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.event_note_outlined),
-          label: 'Events',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.group_outlined),
-          label: 'Groups',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today_outlined),
-          label: 'Availability',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings_outlined),
-          label: 'Settings',
-        ),
-      ],
-      currentIndex: selectedIndex,
-      selectedItemColor: AppColors.primaryBlue,
-      unselectedItemColor: Colors.grey,
-      onTap: onItemTapped,
-      type: BottomNavigationBarType.fixed, // Ensures all labels are visible
-      backgroundColor: Colors.white,
-      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-    );
-  }
-}
-
 // --- CreateEventPage ---
 class CreateEventPage extends StatefulWidget {
   const CreateEventPage({super.key});
@@ -276,24 +227,6 @@ class _CreateEventPageState extends State<CreateEventPage> {
     }
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      // Use GoRouter for navigation
-      if (index == 0) {
-        context.go(RoutePaths.home);
-      } else if (index == 1) {
-        context.go(RoutePaths.upcomingeventspage);
-      } else if (index == 2) {
-        // context.go(RoutePaths.groups);
-      } else if (index == 3) {
-        // context.go(RoutePaths.availability);
-      } else if (index == 4) {
-        // context.go(RoutePaths.settings);
-      }
-    });
-  }
-
 
   @override
   Widget build(BuildContext context) {
@@ -318,14 +251,6 @@ class _CreateEventPageState extends State<CreateEventPage> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-            onPressed: () {
-              // Handle chat button tap
-            },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -414,6 +339,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
                       setState(() {
                         _isOpenInvite = true;
                       });
+                      // Navigate to /direct-invite using GoRouter
+                      context.go('/open-invite');
                     },
                   ),
                 ),
@@ -424,8 +351,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
                     isSelected: !_isOpenInvite,
                     onTap: () {
                       setState(() {
-                        _isOpenInvite = false;
+                        _isOpenInvite = true;
                       });
+                      context.go('/direct-invite');
                     },
                   ),
                 ),
@@ -510,10 +438,6 @@ class _CreateEventPageState extends State<CreateEventPage> {
             const SizedBox(height: 20.0), // Spacing for bottom nav bar
           ],
         ),
-      ),
-      bottomNavigationBar: CustomBottomNavigationBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
       ),
     );
   }

@@ -1,5 +1,5 @@
 import 'package:circleslate/main.dart';
-import 'package:circleslate/presentation/routes/route_paths.dart';
+import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart'; // Import go_router for navigation
 
@@ -111,13 +111,6 @@ class UpcomingEventsPage extends StatelessWidget {
       backgroundColor: Colors.grey[100], // Light grey background
       appBar: AppBar(
         backgroundColor: AppColors.primaryBlue,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
         title: const Text(
           'Upcoming Events',
           style: TextStyle(
@@ -142,7 +135,7 @@ class UpcomingEventsPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
             onPressed: () {
-              // Handle chat button tap
+              context.push('/chat');
             },
           ),
         ],
@@ -164,14 +157,6 @@ class UpcomingEventsPage extends StatelessWidget {
               _buildViewMoreAndAddButton(context),
           ],
         ),
-      ),
-      bottomNavigationBar: CustomBottomNavigationBar(
-        selectedIndex: 1, // 'Events' tab is at index 1
-        onItemTapped: (index) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Bottom Nav Tapped: ${index}')),
-          );
-        },
       ),
     );
   }
@@ -333,50 +318,3 @@ class UpcomingEventsPage extends StatelessWidget {
   }
 }
 
-// Reusable Bottom Navigation Bar Component (Copied for self-containment)
-// In a real project, this would be a shared widget and imported.
-class CustomBottomNavigationBar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemTapped;
-
-  const CustomBottomNavigationBar({
-    Key? key,
-    required this.selectedIndex,
-    required this.onItemTapped,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.event_note_outlined),
-          label: 'Events',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.group_outlined),
-          label: 'Groups',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today_outlined),
-          label: 'Availability',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings_outlined),
-          label: 'Settings',
-        ),
-      ],
-      currentIndex: selectedIndex,
-      selectedItemColor: AppColors.primaryBlue,
-      unselectedItemColor: Colors.grey,
-      onTap: onItemTapped,
-      type: BottomNavigationBarType.fixed, // Ensures all labels are visible
-      backgroundColor: Colors.white,
-      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-    );
-  }
-}

@@ -1,9 +1,9 @@
 // lib/presentation/widgets/auth_bottom_link.dart
+import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
-import '../../presentation/routes/route_paths.dart'; // Make sure this path is correct
 
 class AuthBottomLink extends StatelessWidget {
   final bool isLoginMode; // true for login page, false for signup page

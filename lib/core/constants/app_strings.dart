@@ -49,6 +49,11 @@ class AppStrings {
   static const String termsPrivacy = 'By creating an account, you agree to our Terms of Service and Privacy Policy.';
   static const String termsOfService = 'Terms of Service';
   static const String privacyPolicy = 'Privacy Policy';
+  static const String deleteAccountTitle = 'Delete Account';
+  static const String deleteAccountConfirmation = 'Are you sure you want to delete your account? This action cannot be undone.';
+  static const String deleteAccountWarning = 'Warning: Deleting your account will permanently remove all your data, including your children\'s profiles, events, group memberships, and chat history. This action cannot be undone.';
+  static const String deleteAccountButton = 'Delete Account'; // Used for the red button
+  static const String cancelDeleteButton = 'Cancel';
 
   // Generic UI Text
   static const String skip = 'Skip';

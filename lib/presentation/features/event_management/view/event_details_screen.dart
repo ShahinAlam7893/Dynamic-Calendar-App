@@ -1,5 +1,4 @@
 import 'package:circleslate/main.dart' hide AppAssets;
-import 'package:circleslate/presentation/routes/route_paths.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:circleslate/core/constants/app_assets.dart';
@@ -153,24 +152,6 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     ),
   ];
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      // Use GoRouter for navigation
-      if (index == 0) {
-        context.go(RoutePaths.home);
-      } else if (index == 1) {
-        context.go(RoutePaths.upcomingeventspage);
-      } else if (index == 2) {
-        // context.go(RoutePaths.groups);
-      } else if (index == 3) {
-        // context.go(RoutePaths.availability);
-      } else if (index == 4) {
-        // context.go(RoutePaths.settings);
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -181,7 +162,8 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.of(context).pop();
+            context.pop();
+            // Navigator.of(context).pop();
           },
         ),
         title: const Text(
@@ -198,7 +180,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
             onPressed: () {
-              // Handle chat button tap
+              context.push('/chat');
             },
           ),
         ],
@@ -556,10 +538,6 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
             const SizedBox(height: 20.0), // Spacing for bottom nav bar
           ],
         ),
-      ),
-      bottomNavigationBar: CustomBottomNavigationBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
       ),
     );
   }

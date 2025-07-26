@@ -1,4 +1,5 @@
 // lib/presentation/features/onboarding/view/onboarding_page_4.dart
+import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_assets.dart';
@@ -6,7 +7,6 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
-import '../../../routes/route_paths.dart';
 
 class OnboardingPage4 extends StatelessWidget {
   const OnboardingPage4({Key? key}) : super(key: key);

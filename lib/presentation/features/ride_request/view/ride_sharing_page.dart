@@ -1,55 +1,7 @@
 import 'package:circleslate/core/constants/app_assets.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
-import 'package:circleslate/presentation/routes/route_paths.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-// --- CustomBottomNavigationBar (Copied for self-containment) ---
-class CustomBottomNavigationBar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemTapped;
-
-  const CustomBottomNavigationBar({
-    Key? key,
-    required this.selectedIndex,
-    required this.onItemTapped,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.event_note_outlined),
-          label: 'Events',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.group_outlined),
-          label: 'Groups',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today_outlined),
-          label: 'Availability',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings_outlined),
-          label: 'Settings',
-        ),
-      ],
-      currentIndex: selectedIndex,
-      selectedItemColor: AppColors.primaryBlue,
-      unselectedItemColor: Colors.grey,
-      onTap: onItemTapped,
-      type: BottomNavigationBarType.fixed, // Ensures all labels are visible
-      backgroundColor: Colors.white,
-      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-    );
-  }
-}
 
 // --- RideRequest Model ---
 class RideRequest {
@@ -108,24 +60,6 @@ class _RideSharingPageState extends State<RideSharingPage> {
     ),
   ];
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      // Use GoRouter for navigation
-      if (index == 0) {
-        context.go(RoutePaths.home);
-      } else if (index == 1) {
-        context.go(RoutePaths.upcomingeventspage);
-      } else if (index == 2) {
-        // context.go(RoutePaths.groups);
-      } else if (index == 3) {
-        // context.go(RoutePaths.availability);
-      } else if (index == 4) {
-        // context.go(RoutePaths.settings);
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,7 +87,7 @@ class _RideSharingPageState extends State<RideSharingPage> {
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
             onPressed: () {
-
+              context.push('/chat');
             },
           ),
         ],
@@ -163,10 +97,6 @@ class _RideSharingPageState extends State<RideSharingPage> {
         child: Column(
           children: rideRequests.map((request) => _buildRideRequestCard(request)).toList(),
         ),
-      ),
-      bottomNavigationBar: CustomBottomNavigationBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
       ),
     );
   }
@@ -185,6 +115,7 @@ class _RideSharingPageState extends State<RideSharingPage> {
       statusTextColor = Color(0xCC1B1D2A);
       actionButton = ElevatedButton.icon(
         onPressed: () {
+          context.push('/one-to-one-conversation');
           // Handle chat action for accepted ride
         },
         icon: Icon(Icons.chat_bubble_outline, size: 18, color: Color(0xFF5A8DEE)),

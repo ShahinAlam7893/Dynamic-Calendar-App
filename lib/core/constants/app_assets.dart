@@ -20,6 +20,15 @@ class AppAssets {
   static const String sarahMartinez = 'assets/images/sarah_notgoing.jpg';
   static const String ellaProfile = 'assets/images/Ella.jpg';
   static const String jennyProfile = 'assets/images/jenny.jpg';
-
+  static const String groupChatIcon = 'assets/images/group_chat_icon.jpg';
+  static const String lisaProfile = 'assets/images/lisa.jpg';
+  static const String davidkimProfile = 'assets/images/david_kim.jpg';
+  static const String johnProfile = 'assets/images/john_smith.jpg';
+  static const String tomWillson = 'assets/images/tom.jpg'; // Placeholder for Tom Willson
+  static const String amandaDavis = 'assets/images/amanda.jpg'; // Placeholder for Amanda Davis
+  static const String robertGarcia = 'assets/images/robert.jpg'; // Placeholder for Robert Garcia
+  static const String sophieMiller = 'assets/images/sophie.jpg';
+  static const String jenniferprofile = 'assets/images/jennefer.jpg';
+  static const String openInviteIcon = 'assets/images/open_invite_icon.png';
 
 }

@@ -1,9 +1,9 @@
 // lib/presentation/features/authentication/widgets/auth_navigation_link.dart
+import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:circleslate/core/constants/app_strings.dart';
-import 'package:circleslate/presentation/routes/app_routes_names.dart'; // Using AppRoutes
 
 class AuthNavigationLink extends StatelessWidget {
   final bool isLoginMode; // true for login page, false for signup page

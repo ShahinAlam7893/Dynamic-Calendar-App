@@ -1,157 +1,161 @@
+import 'package:circleslate/presentation/features/chat/view/chat_screen.dart';
+import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-// --- RoutePaths (Copied for self-containment) ---
-class RoutePaths {
-  static const String onboarding = '/onboarding';
-  static const String login = '/login';
-  static const String signup = '/signup';
-  static const String home = '/home';
-  static const String forgotpassword = '/forgot-password';
-  static const String emailVerification = '/email-verification';
-  static const String otpVerificationPage = '/otp-verification';
-  static const String resetPasswordPage = '/reset-password';
-  static const String passwordResetSuccessPage = '/password-reset-success';
-  static const String upcomingEvents = '/upcoming-events';
-  static const String createEvent = '/create-event';
-  static const String groups = '/groups';
-  static const String availability = '/availability';
-  static const String settings = '/settings';
-  static const String eventDetails = '/event-details';
-  static const String rideSharing = '/ride-sharing';
-  static const String oneToOneConversation = '/one-to-one-conversation'; // New route for One-to-One Chat
-}
-
-// --- CustomBottomNavigationBar (Copied for self-containment) ---
-class CustomBottomNavigationBar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemTapped;
-
-  const CustomBottomNavigationBar({
-    Key? key,
-    required this.selectedIndex,
-    required this.onItemTapped,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.event_note_outlined),
-          label: 'Events',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.group_outlined),
-          label: 'Groups',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today_outlined),
-          label: 'Availability',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings_outlined),
-          label: 'Settings',
-        ),
-      ],
-      currentIndex: selectedIndex,
-      selectedItemColor: AppColors.primaryBlue,
-      unselectedItemColor: Colors.grey,
-      onTap: onItemTapped,
-      type: BottomNavigationBarType.fixed, // Ensures all labels are visible
-      backgroundColor: Colors.white,
-      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-    );
-  }
-}
+import 'package:intl/intl.dart'; // For date and time formatting
+import 'package:circleslate/core/constants/app_assets.dart';
+import 'package:circleslate/core/constants/app_colors.dart';
 
 // --- Message Model ---
+
 enum MessageSender { user, other }
+enum MessageStatus { sent, delivered, seen }
 
 class Message {
   final String text;
-  final String time;
+  final DateTime timestamp;
   final MessageSender sender;
   final String? senderImageUrl;
-  final bool isRead; // For read receipts
-
+  final MessageStatus status;
   const Message({
     required this.text,
-    required this.time,
+    required this.timestamp,
     required this.sender,
     this.senderImageUrl,
-    this.isRead = false,
+    this.status = MessageStatus.sent, // Default to sent
   });
 }
 
-
 class OneToOneConversationPage extends StatefulWidget {
-  const OneToOneConversationPage({super.key});
+  final String chatPartnerName; // Added chatPartnerName parameter
+  // final String chatPartnerImage;
+
+  const OneToOneConversationPage({
+    super.key,
+    required this.chatPartnerName,
+    // required this.chatPartnerImage
+  });
 
   @override
-  State<OneToOneConversationPage> createState() => _OneToOneConversationPageState();
+  State<OneToOneConversationPage> createState() =>
+      _OneToOneConversationPageState();
 }
 
 class _OneToOneConversationPageState extends State<OneToOneConversationPage> {
   final TextEditingController _messageController = TextEditingController();
-  int _selectedIndex = 0; // Default selected index for bottom nav bar (not used on this page, but kept for consistency)
 
-  final List<Message> messages = const [
+  int _selectedIndex =
+      0; // Default selected index for bottom nav bar (not used on this page, but kept for consistency)
+
+  final List<Message> messages = [
     Message(
-      text: 'Hi! Thanks for accepting to give Jenny a ride home from soccer practice! 😊',
-      time: '9:00 AM',
+      text:
+          'Hi! Thanks for accepting to give Jenny a ride home from soccer practice! 😊',
+
+      timestamp: DateTime(2025, 7, 25, 9, 0), // July 25, 9:00 AM
+
       sender: MessageSender.other,
-      senderImageUrl: AppAssets.sarahMartinez, // Assuming Sarah Martinez is the other person
-      isRead: true,
+
+      senderImageUrl: AppAssets
+          .sarahMartinez, // Assuming Sarah Martinez is the other person
+
+      status: MessageStatus.seen,
     ),
+
     Message(
-      text: 'No problem at all! Happy to help. Jenny and Ella are good friends �',
-      time: '9:36',
+      text:
+          'No problem at all! Happy to help. Jenny and Ella are good friends 👍',
+
+      timestamp: DateTime(2025, 7, 25, 9, 36), // July 25, 9:36 AM
+
       sender: MessageSender.user,
-      senderImageUrl: AppAssets.johnProfile, // Assuming John is the current user
-      isRead: true,
+
+      senderImageUrl:
+          AppAssets.jennyProfile, // Assuming Jenny is the current user
+
+      status: MessageStatus.seen,
     ),
+
     Message(
-      text: 'Perfect! Practice should end around 4:00 PM. Should I tell Jenny to wait by the main entrance?',
-      time: '9:56 AM',
+      text:
+          'Perfect! Practice should end around 4:00 PM. Should I tell Jenny to wait by the main entrance?',
+
+      timestamp: DateTime(2025, 7, 25, 9, 56), // July 25, 9:56 AM
+
       sender: MessageSender.other,
+
       senderImageUrl: AppAssets.sarahMartinez,
-      isRead: true,
+
+      status: MessageStatus.seen,
     ),
+
     Message(
-      text: 'Yes, that works perfectly. I\'ll be there around 4:05 PM to pick up both girls. I drive a blue Honda Civic.',
-      time: '10:06 AM',
+      text:
+          'Yes, that works perfectly. I\'ll be there around 4:05 PM to pick up both girls. I drive a blue Honda Civic.',
+
+      timestamp: DateTime(2025, 7, 25, 10, 6), // July 25, 10:06 AM
+
       sender: MessageSender.user,
-      senderImageUrl: AppAssets.johnProfile,
-      isRead: true,
+
+      senderImageUrl: AppAssets.jennyProfile,
+
+      status: MessageStatus.seen,
+    ),
+
+    // Example messages for different statuses
+    Message(
+      text: 'Just left home, see you soon!',
+
+      timestamp: DateTime(2025, 7, 25, 10, 30),
+
+      sender: MessageSender.user,
+
+      senderImageUrl: AppAssets.jennyProfile,
+
+      status: MessageStatus.delivered, // Sent but not seen (double gray check)
+    ),
+
+    Message(
+      text: 'Okay, sounds good!',
+
+      timestamp: DateTime(2025, 7, 25, 10, 35),
+
+      sender: MessageSender.other,
+
+      senderImageUrl: AppAssets.sarahMartinez,
+
+      status: MessageStatus.sent, // Sent (single check)
     ),
   ];
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      // Use GoRouter for navigation
-      if (index == 0) {
-        context.go(RoutePaths.home);
-      } else if (index == 1) {
-        context.go(RoutePaths.upcomingEvents);
-      } else if (index == 2) {
-        context.go(RoutePaths.groups);
-      } else if (index == 3) {
-        context.go(RoutePaths.availability);
-      } else if (index == 4) {
-        context.go(RoutePaths.settings);
-      }
-    });
+
+  void _sendMessage() {
+    if (_messageController.text.isNotEmpty) {
+      setState(() {
+        messages.add(
+          Message(
+            text: _messageController.text,
+
+            timestamp: DateTime.now(),
+
+            sender: MessageSender.user, // Assuming current user sends messages
+
+            senderImageUrl: AppAssets.jennyProfile, // Current user's profile
+
+            status: MessageStatus.sent, // Default to sent when sending
+          ),
+        );
+
+        _messageController.clear();
+
+      });
+    }
   }
 
   @override
   void dispose() {
     _messageController.dispose();
+
     super.dispose();
   }
 
@@ -159,79 +163,95 @@ class _OneToOneConversationPageState extends State<OneToOneConversationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100], // Light grey background
+
       appBar: AppBar(
         backgroundColor: AppColors.primaryBlue,
+
         elevation: 0,
+
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
+
           onPressed: () {
             Navigator.of(context).pop();
           },
         ),
-        title: const Text(
-          'Message',
-          style: TextStyle(
+
+        title: Text(
+          // Dynamic title based on chatPartnerName
+          widget.chatPartnerName,
+
+          style: const TextStyle(
             color: Colors.white,
+
             fontSize: 20.0,
+
             fontWeight: FontWeight.w500,
+
             fontFamily: 'Poppins',
           ),
         ),
+
         centerTitle: true,
-        actions: [
+
+        actions: const [
           // The screenshot doesn't show a chat icon here, so I'll omit it for accuracy.
-          // If you want it, uncomment the following:
-          // IconButton(
-          //   icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-          //   onPressed: () {
-          //     // Handle chat button tap
-          //   },
-          // ),
         ],
       ),
+
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16.0),
+
               itemCount: messages.length + 1, // +1 for the "Today" separator
+
               itemBuilder: (context, index) {
                 if (index == 0) {
                   return _buildDateSeparator('Today');
                 }
-                final message = messages[index - 1]; // Adjust index for messages list
+
+                final message =
+                    messages[index - 1]; // Adjust index for messages list
+
                 return _buildMessageBubble(message);
               },
             ),
           ),
+
           _buildMessageInput(),
         ],
       ),
-      // Bottom navigation bar is not shown in the chat screenshot,
-      // but if you need it, uncomment the following:
-      // bottomNavigationBar: CustomBottomNavigationBar(
-      //   selectedIndex: _selectedIndex,
-      //   onItemTapped: _onItemTapped,
-      // ),
     );
   }
 
   Widget _buildDateSeparator(String date) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20.0),
+
       child: Center(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+
           decoration: BoxDecoration(
-            color: AppColors.dateBackground, // Use a light grey for date background
-            borderRadius: BorderRadius.circular(20.0),
+            color: const Color(
+              0x1A36D399,
+            ), // Light green/teal background for date separator
+
+            borderRadius: BorderRadius.circular(30.0),
           ),
+
           child: Text(
             date,
+
             style: const TextStyle(
-              fontSize: 12.0,
-              color: AppColors.dateText, // Use a darker grey for date text
+              fontSize: 11.0,
+
+              color: Color(0xFF5A8DEE), // Blue text for date separator
+
               fontWeight: FontWeight.w500,
+
               fontFamily: 'Poppins',
             ),
           ),
@@ -242,79 +262,147 @@ class _OneToOneConversationPageState extends State<OneToOneConversationPage> {
 
   Widget _buildMessageBubble(Message message) {
     final bool isUser = message.sender == MessageSender.user;
+
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
+
         child: Column(
-          crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isUser
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
+
           children: [
             Row(
               mainAxisSize: MainAxisSize.min, // Wrap content
+
               crossAxisAlignment: CrossAxisAlignment.end,
+
               children: [
                 if (!isUser) // Profile picture for other sender
                   Padding(
                     padding: const EdgeInsets.only(right: 8.0),
+
                     child: CircleAvatar(
                       radius: 16,
+
                       backgroundImage: Image.asset(
                         message.senderImageUrl ?? AppAssets.profilePicture,
-                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.person),
+
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.person),
                       ).image,
                     ),
                   ),
+
                 Flexible(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 10.0,
+                    ),
+
                     decoration: BoxDecoration(
-                      color: isUser ? AppColors.receiverBubbleColor : AppColors.senderBubbleColor,
+                      color: isUser
+                          ? AppColors.receiverBubbleColor
+                          : AppColors.senderBubbleColor,
+
                       borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(12.0),
-                        topRight: const Radius.circular(12.0),
-                        bottomLeft: isUser ? const Radius.circular(12.0) : const Radius.circular(4.0),
-                        bottomRight: isUser ? const Radius.circular(4.0) : const Radius.circular(12.0),
+                        topLeft: const Radius.circular(8.0),
+
+                        topRight: const Radius.circular(8.0),
+
+                        bottomLeft: isUser
+                            ? const Radius.circular(12.0)
+                            : const Radius.circular(4.0),
+
+                        bottomRight: isUser
+                            ? const Radius.circular(4.0)
+                            : const Radius.circular(8.0),
                       ),
                     ),
+
                     child: Text(
                       message.text,
+
                       style: const TextStyle(
                         fontSize: 14.0,
-                        color: AppColors.textDark,
+
+                        color: Color(
+                          0xFF1A1A1A,
+                        ), // Dark text for message content
+
                         fontFamily: 'Poppins',
                       ),
                     ),
                   ),
                 ),
+
                 if (isUser) // Profile picture for user sender
                   Padding(
                     padding: const EdgeInsets.only(left: 8.0),
+
                     child: CircleAvatar(
                       radius: 16,
+
                       backgroundImage: Image.asset(
                         message.senderImageUrl ?? AppAssets.profilePicture,
-                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.person),
+
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.person),
                       ).image,
                     ),
                   ),
               ],
             ),
+
             const SizedBox(height: 4.0),
+
             Row(
               mainAxisSize: MainAxisSize.min,
+
               children: [
                 if (isUser) // Read receipt for user's messages
-                  Icon(
-                    Icons.check, // Single check for sent, double for read
-                    size: 14,
-                    color: message.isRead ? AppColors.primaryBlue : AppColors.chatTimeColor,
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.check,
+
+                        size: 14,
+
+                        color: message.status == MessageStatus.seen
+                            ? AppColors.primaryBlue
+                            : AppColors.chatTimeColor,
+                      ),
+
+                      if (message.status == MessageStatus.seen ||
+                          message.status == MessageStatus.delivered)
+                        Icon(
+                          Icons.check,
+
+                          size: 14,
+
+                          color: message.status == MessageStatus.seen
+                              ? AppColors.primaryBlue
+                              : AppColors.chatTimeColor,
+                        ),
+                    ],
                   ),
+
                 const SizedBox(width: 4.0),
+
                 Text(
-                  message.time,
+                  DateFormat(
+                    'h:mm a',
+                  ).format(message.timestamp), // Format DateTime to string
+
                   style: const TextStyle(
                     fontSize: 10.0,
-                    color: AppColors.chatTimeColor,
+
+                    color: Color(0x991A1A1A), // Grey for time text
+
                     fontFamily: 'Poppins',
                   ),
                 ),
@@ -329,37 +417,87 @@ class _OneToOneConversationPageState extends State<OneToOneConversationPage> {
   Widget _buildMessageInput() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+
       color: Colors.white, // White background for the input bar
+
       child: Row(
         children: [
-          Icon(Icons.add_circle_outline, color: AppColors.textMedium, size: 24), // Plus icon
+          Icon(
+            Icons.add_circle_outline,
+            color: AppColors.textColorSecondary,
+            size: 24,
+          ), // Plus icon
+
           const SizedBox(width: 8.0),
-          Icon(Icons.camera_alt_outlined, color: AppColors.textMedium, size: 24), // Camera icon
+
+          Icon(
+            Icons.camera_alt_outlined,
+            color: AppColors.textColorSecondary,
+            size: 24,
+          ), // Camera icon
+
           const SizedBox(width: 8.0),
-          Icon(Icons.photo_library_outlined, color: AppColors.textMedium, size: 24), // Gallery icon
+
+          Icon(
+            Icons.photo_library_outlined,
+            color: AppColors.textColorSecondary,
+            size: 24,
+          ), // Gallery icon
+
           const SizedBox(width: 8.0),
+
           Expanded(
             child: TextField(
               controller: _messageController,
+
               decoration: InputDecoration(
                 hintText: 'Message',
-                hintStyle: const TextStyle(color: AppColors.inputHintColor, fontSize: 14.0, fontFamily: 'Poppins'),
+
+                hintStyle: const TextStyle(
+                  color: AppColors.textColorSecondary,
+                  fontSize: 14.0,
+                  fontFamily: 'Poppins',
+                ),
+
                 filled: true,
+
                 fillColor: AppColors.chatInputFillColor, // Light grey fill
+
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25.0),
+
                   borderSide: BorderSide.none, // No border
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-                suffixIcon: Icon(Icons.sentiment_satisfied_alt_outlined, color: AppColors.textMedium, size: 24), // Emoji icon
+
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 10.0,
+                ),
+
+                suffixIcon: Icon(
+                  Icons.sentiment_satisfied_alt_outlined,
+                  color: AppColors.textColorSecondary,
+                  size: 24,
+                ), // Emoji icon
               ),
+
+              onSubmitted: (_) => _sendMessage(), // Send message on enter
             ),
           ),
+
           const SizedBox(width: 8.0),
-          Icon(Icons.mic_none, color: AppColors.textMedium, size: 24), // Microphone icon
+
+          GestureDetector(
+            onTap: _sendMessage, // Send message on tap
+
+            child: Icon(
+              Icons.send,
+              color: AppColors.primaryBlue,
+              size: 24,
+            ), // Send icon
+          ),
         ],
       ),
     );
   }
 }
-�

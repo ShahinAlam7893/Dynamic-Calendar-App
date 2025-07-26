@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:circleslate/core/constants/app_strings.dart';
 import 'package:circleslate/core/constants/app_assets.dart';
-import 'package:circleslate/presentation/routes/app_routes_names.dart';
 import 'package:flutter/material.dart';
 
 class AppColors {
@@ -111,53 +110,6 @@ class _AuthInputFieldState extends State<AuthInputField> {
   }
 }
 
-// Reusable Bottom Navigation Bar Component
-class CustomBottomNavigationBar extends StatelessWidget {
-  final int selectedIndex;
-  final Function(int) onItemTapped;
-
-  const CustomBottomNavigationBar({
-    Key? key,
-    required this.selectedIndex,
-    required this.onItemTapped,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.event_note_outlined),
-          label: 'Events',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.group_outlined),
-          label: 'Groups',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today_outlined),
-          label: 'Availability',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings_outlined),
-          label: 'Settings',
-        ),
-      ],
-      currentIndex: selectedIndex,
-      selectedItemColor: AppColors.primaryBlue,
-      unselectedItemColor: Colors.grey,
-      onTap: onItemTapped,
-      type: BottomNavigationBarType.fixed, // Ensures all labels are visible
-      backgroundColor: Colors.white,
-      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-    );
-  }
-}
-
 void main() {
   runApp(const MyApp());
 }
@@ -234,7 +186,7 @@ class _HomePageState extends State<HomePage> {
       } else if (index == 1) {
         context.go('/up_coming_events');
       }else if (index == 2) {
-        context.go('/groups');
+        context.go('/group_chat');
       }else if (index == 3) {
         context.go('/availability');
       }else if (index == 4) {
@@ -668,10 +620,6 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-          ),
-          CustomBottomNavigationBar(
-            selectedIndex: _selectedIndex,
-            onItemTapped: _onItemTapped,
           ),
         ],
       ),

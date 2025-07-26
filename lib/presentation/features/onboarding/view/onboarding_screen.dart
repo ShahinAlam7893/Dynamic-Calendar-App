@@ -1,4 +1,5 @@
 // lib/presentation/features/onboarding/view/onboarding_screen.dart
+import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -7,7 +8,7 @@ import '../../../../core/constants/app_assets.dart';
 import '../../../widgets/primary_button.dart';
 import '../../../widgets/secondary_button.dart';
 import '../../../widgets/page_indicator_dots.dart';
-import '../../../routes/route_paths.dart';
+
 
 // Import the individual onboarding page files
 import 'onboarding_page_content.dart'; // Keep this for OnboardingPage1 and general structure
@@ -77,7 +78,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
             ),
-            // >>>>>>>>>>>>>>>>>> END OF BACK BUTTON CODE ADDITION <<<<<<<<<<<<<<<<<<<<<<
 
             Expanded(
               child: PageView(
