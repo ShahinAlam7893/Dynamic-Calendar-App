@@ -353,7 +353,9 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      // Handle sign up navigation
+                      context.push('/signup');
+                      // Navigate to Sign Up page
+                      print('Navigating to Sign Up page');
                     },
                     child: const Text(
                       'Sign Up',

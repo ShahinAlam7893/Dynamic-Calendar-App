@@ -134,6 +134,7 @@ class _ChatListPageState extends State<ChatListPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.of(context).pop();
+            context.pop();
           },
         ),
         title: const Text(

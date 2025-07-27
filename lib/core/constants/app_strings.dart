@@ -55,6 +55,7 @@ class AppStrings {
   static const String deleteAccountButton = 'Delete Account'; // Used for the red button
   static const String cancelDeleteButton = 'Cancel';
 
+
   // Generic UI Text
   static const String skip = 'Skip';
   static const String next = 'Next';

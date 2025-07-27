@@ -21,7 +21,7 @@ class AppColors {
 
   // Specific to Onboarding
   static const Color onboardingDotActive = primaryBlue;
-  static const Color onboardingDotInactive = Color(0xD9D9D9);
+  static const Color onboardingDotInactive = Color(0xFFD8ECFF);
 
   static var inputBorderColor = Color(0xFF1010101A);
   static const Color inputOutline = Color(0x1A101010);
@@ -54,4 +54,10 @@ class AppColors {
   static const Color quickActionCardBorder = Color(0xFF90CAF9);
   static const Color unavailableRed = Color(0xFFF44336);
   static const Color textLight = Color(0xB21B1D2A);
+  static const Color dateBackground = Color(0xFFE0E0E0); // Light gray for inactive dates
+  static const Color dateText = Color(0xFF616161);
+  static const Color availableGreen = Color(0x1A36D399);
+
+
+
 }

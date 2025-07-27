@@ -154,6 +154,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
 
   bool _isOpenInvite = true;
   bool _rideNeeded = false;
+  bool _addToGoogleCalendar = false;
 
   int _selectedIndex = 0; // For the bottom navigation bar
 
@@ -360,8 +361,67 @@ class _CreateEventPageState extends State<CreateEventPage> {
               ],
             ),
             const SizedBox(height: 20.0),
-
-            // Ride Needed Checkbox
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              decoration: BoxDecoration(
+                color: AppColors.lightBlueBackground,
+                borderRadius: BorderRadius.circular(12.0),
+                border: Border.all(color: AppColors.toggleButtonBorder, width: 1.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 24.0,
+                        height: 24.0,
+                        child: Checkbox(
+                          value: _addToGoogleCalendar,
+                          onChanged: (bool? newValue) {
+                            setState(() {
+                              _addToGoogleCalendar = newValue!;
+                            });
+                          },
+                          activeColor: AppColors.primaryBlue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4.0),
+                          ),
+                          side: BorderSide(
+                            color: AppColors.inputOutline,
+                            width: 1.0,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      const Text(
+                        'Add Google Calendar Event(Optional)',
+                        style: TextStyle(
+                          fontSize: 14.0,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.textDark,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                    ],
+                  ),
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    color: AppColors.primaryBlue,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 30.0),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               decoration: BoxDecoration(
@@ -404,8 +464,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 30.0),
-
+            const SizedBox(height: 20.0),
             // Create Event Button
             SizedBox(
               width: double.infinity,

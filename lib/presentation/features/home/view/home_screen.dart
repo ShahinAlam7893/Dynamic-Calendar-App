@@ -1,133 +1,41 @@
 import 'package:circleslate/core/constants/app_assets.dart';
+import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:circleslate/core/constants/app_colors.dart';
-import 'package:circleslate/core/constants/app_strings.dart';
-import 'package:circleslate/core/constants/app_assets.dart';
-import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:circleslate/core/constants/shared_utilities.dart';
+import 'package:circleslate/presentation/common_providers/availability_provider.dart';
 
-class AppColors {
-  static const Color primaryBlue = Color(0xFF4285F4);
-  static const Color inputBorderColor = Colors.grey;
-  static const Color textColorSecondary = Color(0xFF333333);
-  static const Color inputHintColor = Colors.grey;
-  static const Color lightBlueBackground = Color(0x1AD8ECFF);
-  static const Color textDark = Color(0xE51B1D2A);
-  static const Color textMedium = Color(0x991B1D2A);
-  static const Color textLight = Color(0xB21B1D2A);
-  static const Color accentBlue = Color(0xFF5A8DEE);
-  static const Color inputOutline = Color(0x1A101010);
-  static const Color emailIconBackground = Color(0x1AD8ECFF);
-  static const Color otpInputFill = Color(0xFFF9FAFB);
-  static const Color successIconBackground = Color(0x1AD8ECFF);
-  static const Color successIconColor = Color(0xFF4CAF50);
-  static const Color headerBackground = Color(0xFF4285F4); // Blue background for header
-  static const Color availableGreen = Color(0xFF4CAF50); // Green for available dates
-  static const Color unavailableRed = Color(0xFFF44336); // Red for unavailable dates
-  static const Color dateBackground = Color(0xFFE0E0E0); // Light gray for inactive dates
-  static const Color dateText = Color(0xFF616161); // Darker gray for date text
-  static const Color quickActionCardBackground = Color(0xFFE3F2FD); // Light blue for quick action cards
-  static const Color quickActionCardBorder = Color(0xFF90CAF9); // Slightly darker blue for card border
-}
-
-
-// Reusable AuthInputField (copied for self-containment)
-class AuthInputField extends StatefulWidget {
-  final TextEditingController controller;
-  final String labelText;
-  final String hintText;
-  final TextInputType keyboardType;
-  final bool isPassword;
-  final Widget? suffixIcon;
-  final String? Function(String?)? validator;
-
-  const AuthInputField({
-    Key? key,
-    required this.controller,
-    required this.labelText,
-    required this.hintText,
-    this.keyboardType = TextInputType.text,
-    this.isPassword = false,
-    this.suffixIcon,
-    this.validator,
-  }) : super(key: key);
-
-  @override
-  _AuthInputFieldState createState() => _AuthInputFieldState();
-}
-
-class _AuthInputFieldState extends State<AuthInputField> {
-  bool _obscureText = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _obscureText = widget.isPassword;
-  }
+// PlaceholderScreen for other routes, kept here for self-containment
+class PlaceholderScreen extends StatelessWidget {
+  final String title;
+  const PlaceholderScreen({Key? key, required this.title}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: widget.controller,
-      keyboardType: widget.keyboardType,
-      obscureText: _obscureText,
-      validator: widget.validator,
-      decoration: InputDecoration(
-        labelText: widget.labelText,
-        hintText: widget.hintText,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: AppColors.buttonPrimary,
+      ),
+      body: Center(
+        child: Text(
+          'Welcome to the $title Page!',
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
-        ),
-        labelStyle: const TextStyle(color: AppColors.textColorSecondary, fontSize: 11.0, fontWeight: FontWeight.w500),
-        hintStyle: const TextStyle(color: AppColors.inputHintColor, fontSize: 10),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 16.0),
-        suffixIcon: widget.isPassword
-            ? IconButton(
-          icon: Icon(
-            _obscureText ? Icons.visibility : Icons.visibility_off,
-            color: AppColors.textColorSecondary,
-          ),
-          onPressed: () {
-            setState(() {
-              _obscureText = !_obscureText;
-            });
-          },
-        )
-            : widget.suffixIcon,
       ),
     );
   }
-}
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Home Page',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: 'Poppins', // Assuming 'Poppins' is available
-      ),
-      home: HomePage(),
-    );
+  int _getCurrentIndex(BuildContext context) {
+    // FIX: Use routerDelegate.currentConfiguration.uri.toString() to get the current location
+    final String location = GoRouter.of(context).routerDelegate.currentConfiguration.uri.toString();
+    if (location == '/home') return 0;
+    if (location == '/up_coming_events') return 1;
+    if (location == '/group_chat') return 2;
+    if (location == '/availability') return 3;
+    if (location == '/settings') return 4;
+    return 0; // Default
   }
 }
 
@@ -159,13 +67,6 @@ class _HomePageState extends State<HomePage> {
     'Art Class': false,
   };
 
-  // State for Calendar dates: 0 = unavailable, 1 = available, 2 = default/inactive
-  final Map<int, int> _calendarDateStates = {
-    1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 2, 13: 2,
-    14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 2, 20: 2, 21: 2, 22: 2, 23: 2, 24: 2,
-    25: 2, 26: 2, 27: 2, 28: 2, 29: 2, 30: 2, 31: 2, 32: 2, 33: 2, // For next month's initial days
-  };
-
   @override
   void dispose() {
     for (var controller in _childNameControllers) {
@@ -176,26 +77,6 @@ class _HomePageState extends State<HomePage> {
     }
     super.dispose();
   }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      // Use GoRouter for navigation
-      if (index == 0) {
-        context.go('/home');
-      } else if (index == 1) {
-        context.go('/up_coming_events');
-      }else if (index == 2) {
-        context.go('/group_chat');
-      }else if (index == 3) {
-        context.go('/availability');
-      }else if (index == 4) {
-        context.go('/settings');
-      }
-      // Add more cases for other tabs as needed
-    });
-  }
-
   void _addChildField() {
     setState(() {
       _childNameControllers.add(TextEditingController());
@@ -203,43 +84,11 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _toggleDateState(int date) {
-    setState(() {
-      if (_calendarDateStates[date] == 2) { // If currently default, make it available
-        _calendarDateStates[date] = 1;
-      } else if (_calendarDateStates[date] == 1) { // If available, make it unavailable
-        _calendarDateStates[date] = 0;
-      } else { // If unavailable, make it default
-        _calendarDateStates[date] = 2;
-      }
-    });
-  }
-
-  Color _getDateColor(int date) {
-    switch (_calendarDateStates[date]) {
-      case 0:
-        return AppColors.unavailableRed; // Unavailable
-      case 1:
-        return AppColors.availableGreen; // Available
-      case 2:
-      default:
-        return AppColors.dateBackground; // Default/Inactive
-    }
-  }
-
-  Color _getDateTextColor(int date) {
-    switch (_calendarDateStates[date]) {
-      case 0:
-      case 1:
-        return Colors.white; // White text for colored dates
-      case 2:
-      default:
-        return AppColors.dateText; // Darker gray for default dates
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Watch the AvailabilityProvider for changes
+    final availabilityProvider = Provider.of<AvailabilityProvider>(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
@@ -248,7 +97,7 @@ class _HomePageState extends State<HomePage> {
           Container(
             padding: const EdgeInsets.fromLTRB(24.0, 40.0, 24.0, 20.0), // Adjusted padding
             decoration: const BoxDecoration(
-              color: AppColors.headerBackground,
+              color: AppColors.buttonPrimary,
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(20.0)),
             ),
             child: SafeArea(
@@ -259,23 +108,20 @@ class _HomePageState extends State<HomePage> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       // Profile Picture
-                      // Profile Picture Container
                       Container(
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
-                          // The image itself will now be clipped by ClipOval
                         ),
-                        child: ClipOval( // Added ClipOval here
+                        child: ClipOval(
                           child: Image.asset(
                             AppAssets.profilePicture, // This should be your profile picture asset
                             width: 50,
                             height: 50,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              // Fallback for Image.asset if the asset is not found
                               return const Icon(
                                 Icons.person,
                                 size: 40.0,
@@ -285,10 +131,10 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       ),
+                      const SizedBox(width: 12.0), // Added spacing
                       Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start, // Align text to start
                         children: [
-                          const SizedBox(height: 0.0),
                           const Text(
                             'Hello, Peter!',
                             style: TextStyle(
@@ -298,7 +144,6 @@ class _HomePageState extends State<HomePage> {
                               fontFamily: 'Poppins',
                             ),
                           ),
-                          const SizedBox(height: 0.0),
                           const Text(
                             'Manage Ella’s activities',
                             style: TextStyle(
@@ -315,7 +160,7 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 20.0),
                   Row(
                     children: [
-                      Icon(Icons.circle, size: 12, color: AppColors.availableGreen),
+                      Icon(Icons.circle, size: 12, color: Colors.green),
                       SizedBox(width: 8),
                       Text(
                         'Available for playdates',
@@ -345,7 +190,7 @@ class _HomePageState extends State<HomePage> {
                     style: TextStyle(
                       fontSize: 16.0,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.textDark,
+                      color: AppColors.textColorPrimary,
                       fontFamily: 'Poppins',
                     ),
                   ),
@@ -354,7 +199,7 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Expanded(
                         child: _buildQuickActionCard(
-                          icon: Image.asset('assets/images/plus.png', width: 25, height: 25,),
+                          icon: Image.asset(AppAssets.plusIcon, width: 25, height: 25, errorBuilder: (context, error, stackTrace) => const Icon(Icons.add_circle_outline, size: 25, color: AppColors.primaryBlue)),
                           title: 'Add Event',
                           onTap: () {
                             context.push('/create_event');
@@ -367,7 +212,7 @@ class _HomePageState extends State<HomePage> {
                       SizedBox(width: 16.0),
                       Expanded(
                         child: _buildQuickActionCard(
-                          icon: Image.asset('assets/images/event_calendar.png', width: 25, height: 25,),
+                          icon: Image.asset(AppAssets.eventCalendarIcon, width: 25, height: 25, errorBuilder: (context, error, stackTrace) => const Icon(Icons.calendar_month, size: 25, color: AppColors.primaryBlue)),
                           title: 'View Events',
                           onTap: () {
                             context.push('/up_coming_events');
@@ -387,7 +232,7 @@ class _HomePageState extends State<HomePage> {
                     decoration: BoxDecoration(
                       border: Border.all(color: AppColors.primaryBlue),
                       borderRadius: BorderRadius.circular(12.0),
-                      color: Color(0x26D8ECFF),
+                      color: const Color(0x26D8ECFF),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.05),
@@ -406,18 +251,19 @@ class _HomePageState extends State<HomePage> {
                               style: TextStyle(
                                 fontSize: 13.0,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.textDark,
+                                color: AppColors.textColorPrimary,
                                 fontFamily: 'Poppins',
                               ),
                             ),
                             GestureDetector(
                               onTap: _addChildField,
                               child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(6),
-                                  color: Color(0xFFD8ECFF),
+                                  color: const Color(0xFFD8ECFF),
                                 ),
-                                child: Text(
+                                child: const Text(
                                   '+ Add Another Child',
                                   style: TextStyle(
                                     fontSize: 10.0,
@@ -532,7 +378,7 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                   ),
-                  // const SizedBox(height: 30.0),
+                  const SizedBox(height: 20.0), // Added spacing
 
                   // Join Groups Section
                   Text(
@@ -540,7 +386,7 @@ class _HomePageState extends State<HomePage> {
                     style: TextStyle(
                       fontSize: 13.0,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.textDark,
+                      color: AppColors.textColorPrimary,
                       fontFamily: 'Poppins',
                     ),
                   ),
@@ -549,7 +395,7 @@ class _HomePageState extends State<HomePage> {
                     style: TextStyle(
                       fontSize: 8.0,
                       fontWeight: FontWeight.w400,
-                      color: Color(0x991B1D2A),
+                      color: const Color(0x991B1D2A),
                       fontFamily: 'Poppins',
                     ),
                   ),
@@ -568,7 +414,7 @@ class _HomePageState extends State<HomePage> {
                       return _buildCheckboxTile(groupName);
                     },
                   ),
-                  // const SizedBox(height: 30.0),
+                  const SizedBox(height: 20.0), // Added spacing
 
                   // Calendar Section
                   Row(
@@ -579,20 +425,20 @@ class _HomePageState extends State<HomePage> {
                         style: TextStyle(
                           fontSize: 20.0,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
+                          color: AppColors.textColorPrimary,
                           fontFamily: 'Poppins',
                         ),
                       ),
                       Row(
                         children: [
                           IconButton(
-                            icon: Icon(Icons.arrow_back_ios, size: 16, color: AppColors.textMedium),
+                            icon: const Icon(Icons.arrow_back_ios, size: 16, color: AppColors.textColorSecondary),
                             onPressed: () {
                               // Handle previous month
                             },
                           ),
                           IconButton(
-                            icon: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textMedium),
+                            icon: const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textColorSecondary),
                             onPressed: () {
                               // Handle next month
                             },
@@ -601,19 +447,20 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
-                  //const SizedBox(height: 16.0),
-                  _buildCalendarGrid(),
-                  // const SizedBox(height: 20.0),
+                  const SizedBox(height: 16.0),
+                  // Pass the calendarDateStates from the provider to the calendar grid
+                  _buildCalendarGrid(availabilityProvider.calendarDateStates),
+                  const SizedBox(height: 20.0),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.circle, size: 12, color: AppColors.availableGreen),
                       SizedBox(width: 8),
-                      Text('Available', style: TextStyle(color: AppColors.textMedium)),
+                      Text('Available', style: TextStyle(color: AppColors.textLight)),
                       SizedBox(width: 20),
                       Icon(Icons.circle, size: 12, color: AppColors.unavailableRed),
                       SizedBox(width: 8),
-                      Text('Unavailable', style: TextStyle(color: AppColors.textMedium)),
+                      Text('Unavailable', style: TextStyle(color: AppColors.textColorSecondary)),
                     ],
                   ),
                   const SizedBox(height: 20.0),
@@ -625,7 +472,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
   Widget _buildQuickActionCard({
     required Widget icon,
     required String title,
@@ -646,10 +492,10 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 10.0),
             Text(
               title,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16.0,
                 fontWeight: FontWeight.w500,
-                color: AppColors.textDark,
+                color: AppColors.textColorPrimary,
                 fontFamily: 'Poppins',
               ),
               textAlign: TextAlign.center,
@@ -674,8 +520,7 @@ class _HomePageState extends State<HomePage> {
         title: Text(
           title,
           style: TextStyle(
-            fontSize: 14.0,
-            color: _groupSelections[title]! ? AppColors.primaryBlue : AppColors.textDark,
+            color: _groupSelections[title]! ? AppColors.primaryBlue : AppColors.textColorPrimary,
             fontFamily: 'Poppins',
           ),
         ),
@@ -693,12 +538,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildCalendarGrid() {
+  Widget _buildCalendarGrid(Map<int, int> calendarDateStates) {
     final List<String> weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
     final List<DateTime> calendarDates = [];
 
-    DateTime startDate = DateTime(2025, 6, 29);
-    for (int i = 0; i < 35; i++) {
+    DateTime startDate = DateTime(2025, 6, 29); // Start from the Sunday before July 1st
+
+    for (int i = 0; i < 35; i++) { // Display 5 weeks (7 days * 5 rows = 35 days)
       calendarDates.add(startDate.add(Duration(days: i)));
     }
 
@@ -706,7 +552,7 @@ class _HomePageState extends State<HomePage> {
       children: [
         GridView.builder(
           shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
+          physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 7,
             childAspectRatio: 1.0,
@@ -718,19 +564,19 @@ class _HomePageState extends State<HomePage> {
             return Center(
               child: Text(
                 weekdays[index],
-                style: TextStyle(
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
-                  color: AppColors.textDark,
+                  color: AppColors.textColorPrimary,
                 ),
               ),
             );
           },
         ),
-        SizedBox(height: 8.0),
+        const SizedBox(height: 8.0),
         GridView.builder(
           shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
+          physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 7,
             childAspectRatio: 1.0,
@@ -740,40 +586,46 @@ class _HomePageState extends State<HomePage> {
           itemCount: calendarDates.length,
           itemBuilder: (context, index) {
             final date = calendarDates[index];
-            final state = _calendarDateStates[date.day] ?? 2;
+            final bool isCurrentMonth = date.month == 7 && date.year == 2025;
+
+            final state = isCurrentMonth ? calendarDateStates[date.day] ?? 2 : 2;
 
             Color bgColor = Colors.transparent;
             Color borderColor = Colors.transparent;
             Color textColor = AppColors.dateText;
 
-            switch (state) {
-              case 0:
-                borderColor = AppColors.unavailableRed;
-                textColor = AppColors.unavailableRed;
-                break;
-              case 1:
-                borderColor = AppColors.availableGreen;
-                textColor = AppColors.availableGreen;
-                break;
-              case 2:
-              default:
-                bgColor = AppColors.dateBackground;
-                break;
+            if (isCurrentMonth) {
+              switch (state) {
+                case 0: // Unavailable
+                  bgColor = AppColors.unavailableRed;
+                  textColor = Colors.white;
+                  break;
+                case 1: // Available
+                  bgColor = AppColors.availableGreen;
+                  textColor = Colors.white;
+                  break;
+                case 2: // Default/Inactive
+                default:
+                  bgColor = AppColors.dateBackground;
+                  textColor = AppColors.dateText;
+                  break;
+              }
+            } else {
+              bgColor = AppColors.dateBackground.withOpacity(0.5);
+              textColor = AppColors.dateText.withOpacity(0.5);
             }
 
+
             return GestureDetector(
-              onTap: state == 2
-                  ? null
-                  : () {
-                setState(() {
-                  _calendarDateStates.updateAll((key, _) => _calendarDateStates[key] == 3 ? 1 : _calendarDateStates[key]!);
-                  _calendarDateStates[date.day] = 3;
-                });
-              },
+              onTap: isCurrentMonth
+                  ? () {
+                Provider.of<AvailabilityProvider>(context, listen: false).toggleDateState(date.day);
+              }
+                  : null,
               child: Container(
                 decoration: BoxDecoration(
                   color: bgColor,
-                  border: Border.all(color: borderColor, width: state == 3 ? 0 : 1.5),
+                  border: Border.all(color: borderColor, width: 1.5),
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: Center(

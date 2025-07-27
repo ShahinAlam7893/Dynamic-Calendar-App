@@ -1,3 +1,5 @@
+import 'package:circleslate/presentation/features/availability/view/availability_preview_page.dart';
+import 'package:circleslate/presentation/features/availability/view/create_edit_availability_screen.dart';
 import 'package:circleslate/presentation/features/chat/view/chat_list_screen.dart';
 import 'package:circleslate/presentation/features/chat/view/chat_screen.dart';
 import 'package:circleslate/presentation/features/chat/view/create_group.dart';
@@ -8,8 +10,10 @@ import 'package:circleslate/presentation/features/event_management/view/open_inv
 import 'package:circleslate/presentation/features/group_management/view/add_member_page.dart';
 import 'package:circleslate/presentation/features/ride_request/view/ride_sharing_page.dart';
 import 'package:circleslate/presentation/features/settings/view/delete_account_screen.dart';
+import 'package:circleslate/presentation/features/settings/view/edit_profile_page.dart';
 import 'package:circleslate/presentation/features/settings/view/privacy_controls_page.dart';
 import 'package:circleslate/presentation/features/settings/view/privacy_policy_page.dart';
+import 'package:circleslate/presentation/features/settings/view/profile_page.dart';
 import 'package:circleslate/presentation/features/settings/view/terms_and_conditions_page.dart';
 import 'package:circleslate/presentation/widgets/custom_bottom_nav_bar.dart';
 import 'package:flutter/material.dart'; // For GlobalKey, NavigatorState, BuildContext
@@ -50,13 +54,16 @@ class RoutePaths {
   static const String openInvite = '/open-invite';
   // Added these as they are part of your navbar, assuming they are intended routes
   static const String availability = '/availability';
+  static const String availabilitypreview = '/availability_preview';
   static const String settings = '/settings';
-  static const String profile = '/profile'; // New route for Profile
+  static const String profile = '/profile';
+  static const String editProfile = '/edit-profile';
   static const String changePassword = '/change-password'; // New route for Change Password
   static const String privacyControls = '/privacy-controls'; // New route for Privacy Controls
   static const String privacyPolicy = '/privacy-policy'; // New route for Privacy Policy
   static const String termsAndConditions = '/terms-and-conditions'; // New route for Terms & Conditions
   static const String deleteAccount = '/delete-account';
+
 }
 
 // --- AppRoutes Class (Restored to your original structure) ---
@@ -80,11 +87,13 @@ class AppRoutes {
   static const String directInvite = 'directInvite';
   static const String openInvite = 'openInvite';
   static const String availability = 'availability';
+  static const String availabilitypreview = 'availabilitypreview';
   static const String settings = 'settings';
   static const String privacyPolicy = 'privacyPolicy';
   static const String privacyControls = 'privacyControls';
   static const String termsAndConditions = 'termsAndConditions';
   static const String deleteAccount = 'deleteAccount';
+
 }
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -230,6 +239,31 @@ class AppRouter {
       GoRoute(
         path: RoutePaths.deleteAccount,
         builder: (context, state) => const DeleteAccountScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.profile,
+        builder: (context, state) => const ProfilePage(),
+      ),
+      GoRoute(
+        path: RoutePaths.availability,
+        builder: (context, state) => const AvailabilityPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.availabilitypreview,
+        builder: (context, state) => const AvailabilityPreviewPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.editProfile,
+        builder: (context, state) {
+          final Map<String, dynamic> extraData = state.extra as Map<String, dynamic>;
+          return EditProfilePage(
+            initialFullName: extraData['fullName'] as String,
+            initialEmail: extraData['email'] as String,
+            initialMobile: extraData['mobile'] as String,
+            initialChildren: List<Map<String, String>>.from(extraData['children']),
+            initialProfileImageUrl: extraData['profileImageUrl'] as String,
+          );
+        },
       ),
     ],
   );

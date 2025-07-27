@@ -128,12 +128,7 @@ class SettingsPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.primaryBlue,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            context.pop(); // Use pop for back navigation
-          },
-        ),
+
         title: const Text(
           'Settings',
           style: TextStyle(

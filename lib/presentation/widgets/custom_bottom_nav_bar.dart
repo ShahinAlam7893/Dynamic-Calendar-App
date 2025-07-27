@@ -1,3 +1,4 @@
+import 'package:circleslate/presentation/features/availability/view/create_edit_availability_screen.dart';
 import 'package:circleslate/presentation/features/event_management/view/upcoming_events_page.dart';
 import 'package:circleslate/presentation/features/group_management/view/group_management_page.dart';
 import 'package:circleslate/presentation/features/settings/view/settings_screen.dart';
@@ -122,7 +123,7 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
     const HomePage(), // Your actual Home Page
     const UpcomingEventsPage(), // Your actual Events Page
     const GroupManagementPage(),
-    const _ComingSoonPage(title: 'Availability', icon: Icons.calendar_today),
+    const AvailabilityPage(),
     const SettingsPage(),// Your actual Groups Page
      // Placeholder for Availability
     // const _ComingSoonPage(title: 'Settings', icon: Icons.settings), // Placeholder for Settings
@@ -168,16 +169,20 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
 
   void _onTabTapped(int index) {
     if (_currentIndex != index) {
-      // Add haptic feedback
-      HapticFeedback.lightImpact();
-
+      setState(() {
+        _currentIndex = index;
+      });
       _pageController.animateToPage(
         index,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOutCubic,
       );
+
+      // Optional: update browser path without rebuild
+      GoRouter.of(context).go('/home??tab=$index');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

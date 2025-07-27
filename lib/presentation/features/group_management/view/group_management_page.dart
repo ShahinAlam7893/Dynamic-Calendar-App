@@ -288,12 +288,6 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       appBar: AppBar(
         backgroundColor: AppColors.primaryBlue,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
         title: const Text(
           'Group Management',
           style: TextStyle(
@@ -308,8 +302,8 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
             onPressed: () {
-              context.go(RoutePaths.chatlistpage); // Corrected from chatlistpage
-            },
+              context.push('/chat');
+              },
           ),
         ],
       ),
