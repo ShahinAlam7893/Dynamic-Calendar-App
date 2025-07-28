@@ -71,14 +71,6 @@ class AvailabilityPreviewPage extends StatelessWidget {
             fontFamily: 'Poppins',
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-            onPressed: () {
-              // Handle chat action
-            },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -173,46 +165,6 @@ class AvailabilityPreviewPage extends StatelessWidget {
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _getCurrentIndex(context),
-        selectedItemColor: AppColors.primaryBlue,
-        unselectedItemColor: Colors.grey,
-        onTap: (index) {
-          if (index == 0) {
-            context.go('/home');
-          } else if (index == 1) {
-            context.go('/up_coming_events');
-          } else if (index == 2) {
-            context.go('/group_chat');
-          } else if (index == 3) {
-            context.go('/availability'); // Navigate to Availability Settings
-          } else if (index == 4) {
-            context.go('/settings');
-          }
-        },
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.event),
-            label: 'Events',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group),
-            label: 'Groups',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Availability',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
       ),
     );
   }

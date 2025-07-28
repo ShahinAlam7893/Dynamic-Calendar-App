@@ -8,6 +8,7 @@ import 'package:circleslate/presentation/features/event_management/view/direct_i
 import 'package:circleslate/presentation/features/event_management/view/event_details_screen.dart';
 import 'package:circleslate/presentation/features/event_management/view/open_invite_page.dart';
 import 'package:circleslate/presentation/features/group_management/view/add_member_page.dart';
+import 'package:circleslate/presentation/features/group_management/view/group_management_page.dart';
 import 'package:circleslate/presentation/features/ride_request/view/ride_sharing_page.dart';
 import 'package:circleslate/presentation/features/settings/view/delete_account_screen.dart';
 import 'package:circleslate/presentation/features/settings/view/edit_profile_page.dart';
@@ -170,7 +171,7 @@ class AppRouter {
         builder: (context, state) => const SmoothNavigationWrapper(initialIndex: 1),
       ),
       GoRoute(
-        path: RoutePaths.groupManagement, // Your original route name
+        path: RoutePaths.chatlistpage, // Your original route name
         builder: (context, state) => const SmoothNavigationWrapper(initialIndex: 2),
       ),
       GoRoute(
@@ -198,15 +199,34 @@ class AppRouter {
       GoRoute(
         path: RoutePaths.onetooneconversationpage,
         builder: (context, state) {
-          final chatPartnerName = state.extra as String?;
+          // Correctly extract the parameters from the 'extra' Map
+          final Map<String, dynamic>? extraData = state.extra as Map<String, dynamic>?;
+
+          // Provide default values if extraData is null or keys are missing,
+          // though for chatPartnerName, it's typically required.
+          final String chatPartnerName = extraData?['chatPartnerName'] as String? ?? 'Unknown Chat Partner';
+          final bool isGroupChat = extraData?['isGroupChat'] as bool? ?? false;
+          final bool isCurrentUserAdminInGroup = extraData?['isCurrentUserAdminInGroup'] as bool? ?? false;
+
           return OneToOneConversationPage(
-            chatPartnerName: chatPartnerName ?? 'Unknown',
+            chatPartnerName: chatPartnerName,
+            isGroupChat: isGroupChat,
+            isCurrentUserAdminInGroup: isCurrentUserAdminInGroup,
           );
         },
       ),
+      // GoRoute(
+      //   path: RoutePaths.onetooneconversationpage,
+      //   builder: (context, state) {
+      //     final chatPartnerName = state.extra as String?;
+      //     return OneToOneConversationPage(
+      //       chatPartnerName: chatPartnerName ?? 'Unknown',
+      //     );
+      //   },
+      // ),
       GoRoute(
-        path: RoutePaths.chatlistpage, // Your original route name
-        builder: (context, state) => const ChatListPage(),
+        path: RoutePaths.groupManagement, // Your original route name
+        builder: (context, state) => const GroupManagementPage(),
       ),
       GoRoute(
         path: RoutePaths.creategrouppage, // Your original route name
@@ -252,6 +272,8 @@ class AppRouter {
         path: RoutePaths.availabilitypreview,
         builder: (context, state) => const AvailabilityPreviewPage(),
       ),
+
+
       GoRoute(
         path: RoutePaths.editProfile,
         builder: (context, state) {

@@ -1,4 +1,5 @@
 import 'package:circleslate/presentation/features/availability/view/create_edit_availability_screen.dart';
+import 'package:circleslate/presentation/features/chat/view/chat_list_screen.dart';
 import 'package:circleslate/presentation/features/event_management/view/upcoming_events_page.dart';
 import 'package:circleslate/presentation/features/group_management/view/group_management_page.dart';
 import 'package:circleslate/presentation/features/settings/view/settings_screen.dart';
@@ -6,11 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart'; // Still useful for internal page navigation (not bottom bar)
 import 'package:circleslate/presentation/features/settings/view/settings_screen.dart';
-// Importing your existing pages
 import 'package:circleslate/presentation/features/home/view/home_screen.dart';
-// New OpenInvitePage
-// Assuming these exist or will be created:
-// import 'package:circleslate/presentation/features/availability/view/availability_page.dart';
+
 
 
 
@@ -122,11 +120,11 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
   final List<Widget> _pages = [
     const HomePage(), // Your actual Home Page
     const UpcomingEventsPage(), // Your actual Events Page
-    const GroupManagementPage(),
+    const ChatListPage(),
     const AvailabilityPage(),
     const SettingsPage(),// Your actual Groups Page
-     // Placeholder for Availability
-    // const _ComingSoonPage(title: 'Settings', icon: Icons.settings), // Placeholder for Settings
+    // const GroupManagementPage(),
+
   ];
 
   @override
@@ -179,7 +177,7 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
       );
 
       // Optional: update browser path without rebuild
-      GoRouter.of(context).go('/home??tab=$index');
+      // GoRouter.of(context).go('/home??tab=$index');
     }
   }
 
@@ -226,7 +224,7 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
             children: [
               _buildNavItem(0, Icons.home_outlined, Icons.home, 'Home'),
               _buildNavItem(1, Icons.event_note_outlined, Icons.event_note, 'Events'),
-              _buildNavItem(2, Icons.group_outlined, Icons.group, 'Groups'),
+              _buildNavItem(2, Icons.chat_bubble_outline, Icons.chat_bubble_outline, 'Chats'),
               _buildNavItem(3, Icons.calendar_today_outlined, Icons.calendar_today, 'Availability'),
               _buildNavItem(4, Icons.settings_outlined, Icons.settings, 'Settings'),
             ],

@@ -100,24 +100,6 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     });
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      // Use GoRouter for navigation
-      if (index == 0) {
-        context.go(RoutePaths.home);
-      } else if (index == 1) {
-        context.go(RoutePaths.upcomingeventspage); // Corrected from upcomingeventspage
-      } else if (index == 2) {
-        // Already on groups page, do nothing or refresh
-      } else if (index == 3) {
-        // context.go(RoutePaths.availability); // Corrected from commented out
-      } else if (index == 4) {
-        // context.go(RoutePaths.settings); // Corrected from commented out
-      }
-    });
-  }
-
   void _deleteMember(GroupMember member) {
     showDialog(
       context: context,
@@ -288,6 +270,10 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       appBar: AppBar(
         backgroundColor: AppColors.primaryBlue,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: const Text(
           'Group Management',
           style: TextStyle(
@@ -298,15 +284,6 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-            onPressed: () {
-              context.push(RoutePaths.chatlistpage);
-              // context.push('/chat');
-              },
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -372,7 +349,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
               },
             ),
           ),
-          const SizedBox(height: 5,),
+          const SizedBox(height: 20,),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -400,7 +377,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                   ),
                 ),
               ),
-              // const SizedBox(width: 50.0),
+              const SizedBox(width: 50.0),
               FloatingActionButton(
                 onPressed: _navigateToAddMember, // Call the navigation function
                 backgroundColor: Colors.white,

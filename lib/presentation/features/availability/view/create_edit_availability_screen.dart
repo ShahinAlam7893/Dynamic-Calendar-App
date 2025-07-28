@@ -53,12 +53,6 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
             ),
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
