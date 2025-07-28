@@ -111,8 +111,6 @@ class AppRouter {
 
     // Redirection logic (can be expanded for authentication, etc.)
     redirect: (BuildContext context, GoRouterState state) {
-      // Example: If user tries to go to login/signup but is already authenticated, redirect to home.
-      // For now, it's minimal.
       return null;
     },
 
@@ -202,8 +200,6 @@ class AppRouter {
           // Correctly extract the parameters from the 'extra' Map
           final Map<String, dynamic>? extraData = state.extra as Map<String, dynamic>?;
 
-          // Provide default values if extraData is null or keys are missing,
-          // though for chatPartnerName, it's typically required.
           final String chatPartnerName = extraData?['chatPartnerName'] as String? ?? 'Unknown Chat Partner';
           final bool isGroupChat = extraData?['isGroupChat'] as bool? ?? false;
           final bool isCurrentUserAdminInGroup = extraData?['isCurrentUserAdminInGroup'] as bool? ?? false;

@@ -137,15 +137,9 @@ class _ChatListPageState extends State<ChatListPage> {
     return Scaffold(
       backgroundColor: Colors.grey[100], // Light grey background
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: AppColors.primaryBlue,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.of(context).pop();
-            context.pop();
-          },
-        ),
         title: const Text(
           'Chat',
           style: TextStyle(

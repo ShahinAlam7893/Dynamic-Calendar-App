@@ -57,7 +57,7 @@ class _SplashScreenState extends State<SplashScreen> {
     ),
     ),
       child: Scaffold(
-        backgroundColor: AppColors.primaryBlue,
+        backgroundColor: Colors.transparent,
         body: Center( // This Center widget will center its child (the Column)
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center, // Centers children vertically within the Column's available space

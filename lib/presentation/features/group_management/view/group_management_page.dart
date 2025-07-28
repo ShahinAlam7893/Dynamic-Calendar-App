@@ -25,7 +25,6 @@ class GroupMember {
   });
 }
 
-
 class GroupManagementPage extends StatefulWidget {
   const GroupManagementPage({super.key});
 
@@ -54,7 +53,8 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       name: 'Sarah Wilson',
       email: 'sarahwilson@gmail.com',
       children: 'Jen',
-      imageUrl: AppAssets.sarahMartinez, // Using Sarah Martinez for Sarah Wilson
+      imageUrl:
+          AppAssets.sarahMartinez, // Using Sarah Martinez for Sarah Wilson
       role: MemberRole.member,
     ),
     GroupMember(
@@ -156,7 +156,10 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12.0),
-                          side: const BorderSide(color: AppColors.primaryBlue, width: 1),
+                          side: const BorderSide(
+                            color: AppColors.primaryBlue,
+                            width: 1,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8.0),
                           ),
@@ -182,11 +185,14 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                           });
                           Navigator.of(context).pop(); // Dismiss dialog
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('${member.name} has been removed.')),
+                            SnackBar(
+                              content: Text('${member.name} has been removed.'),
+                            ),
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.delete, // Red for Remove button
+                          backgroundColor:
+                              AppColors.delete, // Red for Remove button
                           padding: const EdgeInsets.symmetric(vertical: 12.0),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8.0),
@@ -293,15 +299,24 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search members or children',
-                hintStyle: const TextStyle(color: AppColors.textColorSecondary, fontFamily: 'Poppins'),
-                prefixIcon: const Icon(Icons.search, color: AppColors.textColorSecondary),
+                hintStyle: const TextStyle(
+                  color: AppColors.textColorSecondary,
+                  fontFamily: 'Poppins',
+                ),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: AppColors.textColorSecondary,
+                ),
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.0),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 12.0,
+                  horizontal: 16.0,
+                ),
               ),
             ),
           ),
@@ -315,12 +330,16 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                   style: TextStyle(
                     fontSize: 13.0,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textColorPrimary, // Corrected from textColorPrimary
+                    color: AppColors
+                        .textColorPrimary, // Corrected from textColorPrimary
                     fontFamily: 'Poppins',
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10.0,
+                    vertical: 5.0,
+                  ),
                   decoration: BoxDecoration(
                     color: Color(0xFFD8ECFF), // Corrected from hardcoded color
                     borderRadius: BorderRadius.circular(20.0),
@@ -349,55 +368,77 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
               },
             ),
           ),
-          const SizedBox(height: 20,),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('View More Tapped')),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue, // Corrected from buttonPrimary
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  side: const BorderSide(color: AppColors.primaryBlue, width: 1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+          // const SizedBox(height: 20,),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 40.0),
+            child: Row(
+              mainAxisAlignment:
+                  MainAxisAlignment.start, // Align to start, Expanded will push
+              children: [
+                Expanded(
+                  // Expanded to take available space and allow centering
+                  child: Center(
+                    // Center the ElevatedButton within the Expanded space
+                    child: SizedBox(
+                      // Wrap with SizedBox for fixed dimensions
+                      width: 72.0, // Set width as requested
+                      height: 32.0, // Set height as requested
+                      child: ElevatedButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('View More Tapped')),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryBlue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                          padding: EdgeInsets
+                              .zero, // Remove default padding if using SizedBox for size
+                        ),
+                        child: const Text(
+                          'View More',
+                          style: TextStyle(
+                            fontSize: 10.0, // Keep the requested font size
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                child: const Text(
-                  'View More',
-                  style: TextStyle(
-                    fontSize: 10.0,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                    fontFamily: 'Poppins',
+                // const SizedBox(width: 0.0), // Spacing between the centered button and the right-aligned button
+                Center(
+                  child: SizedBox(
+                    // This will naturally be on the right after the Expanded
+                    width: 40,
+                    height: 40,
+                    child: FloatingActionButton(
+                      onPressed:
+                          _navigateToAddMember, // Call the navigation function
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20.0),
+                      ),
+                      child: const Icon(Icons.add, color: Colors.blue),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 50.0),
-              FloatingActionButton(
-                onPressed: _navigateToAddMember, // Call the navigation function
-                backgroundColor: Colors.white,
-                mini: true, // Make it a small button
-                child: const Icon(Icons.add, color: AppColors.primaryBlue), // Corrected from buttonPrimary
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
-
     );
   }
 
   Widget _buildMemberCard(GroupMember member) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       elevation: 0,
       color: Colors.white,
       child: Padding(
@@ -411,7 +452,8 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                   radius: 28,
                   backgroundImage: Image.asset(
                     member.imageUrl,
-                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.person),
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.person),
                   ).image,
                 ),
                 const SizedBox(width: 16.0),
@@ -427,12 +469,16 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                             style: const TextStyle(
                               fontSize: 16.0,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textColorPrimary, // Corrected from textColorPrimary
+                              color: AppColors
+                                  .textColorPrimary, // Corrected from textColorPrimary
                               fontFamily: 'Poppins',
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0,
+                              vertical: 4.0,
+                            ),
                             decoration: BoxDecoration(
                               color: member.role == MemberRole.admin
                                   ? AppColors.adminTagColor
@@ -440,7 +486,9 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                               borderRadius: BorderRadius.circular(20.0),
                             ),
                             child: Text(
-                              member.role == MemberRole.admin ? 'Admin' : 'Member',
+                              member.role == MemberRole.admin
+                                  ? 'Admin'
+                                  : 'Member',
                               style: const TextStyle(
                                 fontSize: 10.0,
                                 fontWeight: FontWeight.w500,
@@ -455,7 +503,8 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                         member.email,
                         style: const TextStyle(
                           fontSize: 12.0,
-                          color: AppColors.textColorSecondary, // Corrected from textColorSecondary
+                          color: AppColors
+                              .textColorSecondary, // Corrected from textColorSecondary
                           fontFamily: 'Poppins',
                         ),
                       ),
@@ -465,7 +514,11 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                 ),
               ],
             ),
-            const Divider(height: 24, thickness: 1, color: Colors.grey), // Divider line
+            const Divider(
+              height: 24,
+              thickness: 1,
+              color: Colors.grey,
+            ), // Divider line
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -473,7 +526,8 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                   'Children: ${member.children}',
                   style: const TextStyle(
                     fontSize: 12.0,
-                    color: AppColors.textColorSecondary, // Corrected from textColorSecondary
+                    color: AppColors
+                        .textColorSecondary, // Corrected from textColorSecondary
                     fontFamily: 'Poppins',
                   ),
                 ),
@@ -485,7 +539,10 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                       icon: Icons.chat_bubble_outline,
                       label: 'Message',
                       onTap: () {
-                        context.go(RoutePaths.onetooneconversationpage, extra: member.name); // Corrected from onetooneconversationpage
+                        context.go(
+                          RoutePaths.onetooneconversationpage,
+                          extra: member.name,
+                        ); // Corrected from onetooneconversationpage
                       },
                     ),
                     const SizedBox(width: 16.0),

@@ -93,36 +93,41 @@ class OnboardingPageContent extends StatelessWidget {
           ),
           if (bulletPoints != null && bulletPoints!.isNotEmpty) ...[
             const SizedBox(height: 24),
-            Column(
-              children: bulletPoints!
-                  .map(
-                    (text) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.check_circle,
-                        color: AppColors.buttonPrimary,
-                        size:13 ,
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible( // Use Flexible here to prevent overflow
-                        child: Text(
-                          text,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: AppColors.textColorPrimary,
+            Align(
+              alignment: Alignment.center, // Center align the bullet section
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start, // Ensure child Rows are centered
+                children: bulletPoints!
+                    .map(
+                      (text) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min, // Important: shrink Row width to content
+                      children: [
+                        Icon(
+                          Icons.check_circle,
+                          color: AppColors.buttonPrimary,
+                          size: 13,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            text,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: AppColors.textColorPrimary,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              )
-                  .toList(),
+                )
+                    .toList(),
+              ),
             ),
           ],
+
           const Spacer(),
           if (bottomContent != null) ...[
             bottomContent!,

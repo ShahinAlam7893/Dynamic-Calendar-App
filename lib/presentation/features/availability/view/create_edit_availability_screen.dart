@@ -40,6 +40,7 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: AppColors.primaryBlue,
         elevation: 0,
         title: Center(

@@ -110,6 +110,7 @@ class UpcomingEventsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[100], // Light grey background
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: AppColors.primaryBlue,
         title: const Text(
           'Upcoming Events',
@@ -130,12 +131,6 @@ class UpcomingEventsPage extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Reloading Events...')),
               );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-            onPressed: () {
-              context.push('/chat');
             },
           ),
         ],
