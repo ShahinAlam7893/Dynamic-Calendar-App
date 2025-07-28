@@ -302,7 +302,8 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
             onPressed: () {
-              context.push('/chat');
+              context.push(RoutePaths.chatlistpage);
+              // context.push('/chat');
               },
           ),
         ],

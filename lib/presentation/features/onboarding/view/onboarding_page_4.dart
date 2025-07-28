@@ -74,7 +74,8 @@ class OnboardingPage4 extends StatelessWidget {
                   child: PrimaryButton(
                     text: AppStrings.signUp,
                     onPressed: () {
-                      context.go(RoutePaths.signup); // Navigate to Signup (placeholder)
+                      context.push(RoutePaths.signup);
+                      // context.go(RoutePaths.signup); // Navigate to Signup (placeholder)
                     },
                   ),
                 ),
@@ -84,7 +85,8 @@ class OnboardingPage4 extends StatelessWidget {
                   child: SecondaryButton(
                     text: AppStrings.logIn,
                     onPressed: () {
-                      context.go(RoutePaths.login); // Navigate to Login (placeholder)
+                      context.push(RoutePaths.login);
+                      // context.go(RoutePaths.login); // Navigate to Login (placeholder)
                     },
                   ),
                 ),

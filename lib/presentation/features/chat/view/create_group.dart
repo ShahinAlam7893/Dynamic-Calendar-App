@@ -205,6 +205,38 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                       }
                       return null;
                     },
+
+                  ),
+                  const Text(
+                    'Search Name',
+                    style: TextStyle(
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textColorPrimary, // Changed from textColorPrimary
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                  const SizedBox(height: 8.0),
+                  TextFormField(
+                    // controller: _groupNameController,
+                    decoration: InputDecoration(
+                      hintText: 'Type here',
+                      hintStyle: const TextStyle(color: AppColors.textColorSecondary, fontFamily: 'Poppins'), // Changed from textColorSecondary
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Find a contact to add to the group';
+                      }
+                      return null;
+                    },
+
                   ),
                 ],
               ),

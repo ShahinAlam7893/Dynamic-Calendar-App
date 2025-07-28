@@ -1,4 +1,5 @@
 import 'package:circleslate/presentation/features/event_management/view/create_edit_event_screen.dart';
+import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart'; // Import go_router for navigation
 import 'package:intl/intl.dart'; // For date formatting
@@ -341,7 +342,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
                         _isOpenInvite = true;
                       });
                       // Navigate to /direct-invite using GoRouter
-                      context.go('/open-invite');
+                      context.push(RoutePaths.openInvite);
+                      // context.go('/open-invite');
                     },
                   ),
                 ),
@@ -354,7 +356,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
                       setState(() {
                         _isOpenInvite = true;
                       });
-                      context.go('/direct-invite');
+                      context.push(RoutePaths.directInvite);
+                      // context.go('/direct-invite');
                     },
                   ),
                 ),

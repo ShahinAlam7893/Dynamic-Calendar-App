@@ -163,7 +163,7 @@ class PasswordResetSuccessPage extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    context.push('/home');
+                    context.push('/login');
 
                     // Handle navigation to home page
                     // ScaffoldMessenger.of(context).showSnackBar(
@@ -180,7 +180,7 @@ class PasswordResetSuccessPage extends StatelessWidget {
                     elevation: 3,
                   ),
                   child: const Text(
-                    'Go to home',
+                    'Go to Login',
                     style: TextStyle(
                       fontSize: 14.0,
                       fontWeight: FontWeight.w600,

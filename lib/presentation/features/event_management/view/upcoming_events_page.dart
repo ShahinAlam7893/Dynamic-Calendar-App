@@ -178,7 +178,8 @@ class UpcomingEventsPage extends StatelessWidget {
 
     return GestureDetector( // Wrap with GestureDetector for tap detection
       onTap: () {
-        context.go(RoutePaths.eventDetails); // Navigate to EventDetailsPage
+        context.push(RoutePaths.eventDetails, extra: event); // Pass the event data
+        // context.go(RoutePaths.eventDetails); // Navigate to EventDetailsPage
       },
       child: Card(
         margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -302,7 +303,8 @@ class UpcomingEventsPage extends StatelessWidget {
                 heroTag: "addEventFab", // Unique tag for hero animation
                 onPressed: () {
                   // Navigate to CreateEventPage
-                  context.go(RoutePaths.createeventspage);
+                  context.push(RoutePaths.createeventspage);
+                  // context.go(RoutePaths.createeventspage);
                 },
                 backgroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
