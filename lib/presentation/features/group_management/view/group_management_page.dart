@@ -539,10 +539,10 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                       icon: Icons.chat_bubble_outline,
                       label: 'Message',
                       onTap: () {
-                        context.go(
+                        context.push(
                           RoutePaths.onetooneconversationpage,
-                          extra: member.name,
-                        ); // Corrected from onetooneconversationpage
+                          extra: {'name': member.name},
+                        );
                       },
                     ),
                     const SizedBox(width: 16.0),

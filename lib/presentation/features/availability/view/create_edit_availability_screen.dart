@@ -395,7 +395,7 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
       'Just this once',
       'Repeat weekly',
       'Repeat monthly',
-      'Custom schedule',
+      // 'Custom schedule',
     ];
 
     return Container(

@@ -68,10 +68,18 @@ class _SplashScreenState extends State<SplashScreen> {
               const Spacer(flex: 2),
 
               // App Logo
-              Image.asset(
-                AppAssets.appLogo,
-                width: 120,
+              Container(
                 height: 120,
+                width: 120,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30), // Circular shape
+                ),
+                child: Image.asset(
+                  AppAssets.appLogo,
+                  width: 120,
+                  height: 120,
+                ),
               ),
               const SizedBox(height: 24),
               // App Name

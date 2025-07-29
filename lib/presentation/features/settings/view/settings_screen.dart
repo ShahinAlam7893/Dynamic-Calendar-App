@@ -173,12 +173,12 @@ class SettingsPage extends StatelessWidget {
                 Icons.lock_outline,
                     () => context.push(RoutePaths.forgotpassword),
               ),
-              _buildSettingsItem(
-                context,
-                'Privacy Controls',
-                Icons.privacy_tip_outlined,
-                    () => context.push(RoutePaths.privacyControls),
-              ),
+              // _buildSettingsItem(
+              //   context,
+              //   'Privacy Controls',
+              //   Icons.privacy_tip_outlined,
+              //       () => context.push(RoutePaths.privacyControls),
+              // ),
             ]),
             const SizedBox(height: 24.0),
 

@@ -104,7 +104,7 @@ class _ProfilePageState extends State<ProfilePage> {
   List<Map<String, String>> _children = [
     {'name': 'Ella Jonson', 'age': '10 years old'},
   ];
-  String _profileImageUrl = AppAssets.peterJohnson; // Placeholder for Peter Johnson's image
+  String _profileImageUrl = AppAssets.profilePicture; // Placeholder for Peter Johnson's image
 
   @override
   void initState() {

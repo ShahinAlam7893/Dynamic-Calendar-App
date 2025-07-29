@@ -107,30 +107,35 @@ class _HomePageState extends State<HomePage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      // Profile Picture
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            AppAssets.profilePicture, // This should be your profile picture asset
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.person,
-                                size: 40.0,
-                                color: Colors.white,
-                              );
-                            },
+                      GestureDetector(
+                        onTap: () {
+                          context.push('/profile'); // Replace with your actual profile route
+                        },
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              AppAssets.profilePicture,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.person,
+                                  size: 40.0,
+                                  color: Colors.white,
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
+
                       const SizedBox(width: 12.0), // Added spacing
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start, // Align text to start
@@ -312,7 +317,7 @@ class _HomePageState extends State<HomePage> {
                                             labelText: 'Age',
                                             hintText: 'Age',
                                             keyboardType: TextInputType.number,
-                                            suffixIcon: const Icon(Icons.arrow_drop_down, size: 18),
+                                            // suffixIcon: const Icon(Icons.arrow_drop_down, size: 18),
                                           ),
                                         ),
                                       ],
@@ -358,7 +363,7 @@ class _HomePageState extends State<HomePage> {
                                         child: IconButton(
                                           constraints: const BoxConstraints(),
                                           padding: const EdgeInsets.all(4),
-                                          icon: const Icon(Icons.close_rounded, color: Colors.white, size: 10),
+                                          icon: const Icon(Icons.close_rounded, color: Colors.white, size: 12),
                                           onPressed: () {
                                             setState(() {
                                               _childNameControllers[index].dispose();
@@ -369,11 +374,29 @@ class _HomePageState extends State<HomePage> {
                                           },
                                         ),
                                       ),
+
                                     ),
                                 ],
                               ),
+
                             );
                           },
+                        ),
+                        Center(
+                          child: ElevatedButton(onPressed: (){
+                            // context.push('');
+                          },
+                            style: ElevatedButton.styleFrom(
+                              shadowColor: Color(0x1A000000),
+                              backgroundColor: AppColors.primaryBlue,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                              padding: const EdgeInsets.symmetric(vertical: 10.0),
+                            ),
+                            child:  const Text(
+                              'Save',
+                              style: TextStyle(color: Colors.white, fontSize: 14.0),
+                            ),
+                          ),
                         ),
                       ],
                     ),

@@ -245,20 +245,26 @@ class _ChatListPageState extends State<ChatListPage> {
                       const Icon(Icons.person),
                     ).image,
                   ),
-                  if (chat.isOnline)
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: AppColors.onlineIndicator,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                      ),
-                    ),
+
+
+
+                  // +++++++++++++++++++a person online or not +++++++++++++++++++++++++++++++
+                  // if (chat.isOnline)
+                  //   Positioned(
+                  //     bottom: 0,
+                  //     right: 0,
+                  //     child: Container(
+                  //       width: 12,
+                  //       height: 12,
+                  //       decoration: BoxDecoration(
+                  //         color: AppColors.onlineIndicator,
+                  //         shape: BoxShape.circle,
+                  //         border: Border.all(color: Colors.white, width: 2),
+                  //       ),
+                  //     ),
+                  //   ),
+
+                  
                 ],
               ),
               const SizedBox(width: 16.0),
