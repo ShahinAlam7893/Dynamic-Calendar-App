@@ -15,7 +15,7 @@ class AppStrings {
   static const String onboardingCalendarDesc = 'See when friends are available for playdates!\nGreen means ready for fun, red means busy.\nPerfect timing, every time!';
 
   static const String onboardingCirclesTitle = 'Friend Circles';
-  static const String onboardingCirclesDesc = 'Build your child’s trusted friend network.\nOnly verified connections, always secure and private!';
+  static const String onboardingCirclesDesc = 'See when friends are available for play dates!';
   static const String onboardingTrustedNetwork = 'Your trusted friend network';
   static const String onboardingPrivateSecure = 'Private & Secure through';
 

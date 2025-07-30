@@ -193,15 +193,20 @@ class UpcomingEventsPage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    event.title,
-                    style: const TextStyle(
-                      fontSize: 16.0,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textDark,
-                      fontFamily: 'Poppins',
+                  Expanded( // CRITICAL CHANGE: Wrap event.title in Expanded
+                    child: Text(
+                      event.title,
+                      style: const TextStyle(
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textDark,
+                        fontFamily: 'Poppins',
+                      ),
+                      maxLines: 1, // Ensure it doesn't wrap more than one line
+                      overflow: TextOverflow.ellipsis, // Add ellipsis if it overflows
                     ),
                   ),
+                  // The status container will take its natural size
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                     decoration: BoxDecoration(
@@ -216,6 +221,8 @@ class UpcomingEventsPage extends StatelessWidget {
                         color: statusTextColor,
                         fontFamily: 'Poppins',
                       ),
+                      maxLines: 1, // Ensure status text doesn't wrap
+                      overflow: TextOverflow.ellipsis, // Add ellipsis if status is unexpectedly long
                     ),
                   ),
                 ],
@@ -234,17 +241,22 @@ class UpcomingEventsPage extends StatelessWidget {
   }
 
   Widget _buildInfoRow(IconData icon, String text, {Color? iconColor}) {
+    // You might also need to make this row responsive if the text is very long
     return Row(
       children: [
-        Icon(icon, size: 18, color: iconColor), // Icon color changed to accentBlue
+        Icon(icon, size: 18, color: iconColor),
         const SizedBox(width: 8.0),
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: 12.0, // Font size changed to 12.0
-            fontWeight: FontWeight.w400, // Font weight changed to w400
-            color: AppColors.textMedium,
-            fontFamily: 'Poppins',
+        Expanded( // CRITICAL CHANGE: Wrap Text in Expanded here too
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 12.0,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textMedium,
+              fontFamily: 'Poppins',
+            ),
+            maxLines: 1, // Limit to one line
+            overflow: TextOverflow.ellipsis, // Add ellipsis
           ),
         ),
       ],
@@ -314,4 +326,3 @@ class UpcomingEventsPage extends StatelessWidget {
     );
   }
 }
-

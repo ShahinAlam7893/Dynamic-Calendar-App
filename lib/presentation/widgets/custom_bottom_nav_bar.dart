@@ -242,7 +242,7 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primaryBlue.withOpacity(0.1) // Using AppColors
@@ -288,7 +288,6 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
   }
 }
 
-/// A generic "Coming Soon" page for unimplemented tabs.
 class _ComingSoonPage extends StatelessWidget {
   final String title;
   final IconData icon;

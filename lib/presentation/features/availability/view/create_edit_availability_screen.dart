@@ -37,6 +37,9 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Get screen width to make elements responsive
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -70,32 +73,42 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
               ),
             ),
             const SizedBox(height: 16.0),
+            // We need to ensure the status cards also adapt to smaller screens
+            // Use Flexible or Expanded for status cards if they overflow
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatusCard(
-                  status: 1,
-                  title: 'Available',
-                  subtitle: 'for playdates',
-                  icon: Icons.check_circle,
-                  iconColor: const Color(0xFF36D399),
-                  borderColor: const Color(0xFF36D399),
+                Flexible( // Use Flexible for each status card
+                  child: _buildStatusCard(
+                    status: 1,
+                    title: 'Available',
+                    subtitle: 'for playdates',
+                    icon: Icons.check_circle,
+                    iconColor: const Color(0xFF36D399),
+                    borderColor: const Color(0xFF36D399),
+                  ),
                 ),
-                _buildStatusCard(
-                  status: 0,
-                  title: 'Busy',
-                  subtitle: 'not available',
-                  icon: Icons.event_busy,
-                  iconColor: AppColors.unavailableRed,
-                  borderColor: const Color(0x14F87171),
+                SizedBox(width: screenWidth * 0.02), // Small responsive gap
+                Flexible(
+                  child: _buildStatusCard(
+                    status: 0,
+                    title: 'Busy',
+                    subtitle: 'not available',
+                    icon: Icons.event_busy,
+                    iconColor: AppColors.unavailableRed,
+                    borderColor: const Color(0x14F87171),
+                  ),
                 ),
-                _buildStatusCard(
-                  status: 2,
-                  title: 'Maybe',
-                  subtitle: 'available',
-                  icon: Icons.help_outline,
-                  iconColor: const Color(0xFFFFE082),
-                  borderColor: const Color(0x14FFE082),
+                SizedBox(width: screenWidth * 0.02), // Small responsive gap
+                Flexible(
+                  child: _buildStatusCard(
+                    status: 2,
+                    title: 'Maybe',
+                    subtitle: 'available',
+                    icon: Icons.help_outline,
+                    iconColor: const Color(0xFFFFE082),
+                    borderColor: const Color(0x14FFE082),
+                  ),
                 ),
               ],
             ),
@@ -112,7 +125,7 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
               ),
             ),
             const SizedBox(height: 16.0),
-            _buildDaySelector(),
+            _buildDaySelector(screenWidth), // Pass screenWidth to the method
 
             const SizedBox(height: 30.0),
 
@@ -127,7 +140,7 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
               ),
             ),
             const SizedBox(height: 16.0),
-            _buildTimeSlotSelector(),
+            _buildTimeSlotSelector(screenWidth), // Pass screenWidth
 
             const SizedBox(height: 30.0),
             const Text(
@@ -150,7 +163,7 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
                   shadowColor: Color(0x1A000000),
                   backgroundColor: AppColors.primaryBlue,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-                  padding: const EdgeInsets.symmetric(vertical: 10.0),
+                  padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0), // Added horizontal padding
                 ),
                 child:  const Text(
                   'Preview',
@@ -185,10 +198,15 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
                       final availabilityProvider = Provider.of<AvailabilityProvider>(context, listen: false);
                       List<int> datesToUpdate = [];
 
-                      if (_days.isNotEmpty) {
-                        datesToUpdate.add(21);
+                      if (_days.isNotEmpty) { // This condition seems unusual; _days is always non-empty
+                        // It seems you want to add _selectedDayIndex's date if selected
+                        // For demonstration, let's use the selected date
+                        int? selectedDate = int.tryParse(_days[_selectedDayIndex]["date"]!);
+                        if (selectedDate != null) {
+                          datesToUpdate.add(selectedDate);
+                        }
                       } else {
-                        datesToUpdate = [1, 5, 10, 15, 20, 25];
+                        datesToUpdate = [1, 5, 10, 15, 20, 25]; // Fallback if _days was empty
                       }
 
                       availabilityProvider.setAvailabilityForDates(datesToUpdate, _selectedStatus);
@@ -196,7 +214,7 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Availability Saved!')),
                       );
-                      context.push('/up_coming_events');
+                      context.push('/up_coming_events'); // Navigates to a different page
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryBlue,
@@ -217,7 +235,7 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
     );
   }
 
-  // ⬇️ STATUS CARD
+  // ⬇️ STATUS CARD (Added responsive width to inner Container)
   Widget _buildStatusCard({
     required int status,
     required String title,
@@ -234,8 +252,8 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
         });
       },
       child: Container(
-        width: 100,
-        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+        // Removed fixed width: 100
+        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 4.0), // Reduced horizontal padding
         decoration: BoxDecoration(
           color: isSelected ? borderColor.withOpacity(0.1) : Colors.white,
           borderRadius: BorderRadius.circular(12.0),
@@ -255,23 +273,29 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
         ),
         child: Column(
           children: [
-            Icon(icon, color: iconColor, size: 30),
-            const SizedBox(height: 8.0),
+            Icon(icon, color: iconColor, size: 26), // Reduced icon size
+            const SizedBox(height: 6.0), // Reduced spacing
             Text(
               title,
               style: TextStyle(
-                fontSize: 14.0,
+                fontSize: 13.0, // Reduced font size
                 fontWeight: FontWeight.bold,
                 color: isSelected ? iconColor : AppColors.textColorPrimary,
               ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             Text(
               subtitle,
               style: const TextStyle(
-                fontSize: 11.0,
+                fontSize: 10.0, // Reduced font size
                 fontWeight: FontWeight.w500,
                 color: Color(0xCC1B1D2A),
               ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -279,9 +303,10 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
     );
   }
 
-  Widget _buildDaySelector() {
+  // ⬇️ DAY SELECTOR (Modified to use Expanded for each day cell)
+  Widget _buildDaySelector(double screenWidth) { // Accepts screenWidth
     return Container(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.all(10.0), // Slightly reduced overall padding
       margin: const EdgeInsets.only(bottom: 16.0),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -295,42 +320,53 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Still use spaceBetween
         children: List.generate(_days.length, (index) {
           bool isSelected = _selectedDayIndex == index;
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedDayIndex = index;
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 15.0,horizontal: 10.0),
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.blue.shade100 : Colors.transparent,
-                borderRadius: BorderRadius.circular(8.0),
-                border: Border.all(
-                  color: isSelected ? Colors.blue : Colors.grey.shade300,
+          return Expanded( // <-- CRITICAL CHANGE: Use Expanded for each day item
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedDayIndex = index;
+                });
+              },
+              child: Container(
+                // No fixed width here, Expanded will manage it
+                padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: screenWidth * 0.005), // Make horizontal padding very small and responsive
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.blue.shade100 : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8.0),
+                  border: Border.all(
+                    color: isSelected ? Colors.blue : Colors.grey.shade300,
+                  ),
                 ),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    _days[index]["day"]!,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.blue : Colors.black87,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // Ensure Column takes min height
+                  children: [
+                    Text(
+                      _days[index]["day"]!,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: screenWidth * 0.035, // Responsive font size for day
+                        color: isSelected ? Colors.blue : Colors.black87,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _days[index]["date"]!,
-                    style: TextStyle(
-                      fontSize: 11.0,
-                      color: isSelected ? Colors.blue : AppColors.textColorPrimary,
+                    const SizedBox(height: 2), // Reduced spacing
+                    Text(
+                      _days[index]["date"]!,
+                      style: TextStyle(
+                        fontSize: screenWidth * 0.03, // Responsive font size for date
+                        color: isSelected ? Colors.blue : AppColors.textColorPrimary,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
@@ -338,9 +374,11 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
       ),
     );
   }
-  Widget _buildTimeSlotSelector() {
+
+  // ⬇️ TIME SLOT SELECTOR (Added responsive adjustments)
+  Widget _buildTimeSlotSelector(double screenWidth) { // Accepts screenWidth
     return Container(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.all(10.0), // Slightly reduced overall padding
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.0),
@@ -355,9 +393,9 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
       child: GridView.count(
         shrinkWrap: true,
         crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 2.5,
+        mainAxisSpacing: 10, // Reduced spacing
+        crossAxisSpacing: 10, // Reduced spacing
+        childAspectRatio: (screenWidth / 2 - 20) / (screenWidth * 0.18), // Responsive aspect ratio
         physics: const NeverScrollableScrollPhysics(),
         children: List.generate(_timeSlots.length, (index) {
           bool isSelected = _selectedTimeSlotIndex == index;
@@ -370,16 +408,18 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
             child: Container(
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: isSelected ? Color(0x80D8ECFF) : Color(0xFFFFFFFF),
+                color: isSelected ? const Color(0x80D8ECFF) : const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(8.0),
                 border: Border.all(
-                  color: isSelected ? Color(0xFF5A8DEE) : Color(0x1A1B1D2A),
+                  color: isSelected ? const Color(0xFF5A8DEE) : const Color(0x1A1B1D2A),
                 ),
               ),
               child: Text(
                 _timeSlots[index],
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
+                  fontSize: screenWidth * 0.035, // Responsive font size for time slot
                   color: isSelected ? AppColors.buttonPrimary : AppColors.textColorPrimary,
                 ),
               ),
@@ -399,8 +439,10 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
     ];
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      padding: const EdgeInsets.all(16.0),
+      // Using horizontal padding from build method for consistency
+      // And reduced vertical margin
+      margin: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 8.0),
+      padding: const EdgeInsets.all(12.0), // Slightly reduced padding
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.0),
@@ -418,15 +460,15 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
           const Text(
             'Repeat Schedule',
             style: TextStyle(
-              fontSize: 16.0,
+              fontSize: 15.0, // Slightly reduced font size
               fontWeight: FontWeight.w600,
               fontFamily: 'Poppins',
             ),
           ),
-          const SizedBox(height: 12.0),
+          const SizedBox(height: 10.0), // Reduced spacing
           ...List.generate(options.length, (index) {
             return Container(
-              margin: const EdgeInsets.only(bottom: 8.0),
+              margin: const EdgeInsets.only(bottom: 6.0), // Reduced margin
               decoration: BoxDecoration(
                 border: Border.all(
                   color: _selectedRepeatOption == index
@@ -439,7 +481,7 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
                 title: Text(
                   options[index],
                   style: const TextStyle(
-                    fontSize: 14.0,
+                    fontSize: 13.0, // Slightly reduced font size
                     color: AppColors.textColorPrimary,
                     fontFamily: 'Poppins',
                   ),
@@ -452,7 +494,7 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
                   });
                 },
                 activeColor: AppColors.primaryBlue,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12.0),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10.0), // Reduced padding
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),

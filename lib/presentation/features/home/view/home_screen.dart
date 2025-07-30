@@ -5,8 +5,119 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:circleslate/core/constants/shared_utilities.dart';
 import 'package:circleslate/presentation/common_providers/availability_provider.dart';
+import 'package:intl/intl.dart'; // For date formatting
 
-// PlaceholderScreen for other routes, kept here for self-containment
+// --- AuthInputField --- (Copied from previous response for self-containment)
+class AuthInputField extends StatefulWidget {
+  final TextEditingController controller;
+  final String labelText;
+  final String hintText;
+  final TextInputType keyboardType;
+  final bool isPassword;
+  final Widget? suffixIcon;
+  final String? Function(String?)? validator;
+  final int maxLines;
+
+  const AuthInputField({
+    Key? key,
+    required this.controller,
+    required this.labelText,
+    required this.hintText,
+    this.keyboardType = TextInputType.text,
+    this.isPassword = false,
+    this.suffixIcon,
+    this.validator,
+    this.maxLines = 1,
+  }) : super(key: key);
+
+  @override
+  _AuthInputFieldState createState() => _AuthInputFieldState();
+}
+
+class _AuthInputFieldState extends State<AuthInputField> {
+  bool _obscureText = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _obscureText = widget.isPassword;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double labelFontSize = screenWidth * 0.032;
+    final double hintFontSize = screenWidth * 0.03;
+    final double inputContentPaddingVertical = screenWidth * 0.035;
+    final double inputContentPaddingHorizontal = screenWidth * 0.04;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.labelText,
+          style: TextStyle(
+            color: AppColors.textColorSecondary,
+            fontSize: labelFontSize,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        SizedBox(height: screenWidth * 0.02),
+        TextFormField(
+          controller: widget.controller,
+          keyboardType: widget.keyboardType,
+          obscureText: _obscureText,
+          validator: widget.validator,
+          maxLines: widget.maxLines,
+          decoration: InputDecoration(
+            hintText: widget.hintText,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(screenWidth * 0.01),
+              borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(screenWidth * 0.01),
+              borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(screenWidth * 0.01),
+              borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+            ),
+            hintStyle: TextStyle(color: AppColors.inputHintColor, fontSize: hintFontSize, fontWeight: FontWeight.w400),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: EdgeInsets.symmetric(vertical: inputContentPaddingVertical, horizontal: inputContentPaddingHorizontal),
+            suffixIcon: widget.isPassword
+                ? IconButton(
+              icon: Icon(
+                _obscureText ? Icons.visibility : Icons.visibility_off,
+                color: AppColors.textColorSecondary,
+                size: screenWidth * 0.05,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscureText = !_obscureText;
+                });
+              },
+            )
+                : (widget.suffixIcon != null
+                ? SizedBox(
+              width: screenWidth * 0.08,
+              height: screenWidth * 0.08,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: widget.suffixIcon,
+              ),
+            )
+                : null),
+          ),
+        ),
+      ],
+    );
+  }
+}
+// --- PlaceholderScreen for other routes, kept here for self-containment
 class PlaceholderScreen extends StatelessWidget {
   final String title;
   const PlaceholderScreen({Key? key, required this.title}) : super(key: key);
@@ -27,8 +138,9 @@ class PlaceholderScreen extends StatelessWidget {
     );
   }
 
+  // FIX: Use routerDelegate.currentConfiguration.uri.toString() to get the current location
+  // This method should ideally be in a utility or a top-level widget that manages navigation state
   int _getCurrentIndex(BuildContext context) {
-    // FIX: Use routerDelegate.currentConfiguration.uri.toString() to get the current location
     final String location = GoRouter.of(context).routerDelegate.currentConfiguration.uri.toString();
     if (location == '/home') return 0;
     if (location == '/up_coming_events') return 1;
@@ -86,6 +198,32 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height; // Not directly used here, but good for context
+
+    // Responsive font sizes
+    final double headerNameFontSize = screenWidth * 0.055;
+    final double headerSubtitleFontSize = screenWidth * 0.035;
+    final double availabilityTextFontSize = screenWidth * 0.032;
+    final double quickActionTitleFontSize = screenWidth * 0.045;
+    final double sectionTitleFontSize = screenWidth * 0.04;
+    final double childInfoAddChildFontSize = screenWidth * 0.03;
+    final double childInfoChildNumFontSize = screenWidth * 0.035;
+    final double groupSelectionHintFontSize = screenWidth * 0.025;
+    final double groupNameFontSize = screenWidth * 0.038;
+    final double calendarMonthFontSize = screenWidth * 0.05;
+    final double weekdayFontSize = screenWidth * 0.038;
+    final double calendarDateFontSize = screenWidth * 0.04;
+    final double legendFontSize = screenWidth * 0.032;
+    final double saveButtonFontSize = screenWidth * 0.04;
+
+
+    // Responsive spacing
+    final double largeSpacing = screenWidth * 0.05;
+    final double mediumSpacing = screenWidth * 0.04;
+    final double smallSpacing = screenWidth * 0.03;
+    final double extraSmallSpacing = screenWidth * 0.02;
+
     // Watch the AvailabilityProvider for changes
     final availabilityProvider = Provider.of<AvailabilityProvider>(context);
 
@@ -95,10 +233,10 @@ class _HomePageState extends State<HomePage> {
         children: [
           // Top Header Section
           Container(
-            padding: const EdgeInsets.fromLTRB(24.0, 40.0, 24.0, 20.0), // Adjusted padding
-            decoration: const BoxDecoration(
+            padding: EdgeInsets.fromLTRB(screenWidth * 0.06, screenHeight * 0.05, screenWidth * 0.06, screenHeight * 0.03), // Responsive padding
+            decoration: BoxDecoration(
               color: AppColors.buttonPrimary,
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(20.0)),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(screenWidth * 0.05)), // Responsive border radius
             ),
             child: SafeArea(
               child: Column(
@@ -112,22 +250,22 @@ class _HomePageState extends State<HomePage> {
                           context.push('/profile'); // Replace with your actual profile route
                         },
                         child: Container(
-                          width: 50,
-                          height: 50,
+                          width: screenWidth * 0.12, // Responsive profile picture size
+                          height: screenWidth * 0.12,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
+                            border: Border.all(color: Colors.white, width: screenWidth * 0.005), // Responsive border width
                           ),
                           child: ClipOval(
                             child: Image.asset(
                               AppAssets.profilePicture,
-                              width: 50,
-                              height: 50,
+                              width: screenWidth * 0.12,
+                              height: screenWidth * 0.12,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
+                                return Icon(
                                   Icons.person,
-                                  size: 40.0,
+                                  size: screenWidth * 0.09, // Responsive icon size
                                   color: Colors.white,
                                 );
                               },
@@ -136,25 +274,25 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
 
-                      const SizedBox(width: 12.0), // Added spacing
+                      SizedBox(width: screenWidth * 0.03), // Responsive spacing
                       Column(
-                        crossAxisAlignment: CrossAxisAlignment.start, // Align text to start
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Hello, Peter!',
                             style: TextStyle(
-                              fontSize: 20.0,
+                              fontSize: headerNameFontSize, // Responsive font size
                               fontWeight: FontWeight.w400,
                               color: Colors.white,
                               fontFamily: 'Poppins',
                             ),
                           ),
-                          const Text(
+                          Text(
                             'Manage Ella’s activities',
                             style: TextStyle(
-                              fontSize: 13.0,
+                              fontSize: headerSubtitleFontSize, // Responsive font size
                               fontWeight: FontWeight.w400,
-                              color: Color(0xCCFFFFFF),
+                              color: const Color(0xCCFFFFFF),
                               fontFamily: 'Poppins',
                             ),
                           ),
@@ -162,15 +300,15 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20.0),
+                  SizedBox(height: largeSpacing), // Responsive spacing
                   Row(
                     children: [
-                      Icon(Icons.circle, size: 12, color: Colors.green),
-                      SizedBox(width: 8),
+                      Icon(Icons.circle, size: screenWidth * 0.03, color: Colors.green), // Responsive icon size
+                      SizedBox(width: extraSmallSpacing), // Responsive spacing
                       Text(
                         'Available for playdates',
                         style: TextStyle(
-                          fontSize: 12.0,
+                          fontSize: availabilityTextFontSize, // Responsive font size
                           color: Colors.white,
                           fontWeight: FontWeight.w500,
                           fontFamily: 'Poppins',
@@ -186,25 +324,26 @@ class _HomePageState extends State<HomePage> {
           // Main Content Area (Scrollable)
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06, vertical: mediumSpacing), // Responsive padding
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Quick Actions',
                     style: TextStyle(
-                      fontSize: 16.0,
+                      fontSize: quickActionTitleFontSize, // Responsive font size
                       fontWeight: FontWeight.w500,
                       color: AppColors.textColorPrimary,
                       fontFamily: 'Poppins',
                     ),
                   ),
-                  const SizedBox(height: 16.0),
+                  SizedBox(height: smallSpacing), // Responsive spacing
                   Row(
                     children: [
                       Expanded(
                         child: _buildQuickActionCard(
-                          icon: Image.asset(AppAssets.plusIcon, width: 25, height: 25, errorBuilder: (context, error, stackTrace) => const Icon(Icons.add_circle_outline, size: 25, color: AppColors.primaryBlue)),
+                          context: context, // Pass context
+                          icon: Image.asset(AppAssets.plusIcon, width: screenWidth * 0.06, height: screenWidth * 0.06, errorBuilder: (context, error, stackTrace) => Icon(Icons.add_circle_outline, size: screenWidth * 0.06, color: AppColors.primaryBlue)), // Responsive icon size
                           title: 'Add Event',
                           onTap: () {
                             context.push('/create_event');
@@ -214,10 +353,11 @@ class _HomePageState extends State<HomePage> {
                           },
                         ),
                       ),
-                      SizedBox(width: 16.0),
+                      SizedBox(width: smallSpacing), // Responsive spacing
                       Expanded(
                         child: _buildQuickActionCard(
-                          icon: Image.asset(AppAssets.eventCalendarIcon, width: 25, height: 25, errorBuilder: (context, error, stackTrace) => const Icon(Icons.calendar_month, size: 25, color: AppColors.primaryBlue)),
+                          context: context, // Pass context
+                          icon: Image.asset(AppAssets.eventCalendarIcon, width: screenWidth * 0.06, height: screenWidth * 0.06, errorBuilder: (context, error, stackTrace) => Icon(Icons.calendar_month, size: screenWidth * 0.06, color: AppColors.primaryBlue)), // Responsive icon size
                           title: 'View Events',
                           onTap: () {
                             context.push('/up_coming_events');
@@ -229,14 +369,14 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20.0),
+                  SizedBox(height: mediumSpacing), // Responsive spacing
 
                   // Child Information Section
                   Container(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(screenWidth * 0.04), // Responsive padding
                     decoration: BoxDecoration(
                       border: Border.all(color: AppColors.primaryBlue),
-                      borderRadius: BorderRadius.circular(12.0),
+                      borderRadius: BorderRadius.circular(screenWidth * 0.03), // Responsive border radius
                       color: const Color(0x26D8ECFF),
                       boxShadow: [
                         BoxShadow(
@@ -251,10 +391,10 @@ class _HomePageState extends State<HomePage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'Child Information *',
                               style: TextStyle(
-                                fontSize: 13.0,
+                                fontSize: sectionTitleFontSize, // Responsive font size
                                 fontWeight: FontWeight.w500,
                                 color: AppColors.textColorPrimary,
                                 fontFamily: 'Poppins',
@@ -263,15 +403,15 @@ class _HomePageState extends State<HomePage> {
                             GestureDetector(
                               onTap: _addChildField,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.025, vertical: screenWidth * 0.01), // Responsive padding
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(6),
+                                  borderRadius: BorderRadius.circular(screenWidth * 0.015), // Responsive border radius
                                   color: const Color(0xFFD8ECFF),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   '+ Add Another Child',
                                   style: TextStyle(
-                                    fontSize: 10.0,
+                                    fontSize: childInfoAddChildFontSize, // Responsive font size
                                     fontWeight: FontWeight.w400,
                                     color: AppColors.primaryBlue,
                                     fontFamily: 'Poppins',
@@ -281,20 +421,21 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ],
                         ),
+                        SizedBox(height: smallSpacing), // Responsive spacing
                         ListView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _childNameControllers.length,
                           itemBuilder: (context, index) {
                             return Padding(
-                              padding: const EdgeInsets.only(bottom: 16.0),
+                              padding: EdgeInsets.only(bottom: screenWidth * 0.04), // Responsive padding
                               child: Stack(
                                 clipBehavior: Clip.none,
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.all(16.0),
+                                    padding: EdgeInsets.all(screenWidth * 0.04), // Responsive padding
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12.0),
+                                      borderRadius: BorderRadius.circular(screenWidth * 0.03), // Responsive border radius
                                       border: Border.all(color: AppColors.primaryBlue),
                                       color: Colors.white,
                                     ),
@@ -309,7 +450,7 @@ class _HomePageState extends State<HomePage> {
                                             hintText: 'Child\'s name please..',
                                           ),
                                         ),
-                                        const SizedBox(width: 12.0),
+                                        SizedBox(width: screenWidth * 0.03), // Responsive spacing
                                         Expanded(
                                           flex: 1,
                                           child: AuthInputField(
@@ -317,26 +458,25 @@ class _HomePageState extends State<HomePage> {
                                             labelText: 'Age',
                                             hintText: 'Age',
                                             keyboardType: TextInputType.number,
-                                            // suffixIcon: const Icon(Icons.arrow_drop_down, size: 18),
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
                                   Positioned(
-                                    top: -10,
-                                    left: 16,
+                                    top: -screenWidth * 0.025, // Responsive position
+                                    left: screenWidth * 0.04, // Responsive position
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                                      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.025, vertical: screenWidth * 0.01), // Responsive padding
                                       decoration: BoxDecoration(
                                         color: AppColors.primaryBlue,
-                                        borderRadius: BorderRadius.circular(20),
+                                        borderRadius: BorderRadius.circular(screenWidth * 0.05), // Responsive border radius
                                       ),
                                       child: Text(
                                         'Child ${index + 1}',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           color: Colors.white,
-                                          fontSize: 12.0,
+                                          fontSize: childInfoChildNumFontSize, // Responsive font size
                                           fontWeight: FontWeight.w500,
                                           fontFamily: 'Poppins',
                                         ),
@@ -345,11 +485,11 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   if (index > 0)
                                     Positioned(
-                                      top: -10,
-                                      right: 2,
+                                      top: -screenWidth * 0.025, // Responsive position
+                                      right: screenWidth * 0.005, // Responsive position
                                       child: Container(
-                                        height: 20,
-                                        width: 20,
+                                        height: screenWidth * 0.05, // Responsive size
+                                        width: screenWidth * 0.05,
                                         decoration: BoxDecoration(
                                           color: Colors.red,
                                           shape: BoxShape.circle,
@@ -362,8 +502,8 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                         child: IconButton(
                                           constraints: const BoxConstraints(),
-                                          padding: const EdgeInsets.all(4),
-                                          icon: const Icon(Icons.close_rounded, color: Colors.white, size: 12),
+                                          padding: EdgeInsets.all(screenWidth * 0.01), // Responsive padding
+                                          icon: Icon(Icons.close_rounded, color: Colors.white, size: screenWidth * 0.03), // Responsive icon size
                                           onPressed: () {
                                             setState(() {
                                               _childNameControllers[index].dispose();
@@ -387,27 +527,27 @@ class _HomePageState extends State<HomePage> {
                             // context.push('');
                           },
                             style: ElevatedButton.styleFrom(
-                              shadowColor: Color(0x1A000000),
+                              shadowColor: const Color(0x1A000000),
                               backgroundColor: AppColors.primaryBlue,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-                              padding: const EdgeInsets.symmetric(vertical: 10.0),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(screenWidth * 0.02)), // Responsive border radius
+                              padding: EdgeInsets.symmetric(vertical: screenWidth * 0.025, horizontal: screenWidth * 0.1), // Responsive padding
                             ),
-                            child:  const Text(
+                            child:  Text(
                               'Save',
-                              style: TextStyle(color: Colors.white, fontSize: 14.0),
+                              style: TextStyle(color: Colors.white, fontSize: saveButtonFontSize), // Responsive font size
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20.0), // Added spacing
+                  SizedBox(height: mediumSpacing), // Responsive spacing
 
                   // Join Groups Section
                   Text(
                     'Join Groups *',
                     style: TextStyle(
-                      fontSize: 13.0,
+                      fontSize: sectionTitleFontSize, // Responsive font size
                       fontWeight: FontWeight.w500,
                       color: AppColors.textColorPrimary,
                       fontFamily: 'Poppins',
@@ -416,28 +556,29 @@ class _HomePageState extends State<HomePage> {
                   Text(
                     "Select one or more groups you'd like to join",
                     style: TextStyle(
-                      fontSize: 8.0,
+                      fontSize: groupSelectionHintFontSize, // Responsive font size
                       fontWeight: FontWeight.w400,
                       color: const Color(0x991B1D2A),
                       fontFamily: 'Poppins',
                     ),
                   ),
+                  SizedBox(height: extraSmallSpacing), // Responsive spacing
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 3.5,
-                      crossAxisSpacing: 10.0,
-                      mainAxisSpacing: 10.0,
+                      childAspectRatio: screenWidth / (screenWidth * 0.3), // Responsive aspect ratio
+                      crossAxisSpacing: screenWidth * 0.025, // Responsive spacing
+                      mainAxisSpacing: screenWidth * 0.025, // Responsive spacing
                     ),
                     itemCount: _groupSelections.length,
                     itemBuilder: (context, index) {
                       String groupName = _groupSelections.keys.elementAt(index);
-                      return _buildCheckboxTile(groupName);
+                      return _buildCheckboxTile(context, groupName); // Pass context
                     },
                   ),
-                  const SizedBox(height: 20.0), // Added spacing
+                  SizedBox(height: mediumSpacing), // Responsive spacing
 
                   // Calendar Section
                   Row(
@@ -446,7 +587,7 @@ class _HomePageState extends State<HomePage> {
                       Text(
                         'July 2025',
                         style: TextStyle(
-                          fontSize: 20.0,
+                          fontSize: calendarMonthFontSize, // Responsive font size
                           fontWeight: FontWeight.bold,
                           color: AppColors.textColorPrimary,
                           fontFamily: 'Poppins',
@@ -455,13 +596,13 @@ class _HomePageState extends State<HomePage> {
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.arrow_back_ios, size: 16, color: AppColors.textColorSecondary),
+                            icon: Icon(Icons.arrow_back_ios, size: screenWidth * 0.04), // Responsive icon size
                             onPressed: () {
                               // Handle previous month
                             },
                           ),
                           IconButton(
-                            icon: const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textColorSecondary),
+                            icon: Icon(Icons.arrow_forward_ios, size: screenWidth * 0.04), // Responsive icon size
                             onPressed: () {
                               // Handle next month
                             },
@@ -470,23 +611,23 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16.0),
+                  SizedBox(height: smallSpacing), // Responsive spacing
                   // Pass the calendarDateStates from the provider to the calendar grid
-                  _buildCalendarGrid(availabilityProvider.calendarDateStates),
-                  const SizedBox(height: 20.0),
+                  _buildCalendarGrid(context, availabilityProvider.calendarDateStates), // **FIXED LINE**
+                  SizedBox(height: mediumSpacing),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.circle, size: 12, color: AppColors.availableGreen),
-                      SizedBox(width: 8),
-                      Text('Available', style: TextStyle(color: AppColors.textLight)),
-                      SizedBox(width: 20),
-                      Icon(Icons.circle, size: 12, color: AppColors.unavailableRed),
-                      SizedBox(width: 8),
-                      Text('Unavailable', style: TextStyle(color: AppColors.textColorSecondary)),
+                      Icon(Icons.circle, size: screenWidth * 0.03, color: AppColors.availableGreen), // Responsive icon size
+                      SizedBox(width: extraSmallSpacing),
+                      Text('Available', style: TextStyle(color: AppColors.textLight, fontSize: legendFontSize)), // Responsive font size
+                      SizedBox(width: smallSpacing),
+                      Icon(Icons.circle, size: screenWidth * 0.03, color: AppColors.unavailableRed), // Responsive icon size
+                      SizedBox(width: extraSmallSpacing),
+                      Text('Unavailable', style: TextStyle(color: AppColors.textColorSecondary, fontSize: legendFontSize)), // Responsive font size
                     ],
                   ),
-                  const SizedBox(height: 20.0),
+                  SizedBox(height: largeSpacing), // Added spacing for bottom
                 ],
               ),
             ),
@@ -496,27 +637,33 @@ class _HomePageState extends State<HomePage> {
     );
   }
   Widget _buildQuickActionCard({
+    required BuildContext context, // Added context
     required Widget icon,
     required String title,
     required VoidCallback onTap,
   }) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double cardPadding = screenWidth * 0.05; // Responsive padding
+    final double iconTextSpacing = screenWidth * 0.025; // Responsive spacing
+    final double titleFontSize = screenWidth * 0.04; // Responsive font size
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(cardPadding), // Responsive padding
         decoration: BoxDecoration(
           color: AppColors.quickActionCardBackground,
-          borderRadius: BorderRadius.circular(12.0),
+          borderRadius: BorderRadius.circular(screenWidth * 0.03), // Responsive border radius
           border: Border.all(color: AppColors.quickActionCardBorder, width: 1.0),
         ),
         child: Column(
           children: [
             icon,
-            const SizedBox(height: 10.0),
+            SizedBox(height: iconTextSpacing), // Responsive spacing
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16.0,
+              style: TextStyle(
+                fontSize: titleFontSize, // Responsive font size
                 fontWeight: FontWeight.w500,
                 color: AppColors.textColorPrimary,
                 fontFamily: 'Poppins',
@@ -529,11 +676,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildCheckboxTile(String title) {
+  Widget _buildCheckboxTile(BuildContext context, String title) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double titleFontSize = screenWidth * 0.038; // Responsive font size
+
     return Container(
       decoration: BoxDecoration(
         color: _groupSelections[title]! ? AppColors.primaryBlue.withOpacity(0.1) : Colors.white,
-        borderRadius: BorderRadius.circular(8.0),
+        borderRadius: BorderRadius.circular(screenWidth * 0.02), // Responsive border radius
         border: Border.all(
           color: _groupSelections[title]! ? AppColors.primaryBlue : AppColors.inputOutline,
           width: 1.0,
@@ -545,6 +695,7 @@ class _HomePageState extends State<HomePage> {
           style: TextStyle(
             color: _groupSelections[title]! ? AppColors.primaryBlue : AppColors.textColorPrimary,
             fontFamily: 'Poppins',
+            fontSize: titleFontSize, // Responsive font size
           ),
         ),
         value: _groupSelections[title],
@@ -556,12 +707,18 @@ class _HomePageState extends State<HomePage> {
         controlAffinity: ListTileControlAffinity.leading,
         activeColor: AppColors.primaryBlue,
         checkColor: Colors.white,
-        contentPadding: EdgeInsets.zero,
+        contentPadding: EdgeInsets.zero, // Keep zero for tight fit inside the container
       ),
     );
   }
 
-  Widget _buildCalendarGrid(Map<int, int> calendarDateStates) {
+  Widget _buildCalendarGrid(BuildContext context, Map<int, int> calendarDateStates) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double weekdayFontSize = screenWidth * 0.035; // Responsive weekday font size
+    final double dateNumberFontSize = screenWidth * 0.04; // Responsive date number font size
+    final double cellSpacing = screenWidth * 0.01; // Responsive spacing between cells
+    final double borderRadius = screenWidth * 0.02; // Responsive border radius for date cells
+
     final List<String> weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
     final List<DateTime> calendarDates = [];
 
@@ -576,35 +733,35 @@ class _HomePageState extends State<HomePage> {
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 7,
             childAspectRatio: 1.0,
-            crossAxisSpacing: 4.0,
-            mainAxisSpacing: 4.0,
+            crossAxisSpacing: cellSpacing, // Responsive spacing
+            mainAxisSpacing: cellSpacing, // Responsive spacing
           ),
           itemCount: weekdays.length,
           itemBuilder: (context, index) {
             return Center(
               child: Text(
                 weekdays[index],
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
+                  fontSize: weekdayFontSize, // Responsive font size
                   color: AppColors.textColorPrimary,
                 ),
               ),
             );
           },
         ),
-        const SizedBox(height: 8.0),
+        SizedBox(height: screenWidth * 0.02), // Responsive spacing
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 7,
             childAspectRatio: 1.0,
-            crossAxisSpacing: 4.0,
-            mainAxisSpacing: 4.0,
+            crossAxisSpacing: cellSpacing, // Responsive spacing
+            mainAxisSpacing: cellSpacing, // Responsive spacing
           ),
           itemCount: calendarDates.length,
           itemBuilder: (context, index) {
@@ -649,7 +806,7 @@ class _HomePageState extends State<HomePage> {
                 decoration: BoxDecoration(
                   color: bgColor,
                   border: Border.all(color: borderColor, width: 1.5),
-                  borderRadius: BorderRadius.circular(8.0),
+                  borderRadius: BorderRadius.circular(borderRadius), // Responsive border radius
                 ),
                 child: Center(
                   child: Text(
@@ -657,6 +814,7 @@ class _HomePageState extends State<HomePage> {
                     style: TextStyle(
                       color: textColor,
                       fontWeight: FontWeight.bold,
+                      fontSize: dateNumberFontSize, // Responsive font size
                     ),
                   ),
                 ),
