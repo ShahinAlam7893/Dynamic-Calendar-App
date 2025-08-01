@@ -140,30 +140,57 @@ class AppRouter {
         path: RoutePaths.signup,
         builder: (context, state) => const SignUpPage(),
       ),
+      // Route for the forgot password page.
       GoRoute(
         path: RoutePaths.forgotpassword,
-        builder: (context, state) => const ForgotPasswordPage(isLoggedIn: false,),
-      ),
-      GoRoute(
-        path: RoutePaths.emailVerification,
-        builder: (context, state) => const EmailVerificationPage(),
-      ),
-      GoRoute(
-        path: RoutePaths.OtpVerificationPage, // Your original route name
-        builder: (context, state) => const OtpVerificationPage(),
-      ),
-      GoRoute(
-        path: RoutePaths.resetPasswordPage, // Your original route name
-        builder: (context, state) => const ResetPasswordPage(),
-      ),
-      GoRoute(
-        path: RoutePaths.passwordResetSuccessPage, // Your original route name
-        builder: (context, state) => const PasswordResetSuccessPage(),
+        builder: (BuildContext context, GoRouterState state) {
+          return const ForgotPasswordPage(isLoggedIn: false);
+        },
       ),
 
-      // Main Application Tabs (handled by SmoothNavigationWrapper)
-      // Each of your main tab routes now points to the SmoothNavigationWrapper
-      // with the corresponding initialIndex.
+      // Route for the email verification page.
+      GoRoute(
+        path: RoutePaths.emailVerification,
+        builder: (BuildContext context, GoRouterState state) {
+          final String? userEmail = state.extra as String?;
+          if (userEmail != null) {
+            return EmailVerificationPage(userEmail: userEmail);
+          } else {
+            // If no email is provided, navigate back to the login or forgot password page.
+            return const ForgotPasswordPage(isLoggedIn: false);
+          }
+        },
+      ),
+
+      // Route for the OTP verification page.
+      GoRoute(
+       path: RoutePaths.OtpVerificationPage,
+        builder: (BuildContext context, GoRouterState state) {
+          final String? userEmail = state.extra as String?;
+          if (userEmail != null) {
+            return OtpVerificationPage(userEmail: userEmail);
+          } else {
+            return const ForgotPasswordPage(isLoggedIn: false);
+          }
+        },
+      ),
+
+      // Route for the password reset page.
+      GoRoute(
+        path: RoutePaths.resetPasswordPage,
+        builder: (BuildContext context, GoRouterState state) {
+          return const ResetPasswordPage();
+        },
+      ),
+
+      // Route for the password changed success page.
+      GoRoute(
+        path: RoutePaths.passwordResetSuccessPage,
+        builder: (BuildContext context, GoRouterState state) {
+          return const PasswordResetSuccessPage();
+        },
+      ),
+
       GoRoute(
         path: RoutePaths.home,
         builder: (context, state) => const SmoothNavigationWrapper(initialIndex: 0),

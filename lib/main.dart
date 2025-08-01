@@ -9,12 +9,15 @@ import 'package:circleslate/presentation/widgets/custom_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:circleslate/presentation/common_providers/auth_provider.dart';
 
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
+        // This is the missing provider!
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => AvailabilityProvider()),
       ],
       child: MyApp(),

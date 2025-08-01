@@ -1,43 +1,56 @@
+// lib/presentation/auth/EmailVerificationPage.dart
 import 'package:flutter/material.dart';
-import 'package:circleslate/core/constants/app_assets.dart';
-import 'package:circleslate/core/constants/app_colors.dart';
-import 'package:circleslate/presentation/features/authentication/view/EmailVerificationPage.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:provider/provider.dart';
+import 'package:circleslate/presentation/common_providers/auth_provider.dart';
 
 // For self-containment in this Canvas, AppColors is defined here.
-// In a real project, you would import them from your project structure.
-
-
-void main() {
-  runApp(const MyApp());
+class AppColors {
+  static const Color primaryBlue = Color(0xFF4285F4);
+  static const Color textColorPrimary = Color(0xFF1B1D2A);
+  static const Color textColorSecondary = Color(0x991B1D2A);
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class EmailVerificationPage extends StatefulWidget {
+  // The user's email is now passed dynamically to this page.
+  final String userEmail;
+  const EmailVerificationPage({super.key, required this.userEmail});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Email Sent Page',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: 'Poppins', // Assuming 'Poppins' is available
-      ),
-      home: EmailVerificationPage(),
-    );
+  State<EmailVerificationPage> createState() => _EmailVerificationPageState();
+}
+
+class _EmailVerificationPageState extends State<EmailVerificationPage> {
+  // State to manage the loading indicator for the resend button
+  bool _isResending = false;
+
+  // Handles the logic for resending the email
+  Future<void> _handleResendEmail() async {
+    setState(() {
+      _isResending = true;
+    });
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.forgotPassword(widget.userEmail);
+
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Verification email resent successfully!')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(authProvider.errorMessage ?? 'Failed to resend email.')),
+        );
+      }
+      setState(() {
+        _isResending = false;
+      });
+    }
   }
-}
-
-class EmailVerificationPage extends StatelessWidget {
-  const EmailVerificationPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Example email to display (you would pass this dynamically)
-    const String userEmail = 'example@gmail.com';
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -52,32 +65,23 @@ class EmailVerificationPage extends StatelessWidget {
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.grey),
                   onPressed: () {
-                   Navigator.pop(context);
+                    context.pop();
                   },
                 ),
               ),
               const SizedBox(height: 20.0),
 
-              // Calendar Icon (from previous pages)
+              // Calendar Icon
               Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
                   color: Colors.blue.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Image.asset(
-                  AppAssets.calendarIcon, // This should be your circle-themed illustration
-                  width: 80, // Adjust size of the image within the circle
-                  height: 80,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    // Fallback for Image.asset if the asset is not found
-                    return Icon(
-                      Icons.calendar_month,
-                      size: 60.0,
-                      color: Colors.blue[400],
-                    );
-                  },
+                child: Icon(
+                  Icons.lock_reset_outlined,
+                  size: 60.0,
+                  color: Colors.blue[400],
                 ),
               ),
               const SizedBox(height: 20.0),
@@ -103,19 +107,19 @@ class EmailVerificationPage extends StatelessWidget {
                     fontSize: 12.0,
                     color: AppColors.textColorSecondary,
                     fontWeight: FontWeight.w400,
-                    fontFamily: 'Poppins', // Ensure font consistency
+                    fontFamily: 'Poppins',
                   ),
                   children: <TextSpan>[
                     const TextSpan(text: 'we have sent an email to '),
                     TextSpan(
-                      text: userEmail,
+                      text: widget.userEmail,
                       style: const TextStyle(
-                        color: AppColors.primaryBlue, // Highlight email address
+                        color: AppColors.primaryBlue,
                         fontWeight: FontWeight.w400,
                         fontSize: 12,
                       ),
                     ),
-                    const TextSpan(text: ' with a link reset password'),
+                    const TextSpan(text: ' with a link to reset your password'),
                   ],
                 ),
               ),
@@ -125,22 +129,13 @@ class EmailVerificationPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20.0),
                 decoration: BoxDecoration(
-                  //color: AppColors.emailIconBackground, // Light blue background
+                  color: Colors.blue.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Image.asset(
-                  AppAssets.emailIcon, // This should be your circle-themed illustration
-                  width: 100, // Adjust size of the image within the circle
-                  height: 100,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    // Fallback for Image.asset if the asset is not found
-                    return Icon(
-                      Icons.calendar_month,
-                      size: 60.0,
-                      color: Colors.blue[400],
-                    );
-                  },
+                child: const Icon(
+                  Icons.mail_outline,
+                  size: 100.0,
+                  color: AppColors.primaryBlue,
                 ),
               ),
               const SizedBox(height: 30.0),
@@ -150,11 +145,10 @@ class EmailVerificationPage extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
+                    // This is where you would use a package like `url_launcher`
+                    // to open the user's email application.
+                    // For now, it will navigate to the next page.
                     context.push('/otp_page');
-                    // Handle opening email app (platform-specific implementation needed)
-                    // ScaffoldMessenger.of(context).showSnackBar(
-                    //   const SnackBar(content: Text('Opening email app...')),
-                    // );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
@@ -185,13 +179,10 @@ class EmailVerificationPage extends StatelessWidget {
                     style: TextStyle(fontSize: 10.0, color: Colors.grey, fontWeight: FontWeight.w300),
                   ),
                   GestureDetector(
-                    onTap: () {
-                      // Handle resend email logic
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Resending email...')),
-                      );
-                    },
-                    child: const Text(
+                    onTap: _isResending ? null : _handleResendEmail,
+                    child: _isResending
+                        ? const CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue)
+                        : const Text(
                       'Resend',
                       style: TextStyle(
                         fontSize: 10.0,

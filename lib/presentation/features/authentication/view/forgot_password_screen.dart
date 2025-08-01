@@ -1,12 +1,10 @@
+// lib/presentation/auth/forgot_password_screen.dart
 import 'package:flutter/material.dart';
-import 'package:circleslate/core/constants/app_assets.dart'; // Uncomment if you have this file
-import 'package:circleslate/core/constants/app_colors.dart'; // Uncomment if you have this file
-import 'package:circleslate/presentation/widgets/auth_input_field.dart';
-import 'package:go_router/go_router.dart'; // Uncomment if you have this file
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:circleslate/presentation/common_providers/auth_provider.dart';
 
 // For self-containment in this Canvas, AppColors and AuthInputField are defined here.
-// In a real project, you would import them from your project structure.
-
 class AppColors {
   static const Color primaryBlue = Color(0xFF4285F4);
   static const Color inputBorderColor = Colors.grey;
@@ -18,8 +16,8 @@ class AppColors {
   static const Color textLight = Color(0xB21B1D2A);
   static const Color accentBlue = Color(0xFF5A8DEE);
   static const Color inputOutline = Color(0x1A101010);
+  static const Color otpInputFill = Color(0xFFF9FAFB);
 }
-
 
 class AuthInputField extends StatefulWidget {
   final TextEditingController controller;
@@ -79,7 +77,7 @@ class _AuthInputFieldState extends State<AuthInputField> {
         labelStyle: const TextStyle(color: AppColors.textColorSecondary, fontSize: 11.0, fontWeight: FontWeight.w500),
         hintStyle: const TextStyle(color: AppColors.inputHintColor, fontSize: 10),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.otpInputFill,
         contentPadding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 16.0),
         suffixIcon: widget.isPassword
             ? IconButton(
@@ -99,30 +97,10 @@ class _AuthInputFieldState extends State<AuthInputField> {
   }
 }
 
-void main() {
-  runApp(MyApp());
+// For self-containment, AppAssets is defined here.
+class AppAssets {
+  static const String calendarIcon = 'assets/icons/calendar_icon.png';
 }
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // Simulate authentication check (replace with real check)
-    final bool isLoggedIn = false; // <-- Set this dynamically or from FirebaseAuth
-
-    return MaterialApp(
-      title: isLoggedIn ? 'Change Password Page' : 'Forgot Password Page',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: 'Poppins',
-      ),
-      home: ForgotPasswordPage(isLoggedIn: isLoggedIn),
-    );
-  }
-}
-
 
 class ForgotPasswordPage extends StatefulWidget {
   final bool isLoggedIn;
@@ -140,6 +118,23 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   void dispose() {
     _emailController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleForgotPassword() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.forgotPassword(_emailController.text.trim());
+
+      if (success && mounted) {
+        // Navigate to the OTP verification page on success
+        context.push('/otp_page', extra: _emailController.text.trim());
+      } else if (!success && mounted) {
+        // Show a SnackBar with the error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(authProvider.errorMessage ?? 'An unknown error occurred.')),
+        );
+      }
+    }
   }
 
   @override
@@ -162,7 +157,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.grey),
                   onPressed: () {
-                    Navigator.pop(context);
+                    context.pop();
                   },
                 ),
               ),
@@ -173,18 +168,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   color: Colors.blue.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Image.asset(
-                  AppAssets.calendarIcon,
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(
-                      Icons.calendar_month,
-                      size: 60.0,
-                      color: Colors.blue[400],
-                    );
-                  },
+                child: const Icon(
+                  Icons.lock_reset_outlined,
+                  size: 60.0,
+                  color: AppColors.accentBlue,
                 ),
               ),
               const SizedBox(height: 20.0),
@@ -221,36 +208,49 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       labelText: 'Email Address *',
                       hintText: 'Enter your email..',
                       keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Email address is required';
+                        }
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                          return 'Please enter a valid email address';
+                        }
+                        return null;
+                      },
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 30.0),
 
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    context.push('/emailVerification');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  return SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: authProvider.isLoading ? null : _handleForgotPassword,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        elevation: 3,
+                      ),
+                      child: authProvider.isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                        'Get OTP',
+                        style: TextStyle(
+                          fontSize: 14.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
                     ),
-                    elevation: 3,
-                  ),
-                  child: const Text(
-                    'Get OTP',
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                ),
+                  );
+                },
               ),
               const SizedBox(height: 20.0),
 
@@ -263,7 +263,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      context.push('/login');
+                      context.go('/login');
                     },
                     child: const Text(
                       'Log In',

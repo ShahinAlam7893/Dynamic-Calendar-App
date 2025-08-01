@@ -1,16 +1,12 @@
+// lib/presentation/auth/pass_cng_success.dart
 import 'package:flutter/material.dart';
-import 'package:circleslate/core/constants/app_assets.dart'; // Uncomment if you have this file
-import 'package:circleslate/core/constants/app_colors.dart'; // Uncomment if you have this file
-import 'package:circleslate/presentation/widgets/auth_input_field.dart';
 import 'package:go_router/go_router.dart';
 
 // For self-containment in this Canvas, AppColors is defined here.
-// In a real project, you would import them from your project structure.
-
 class AppColors {
   static const Color primaryBlue = Color(0xFF4285F4);
   static const Color inputBorderColor = Colors.grey;
-  static const Color textColorSecondary = Color(0xFF333333);
+  static const Color textColorSecondary = Color(0x991B1D2A);
   static const Color inputHintColor = Colors.grey;
   static const Color lightBlueBackground = Color(0x1AD8ECFF);
   static const Color textDark = Color(0xE51B1D2A);
@@ -20,12 +16,12 @@ class AppColors {
   static const Color inputOutline = Color(0x1A101010);
   static const Color emailIconBackground = Color(0x1AD8ECFF);
   static const Color otpInputFill = Color(0xFFF9FAFB);
-  static const Color successIconBackground = Color(0x1AD8ECFF); // Matches the light blue background for the success icon
-  static const Color successIconColor = Color(0xFF4CAF50); // Green for success checkmark
+  static const Color successIconBackground = Color(0x1AD8ECFF);
+  static const Color successIconColor = Color(0xFF4CAF50);
 }
 
-
-
+// NOTE: In a real app, this page would be part of a larger routing system.
+// This main function is for demonstration purposes within this canvas.
 void main() {
   runApp(const MyApp());
 }
@@ -40,9 +36,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: 'Poppins', // Assuming 'Poppins' is available
+        fontFamily: 'Poppins',
       ),
-      home: PasswordResetSuccessPage(),
+      home: const PasswordResetSuccessPage(),
     );
   }
 }
@@ -66,33 +62,24 @@ class PasswordResetSuccessPage extends StatelessWidget {
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.grey),
                   onPressed: () {
-                    // Handle back button press (e.g., Navigator.pop(context))
-                    Navigator.of(context).pop(); // Makes the back arrow workable
+                    // Navigate back using go_router
+                    context.pop();
                   },
                 ),
               ),
               const SizedBox(height: 20.0),
 
-              // Calendar Icon (from previous pages)
+              // Calendar Icon placeholder
               Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
                   color: Colors.blue.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Image.asset(
-                  AppAssets.calendarIcon, // This should be your circle-themed illustration
-                  width: 80, // Adjust size of the image within the circle
-                  height: 80,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    // Fallback for Image.asset if the asset is not found
-                    return Icon(
-                      Icons.calendar_month,
-                      size: 60.0,
-                      color: Colors.blue[400],
-                    );
-                  },
+                child: Icon(
+                  Icons.lock_reset_outlined,
+                  size: 60.0,
+                  color: Colors.blue[400],
                 ),
               ),
               const SizedBox(height: 20.0),
@@ -137,39 +124,25 @@ class PasswordResetSuccessPage extends StatelessWidget {
               // Success Checkmark Icon
               Container(
                 padding: const EdgeInsets.all(20.0),
-                decoration: BoxDecoration(
-                  color: AppColors.successIconBackground, // Light blue background
+                decoration: const BoxDecoration(
+                  color: AppColors.successIconBackground,
                   shape: BoxShape.circle,
                 ),
-                child: Image.asset(
-                  AppAssets.successIcon, // This should be your circle-themed illustration
-                  width: 100, // Adjust size of the image within the circle
-                  height: 100,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    // Fallback for Image.asset if the asset is not found
-                    return Icon(
-                      Icons.calendar_month,
-                      size: 60.0,
-                      color: Colors.blue[400],
-                    );
-                  },
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  size: 100,
+                  color: AppColors.successIconColor,
                 ),
               ),
               const SizedBox(height: 30.0),
 
-              // Go to home Button
+              // Go to login Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    context.push('/login');
-
-                    // Handle navigation to home page
-                    // ScaffoldMessenger.of(context).showSnackBar(
-                    //   const SnackBar(content: Text('Navigating to Home...')),
-                    // );
-                    // Example: Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => HomePage()));
+                    // Navigate to the login page and remove all previous routes
+                    context.go('/login');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,

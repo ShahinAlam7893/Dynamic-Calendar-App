@@ -1,33 +1,22 @@
+// lib/presentation/auth/otp_verification_page.dart
 import 'package:flutter/material.dart';
-import 'dart:async'; // For Timer
-import 'package:circleslate/core/constants/app_assets.dart';
-import 'package:circleslate/core/constants/app_colors.dart';
+import 'dart:async';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:circleslate/presentation/common_providers/auth_provider.dart';
 
-
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'OTP Verification Page',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: 'Poppins', // Assuming 'Poppins' is available
-      ),
-      home: OtpVerificationPage(),
-    );
-  }
+// For self-containment, AppColors and AuthInputField are defined here.
+class AppColors {
+  static const Color primaryBlue = Color(0xFF4285F4);
+  static const Color textColorPrimary = Color(0xFF1B1D2A);
+  static const Color textColorSecondary = Color(0x991B1D2A);
+  static const Color otpInputFill = Color(0xFFF9FAFB);
+  static const Color inputOutline = Color(0x1A101010);
 }
 
 class OtpVerificationPage extends StatefulWidget {
-  const OtpVerificationPage({super.key});
+  final String userEmail;
+  const OtpVerificationPage({super.key, required this.userEmail});
 
   @override
   State<OtpVerificationPage> createState() => _OtpVerificationPageState();
@@ -43,9 +32,11 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
         (index) => FocusNode(),
   );
 
-  Timer? _timer;
-  int _resendSeconds = 60; // Initial countdown time in seconds
+  Timer? _resendTimer;
+  int _resendSeconds = 60;
   bool _canResend = false;
+  bool _isVerifying = false;
+  bool _isResending = false;
 
   @override
   void initState() {
@@ -55,21 +46,82 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 
   // Start the countdown timer
   void _startResendTimer() {
-    _resendSeconds = 60; // Reset timer
-    _canResend = false;
-    _timer?.cancel(); // Cancel any existing timer
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_resendSeconds == 0) {
-        setState(() {
-          _canResend = true;
-          timer.cancel();
-        });
-      } else {
-        setState(() {
-          _resendSeconds--;
-        });
-      }
+    if (mounted) {
+      _resendSeconds = 60;
+      _canResend = false;
+      _resendTimer?.cancel();
+      _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (_resendSeconds == 0) {
+          setState(() {
+            _canResend = true;
+            timer.cancel();
+          });
+        } else {
+          setState(() {
+            _resendSeconds--;
+          });
+        }
+      });
+    }
+  }
+
+  // Handles the resend email logic
+  Future<void> _handleResendEmail() async {
+    if (_isResending) return;
+    setState(() {
+      _isResending = true;
     });
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.forgotPassword(widget.userEmail);
+
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Verification email resent successfully!')),
+        );
+        _startResendTimer(); // Restart the timer
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(authProvider.errorMessage ?? 'Failed to resend email.')),
+        );
+      }
+      setState(() {
+        _isResending = false;
+      });
+    }
+  }
+
+  // Handles the OTP verification logic
+  Future<void> _handleVerifyOtp() async {
+    String otp = _otpControllers.map((c) => c.text).join();
+    if (otp.length != 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a 4-digit OTP')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isVerifying = true;
+    });
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    // Corrected the call to verifyOtp to match the expected signature
+    final success = await authProvider.verifyOtp(otp);
+
+    if (mounted) {
+      setState(() {
+        _isVerifying = false;
+      });
+      if (success) {
+        context.push('/password_reset');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(authProvider.errorMessage ?? 'OTP verification failed.')),
+        );
+      }
+    }
   }
 
   @override
@@ -80,7 +132,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     for (var focusNode in _otpFocusNodes) {
       focusNode.dispose();
     }
-    _timer?.cancel();
+    _resendTimer?.cancel();
     super.dispose();
   }
 
@@ -100,31 +152,22 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.grey),
                   onPressed: () {
-                    Navigator.pop(context);
+                    context.pop();
                   },
                 ),
               ),
               const SizedBox(height: 20.0),
-              // Calendar Icon (from previous pages)
+              // Lock icon
               Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
                   color: Colors.blue.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Image.asset(
-                  AppAssets.calendarIcon, // This should be your circle-themed illustration
-                  width: 80, // Adjust size of the image within the circle
-                  height: 80,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    // Fallback for Image.asset if the asset is not found
-                    return Icon(
-                      Icons.calendar_month,
-                      size: 60.0,
-                      color: Colors.blue[400],
-                    );
-                  },
+                child: Icon(
+                  Icons.lock_open_outlined,
+                  size: 60.0,
+                  color: Colors.blue[400],
                 ),
               ),
               const SizedBox(height: 20.0),
@@ -155,7 +198,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
               const SizedBox(height: 30.0),
 
               // OTP Code Label
-              Align(
+              const Align(
                 alignment: Alignment.center,
                 child: Text(
                   'OTP Code',
@@ -170,69 +213,48 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 
               // OTP Input Fields
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,  // Center the children in the row
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(4, (index) {
                   return Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 6.0), // Add space between the boxes
-                    child: Container(
-                      decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0x0F000000), // Applying the shadow color
-                            spreadRadius: 1,
-                            blurRadius: 5,
-                            offset: Offset(0, 3), // Shadow position
-                          ),
-                        ],
-                      ),
-                      child: SizedBox(
-                        width: 50,  // Slightly increased width for better alignment with the image
-                        height: 55, // Slightly increased height for better alignment
-                        child: TextField(
-                          controller: _otpControllers[index],
-                          focusNode: _otpFocusNodes[index],
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          maxLength: 1, // Only one digit per field
-                          style: const TextStyle(
-                            fontSize: 24.0,  // Increased font size to match the image
-                            fontWeight: FontWeight.w500,  // Slightly bold font
-                            color: AppColors.textColorPrimary,
-                          ),
-                          decoration: InputDecoration(
-                            counterText: "", // Hide the character counter
-                            filled: true,
-                            fillColor: AppColors.otpInputFill,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),  // Rounded corners
-                              borderSide: BorderSide(
-                                color: AppColors.inputOutline,
-                                width: 1,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),  // Rounded corners
-                              borderSide: BorderSide(
-                                color: AppColors.inputOutline,
-                                width: 1,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),  // Rounded corners
-                              borderSide: BorderSide(
-                                color: AppColors.primaryBlue,
-                                width: 1.5,
-                              ),
-                            ),
-                          ),
-                          onChanged: (value) {
-                            if (value.length == 1 && index < 3) {
-                              _otpFocusNodes[index + 1].requestFocus(); // Move to next field
-                            } else if (value.isEmpty && index > 0) {
-                              _otpFocusNodes[index - 1].requestFocus(); // Move to previous field
-                            }
-                          },
+                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                    child: SizedBox(
+                      width: 50,
+                      height: 55,
+                      child: TextField(
+                        controller: _otpControllers[index],
+                        focusNode: _otpFocusNodes[index],
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        maxLength: 1,
+                        style: const TextStyle(
+                          fontSize: 24.0,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textColorPrimary,
                         ),
+                        decoration: InputDecoration(
+                          counterText: "",
+                          filled: true,
+                          fillColor: AppColors.otpInputFill,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          if (value.length == 1 && index < 3) {
+                            _otpFocusNodes[index + 1].requestFocus();
+                          } else if (value.isEmpty && index > 0) {
+                            _otpFocusNodes[index - 1].requestFocus();
+                          }
+                        },
                       ),
                     ),
                   );
@@ -245,24 +267,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    context.push('/password_reset');
-                    // Combine OTP digits
-                    String otp = _otpControllers.map((c) => c.text).join();
-                    if (otp.length == 4) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Verifying OTP: $otp')),
-                      );
-                      // Here you would send the OTP to your backend for verification
-                      print('Entered OTP: $otp');
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please enter a 4-digit OTP'),
-                        ),
-                      );
-                    }
-                  },
+                  onPressed: _isVerifying ? null : _handleVerifyOtp,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -271,7 +276,9 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                     ),
                     elevation: 3,
                   ),
-                  child: const Text(
+                  child: _isVerifying
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
                     'Verify',
                     style: TextStyle(
                       fontSize: 14.0,
@@ -292,11 +299,13 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                     style: TextStyle(fontSize: 15.0, color: Colors.grey),
                   ),
                   GestureDetector(
-                    onTap: _canResend ? _startResendTimer : null, // Only tappable when canResend is true
-                    child: Text(
+                    onTap: _canResend && !_isResending ? _handleResendEmail : null,
+                    child: _isResending
+                        ? const CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue)
+                        : Text(
                       _canResend
                           ? 'Resend'
-                          : '00:${_resendSeconds.toString().padLeft(2, '0')}', // Format time as 00:XX
+                          : '00:${_resendSeconds.toString().padLeft(2, '0')}',
                       style: TextStyle(
                         fontSize: 15.0,
                         fontWeight: FontWeight.w500,
