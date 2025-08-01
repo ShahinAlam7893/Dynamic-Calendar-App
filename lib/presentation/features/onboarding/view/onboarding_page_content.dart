@@ -103,11 +103,13 @@ class OnboardingPageContent extends StatelessWidget {
             // Bullet Points
             if (bulletPoints != null && bulletPoints!.isNotEmpty)
               Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: bulletPoints!
                     .map(
                       (text) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4.0),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

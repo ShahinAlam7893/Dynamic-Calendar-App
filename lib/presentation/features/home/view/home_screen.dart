@@ -243,60 +243,82 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween, // Changed to spaceBetween
                     children: [
-                      GestureDetector(
-                        onTap: () {
-                          context.push('/profile'); // Replace with your actual profile route
-                        },
-                        child: Container(
-                          width: screenWidth * 0.12, // Responsive profile picture size
-                          height: screenWidth * 0.12,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: screenWidth * 0.005), // Responsive border width
-                          ),
-                          child: ClipOval(
-                            child: Image.asset(
-                              AppAssets.profilePicture,
-                              width: screenWidth * 0.12,
-                              height: screenWidth * 0.12,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Icon(
-                                  Icons.person,
-                                  size: screenWidth * 0.09, // Responsive icon size
-                                  color: Colors.white,
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(width: screenWidth * 0.03), // Responsive spacing
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      // This inner Row groups the profile picture and text
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start, // Keep this inner row content aligned to start
                         children: [
-                          Text(
-                            'Hello, Peter!',
-                            style: TextStyle(
-                              fontSize: headerNameFontSize, // Responsive font size
-                              fontWeight: FontWeight.w400,
-                              color: Colors.white,
-                              fontFamily: 'Poppins',
+                          GestureDetector(
+                            onTap: () {
+                              context.push('/profile'); // Replace with your actual profile route
+                            },
+                            child: Container(
+                              width: screenWidth * 0.12, // Responsive profile picture size
+                              height: screenWidth * 0.12,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: screenWidth * 0.005), // Responsive border width
+                              ),
+                              child: ClipOval(
+                                child: Image.asset(
+                                  AppAssets.profilePicture,
+                                  width: screenWidth * 0.12,
+                                  height: screenWidth * 0.12,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(
+                                      Icons.person,
+                                      size: screenWidth * 0.09, // Responsive icon size
+                                      color: Colors.white,
+                                    );
+                                  },
+                                ),
+                              ),
                             ),
                           ),
-                          Text(
-                            'Manage Ella’s activities',
-                            style: TextStyle(
-                              fontSize: headerSubtitleFontSize, // Responsive font size
-                              fontWeight: FontWeight.w400,
-                              color: const Color(0xCCFFFFFF),
-                              fontFamily: 'Poppins',
-                            ),
+
+                          SizedBox(width: screenWidth * 0.03), // Responsive spacing
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Hello, Peter!',
+                                style: TextStyle(
+                                  fontSize: headerNameFontSize, // Responsive font size
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.white,
+                                  fontFamily: 'Poppins',
+                                ),
+                              ),
+                              Text(
+                                'Manage Ella’s activities',
+                                style: TextStyle(
+                                  fontSize: headerSubtitleFontSize, // Responsive font size
+                                  fontWeight: FontWeight.w400,
+                                  color: const Color(0xCCFFFFFF),
+                                  fontFamily: 'Poppins',
+                                ),
+                              ),
+                            ],
                           ),
                         ],
+                      ),
+                      // Notification Bell Icon (New addition)
+                      IconButton(
+                        icon: Icon(
+                          Icons.notifications,
+                          color: Colors.white,
+                          size: screenWidth * 0.07, // Responsive icon size
+                        ),
+                        onPressed: () {
+                          // Action when notification button is pressed
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Notification button pressed!')),
+                          );
+                          // You can add navigation here:
+                          context.push('/notifications'); // Example navigation to a notifications page
+                        },
                       ),
                     ],
                   ),

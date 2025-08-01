@@ -99,9 +99,8 @@ class _AuthInputFieldState extends State<AuthInputField> {
   }
 }
 
-
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -109,20 +108,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Simulate authentication check (replace with real check)
+    final bool isLoggedIn = false; // <-- Set this dynamically or from FirebaseAuth
+
     return MaterialApp(
-      title: 'Forgot Password Page',
+      title: isLoggedIn ? 'Change Password Page' : 'Forgot Password Page',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: 'Poppins', // Assuming 'Poppins' is available
+        fontFamily: 'Poppins',
       ),
-      home: ForgotPasswordPage(),
+      home: ForgotPasswordPage(isLoggedIn: isLoggedIn),
     );
   }
 }
 
+
 class ForgotPasswordPage extends StatefulWidget {
-  const ForgotPasswordPage({super.key});
+  final bool isLoggedIn;
+  const ForgotPasswordPage({super.key, required this.isLoggedIn});
 
   @override
   State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
@@ -140,6 +144,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    final titleText = widget.isLoggedIn ? 'Change Password' : 'Forgot Password';
+    final subtitleText = widget.isLoggedIn
+        ? 'Please enter your email address to change your password'
+        : 'Please enter your email address to reset your password';
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -148,7 +157,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Back button
               Align(
                 alignment: Alignment.topLeft,
                 child: IconButton(
@@ -159,8 +167,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
               ),
               const SizedBox(height: 20.0),
-
-              // Calendar Icon
               Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
@@ -168,12 +174,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   shape: BoxShape.circle,
                 ),
                 child: Image.asset(
-                  AppAssets.calendarIcon, // This should be your circle-themed illustration
-                  width: 80, // Adjust size of the image within the circle
+                  AppAssets.calendarIcon,
+                  width: 80,
                   height: 80,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
-                    // Fallback for Image.asset if the asset is not found
                     return Icon(
                       Icons.calendar_month,
                       size: 60.0,
@@ -184,10 +189,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ),
               const SizedBox(height: 20.0),
 
-              // Title
-              const Text(
-                'Forgot Password',
-                style: TextStyle(
+              Text(
+                titleText,
+                style: const TextStyle(
                   fontSize: 20.0,
                   fontWeight: FontWeight.w500,
                   color: AppColors.textDark,
@@ -197,60 +201,37 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ),
               const SizedBox(height: 8.0),
 
-              // Subtitle
-              const Text(
-                'please enter your email address to reset your password',
-                style: TextStyle(
+              Text(
+                subtitleText,
+                style: const TextStyle(
                   fontSize: 12.0,
                   color: Color(0x991B1D2A),
                   fontWeight: FontWeight.w400,
-
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 30.0),
 
-              // Form for input fields
               Form(
                 key: _formKey,
                 child: Column(
                   children: [
-                    // Email Address Input
-                  AuthInputField(
-                  controller: _emailController,
-                  labelText: 'Email Address *',
-                  hintText: 'Enter your email..',
-                  keyboardType: TextInputType.emailAddress,
-                  // validator: (value) {
-                  //   if (value == null || value.isEmpty) {
-                  //     return 'Please enter your email address';
-                  //   }
-                  //   // Simple email validation regex
-                  //   if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                  //     return 'Please enter a valid email address';
-                  //   }
-                  //   return null;
-                  // },
-                ),
+                    AuthInputField(
+                      controller: _emailController,
+                      labelText: 'Email Address *',
+                      hintText: 'Enter your email..',
+                      keyboardType: TextInputType.emailAddress,
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 30.0),
 
-              // Get OTP Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
                     context.push('/emailVerification');
-                    // if (_formKey.currentState!.validate()) {
-                    //   // If the form is valid, display a snackbar or proceed with OTP request
-                    //   ScaffoldMessenger.of(context).showSnackBar(
-                    //     const SnackBar(content: Text('Requesting OTP...')),
-                    //   );
-                    //   // Here you would typically send the email to your backend to send OTP
-                    //   print('Email for OTP: ${_emailController.text}');
-                    // }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
@@ -266,14 +247,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       fontSize: 14.0,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      fontFamily: 'Poppins'
+                      fontFamily: 'Poppins',
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 20.0),
 
-              // Remember password? Log In
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

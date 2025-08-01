@@ -29,6 +29,8 @@ import 'package:circleslate/presentation/features/authentication/view/signup_scr
 import 'package:circleslate/presentation/features/onboarding/view/splash_screen.dart';
 import 'package:circleslate/presentation/features/onboarding/view/onboarding_screen.dart';
 
+import '../features/notification/notification_page.dart';
+
 
 // --- RoutePaths Class (Restored to your original structure) ---
 class RoutePaths {
@@ -64,6 +66,7 @@ class RoutePaths {
   static const String privacyPolicy = '/privacy-policy'; // New route for Privacy Policy
   static const String termsAndConditions = '/terms-and-conditions'; // New route for Terms & Conditions
   static const String deleteAccount = '/delete-account';
+  static const String notification = '/notifications'; // New route for Notifications
 
 }
 
@@ -94,6 +97,7 @@ class AppRoutes {
   static const String privacyControls = 'privacyControls';
   static const String termsAndConditions = 'termsAndConditions';
   static const String deleteAccount = 'deleteAccount';
+  static const String notification = 'notification'; // New route for Notifications
 
 }
 
@@ -138,7 +142,7 @@ class AppRouter {
       ),
       GoRoute(
         path: RoutePaths.forgotpassword,
-        builder: (context, state) => const ForgotPasswordPage(),
+        builder: (context, state) => const ForgotPasswordPage(isLoggedIn: false,),
       ),
       GoRoute(
         path: RoutePaths.emailVerification,
@@ -267,6 +271,10 @@ class AppRouter {
       GoRoute(
         path: RoutePaths.availabilitypreview,
         builder: (context, state) => const AvailabilityPreviewPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.notification,
+        builder: (context, state) => const NotificationPage(),
       ),
 
 

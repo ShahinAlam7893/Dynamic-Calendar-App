@@ -50,6 +50,10 @@ class AppColors {
   static const Color dateBackground = Color(0xFFE0E0E0); // Light gray for inactive dates
   static const Color dateText = Color(0xFF616161);
   static const Color availableGreen = Color(0xFF36D399);
+  // Notification specific colors
+  static const Color unreadIndicatorColor = Colors.orange;
+  static const Color notificationCardUnreadBg = Color(0xFFFFF3E0); // Light orange/yellow for unread
+  static const Color notificationCardReadBg = Colors.white;
 
 
 
