@@ -14,7 +14,7 @@ import 'package:circleslate/presentation/features/settings/view/delete_account_s
 import 'package:circleslate/presentation/features/settings/view/edit_profile_page.dart';
 import 'package:circleslate/presentation/features/settings/view/privacy_controls_page.dart';
 import 'package:circleslate/presentation/features/settings/view/privacy_policy_page.dart';
-import 'package:circleslate/presentation/features/settings/view/profile_page.dart';
+import 'package:circleslate/presentation/features/settings/view/profile_page.dart' hide EditProfilePage;
 import 'package:circleslate/presentation/features/settings/view/terms_and_conditions_page.dart';
 import 'package:circleslate/presentation/widgets/custom_bottom_nav_bar.dart';
 import 'package:flutter/material.dart'; // For GlobalKey, NavigatorState, BuildContext
@@ -30,7 +30,6 @@ import 'package:circleslate/presentation/features/onboarding/view/splash_screen.
 import 'package:circleslate/presentation/features/onboarding/view/onboarding_screen.dart';
 
 import '../features/notification/notification_page.dart';
-
 
 // --- RoutePaths Class (Restored to your original structure) ---
 class RoutePaths {
@@ -82,7 +81,8 @@ class AppRoutes {
   static const String resetPasswordPage = 'resetPasswordPage';
   static const String passwordResetSuccessPage = 'passwordResetSuccessPage';
   static const String upcomingeventspage = 'upcomingeventspage'; // Your original name
-  static const String createeventpage = 'createeventpage'; // Your original name
+  static const String createeventpage = 'createeventpage';
+  static const String chatlistpage = 'chatlistpage';// Your original names
   static const String eventdetailspage = 'eventdetailspage';
   static const String ridesharingpage = 'ridesharingpage';
   static const String onetooneconversationpage = 'onetooneconversationpage';
@@ -190,25 +190,29 @@ class AppRouter {
           return const PasswordResetSuccessPage();
         },
       ),
-
       GoRoute(
         path: RoutePaths.home,
+        name: AppRoutes.home,
         builder: (context, state) => const SmoothNavigationWrapper(initialIndex: 0),
       ),
       GoRoute(
-        path: RoutePaths.upcomingeventspage, // Your original route name
+        path: RoutePaths.upcomingeventspage,
+        name: AppRoutes.upcomingeventspage,
         builder: (context, state) => const SmoothNavigationWrapper(initialIndex: 1),
       ),
       GoRoute(
-        path: RoutePaths.chatlistpage, // Your original route name
+        path: RoutePaths.chatlistpage,
+        name: AppRoutes.chatlistpage,
         builder: (context, state) => const SmoothNavigationWrapper(initialIndex: 2),
       ),
       GoRoute(
-        path: RoutePaths.availability, // Your original route name
+        path: RoutePaths.availability,
+        name: AppRoutes.availability,
         builder: (context, state) => const SmoothNavigationWrapper(initialIndex: 3),
       ),
       GoRoute(
-        path: RoutePaths.settings, // Your original route name
+        path: RoutePaths.settings,
+        name: AppRoutes.settings,
         builder: (context, state) => const SmoothNavigationWrapper(initialIndex: 4),
       ),
 
@@ -291,10 +295,10 @@ class AppRouter {
         path: RoutePaths.profile,
         builder: (context, state) => const ProfilePage(),
       ),
-      GoRoute(
-        path: RoutePaths.availability,
-        builder: (context, state) => const AvailabilityPage(),
-      ),
+      // GoRoute(
+      //   path: RoutePaths.availability,
+      //   builder: (context, state) => const AvailabilityPage(),
+      // ),
       GoRoute(
         path: RoutePaths.availabilitypreview,
         builder: (context, state) => const AvailabilityPreviewPage(),

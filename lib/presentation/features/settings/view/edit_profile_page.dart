@@ -1,9 +1,20 @@
+import 'dart:io';
 import 'package:circleslate/core/constants/app_colors.dart';
+import 'package:circleslate/data/services/api_base_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // For navigation
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../../../common_providers/auth_provider.dart';
 
+// Add the API endpoint for profile update
+class ApiEndpoints {
+  static const String updateProfile = '/auth/profile/update/'; // Adjust this to match your actual endpoint
+}
 
-// --- AuthInputField (Copied for self-containment) ---
+// --- AuthInputField (same as before) ---
 class AuthInputField extends StatefulWidget {
   final TextEditingController controller;
   final String labelText;
@@ -12,7 +23,7 @@ class AuthInputField extends StatefulWidget {
   final bool isPassword;
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
-  final bool readOnly; // Added readOnly property
+  final bool readOnly;
 
   const AuthInputField({
     Key? key,
@@ -23,7 +34,7 @@ class AuthInputField extends StatefulWidget {
     this.isPassword = false,
     this.suffixIcon,
     this.validator,
-    this.readOnly = false, // Default to false
+    this.readOnly = false,
   }) : super(key: key);
 
   @override
@@ -46,7 +57,7 @@ class _AuthInputFieldState extends State<AuthInputField> {
       keyboardType: widget.keyboardType,
       obscureText: _obscureText,
       validator: widget.validator,
-      readOnly: widget.readOnly, // Apply readOnly property
+      readOnly: widget.readOnly,
       decoration: InputDecoration(
         labelText: widget.labelText,
         hintText: widget.hintText,
@@ -85,7 +96,6 @@ class _AuthInputFieldState extends State<AuthInputField> {
   }
 }
 
-
 class EditProfilePage extends StatefulWidget {
   final String initialFullName;
   final String initialEmail;
@@ -114,6 +124,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late List<TextEditingController> _childNameControllers;
   late List<TextEditingController> _childAgeControllers;
   late String _currentProfileImageUrl;
+  File? _pickedImageFile;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -124,10 +136,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _currentProfileImageUrl = widget.initialProfileImageUrl;
 
     _childNameControllers = widget.initialChildren
-        .map((child) => TextEditingController(text: child['name']))
+        .map((child) => TextEditingController(text: child['name'] ?? ''))
         .toList();
     _childAgeControllers = widget.initialChildren
-        .map((child) => TextEditingController(text: child['age']))
+        .map((child) => TextEditingController(text: child['age'] ?? ''))
         .toList();
   }
 
@@ -136,12 +148,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _fullNameController.dispose();
     _emailController.dispose();
     _mobileController.dispose();
-    for (var controller in _childNameControllers) {
-      controller.dispose();
-    }
-    for (var controller in _childAgeControllers) {
-      controller.dispose();
-    }
+    for (var c in _childNameControllers) c.dispose();
+    for (var c in _childAgeControllers) c.dispose();
     super.dispose();
   }
 
@@ -161,56 +169,121 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
   }
 
-  void _saveProfile() {
-    if (_formKey.currentState!.validate()) {
-      // Collect updated children data
-      List<Map<String, String>> updatedChildren = [];
-      for (int i = 0; i < _childNameControllers.length; i++) {
-        updatedChildren.add({
-          'name': _childNameControllers[i].text,
-          'age': _childAgeControllers[i].text,
-        });
-      }
+  // Pick image from gallery
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
 
-      // Prepare data to return to the previous page (ProfilePage)
-      final updatedData = {
-        'fullName': _fullNameController.text,
-        'email': _emailController.text,
-        'mobile': _mobileController.text,
-        'children': updatedChildren,
-        'profileImageUrl': _currentProfileImageUrl,
-      };
-
-      // In a real app, you would send this data to your backend API to save.
-      // For this example, we'll just pop back with the data.
-      context.pop(updatedData);
+    if (pickedFile != null) {
+      setState(() {
+        _pickedImageFile = File(pickedFile.path);
+        _currentProfileImageUrl = '';
+      });
     }
   }
 
-  // Placeholder for image picking logic
-  void _pickImage() {
-    // Implement image picking logic (e.g., using image_picker package)
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Image picker not implemented yet.')),
-    );
-    // After picking, update _currentProfileImageUrl
-    // setState(() {
-    //   _currentProfileImageUrl = 'new_image_path.png'; // Update with actual picked image path
-    // });
+  // Save profile with proper API integration
+  void _saveProfile() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isSaving = true;
+      });
+
+      try {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+        // Check if user is logged in
+        if (!authProvider.isLoggedIn) {
+          _showErrorMessage('Please login first');
+          return;
+        }
+
+        // Collect updated children data
+        List<Map<String, String>> updatedChildren = [];
+        for (int i = 0; i < _childNameControllers.length; i++) {
+          if (_childNameControllers[i].text.isNotEmpty) {
+            updatedChildren.add({
+              'name': _childNameControllers[i].text,
+              'age': _childAgeControllers[i].text,
+            });
+          }
+        }
+
+        // Prepare updated profile data
+        final updatedData = {
+          'full_name': _fullNameController.text,
+          'email': _emailController.text,
+          'phone_number': _mobileController.text,
+          'children': updatedChildren,
+        };
+
+        // Handle image upload if a new image was picked
+        if (_pickedImageFile != null) {
+          // You can add image upload logic here
+          // For now, we'll just include it in the data
+          updatedData['profile_image'] = _pickedImageFile!.path;
+        } else if (_currentProfileImageUrl.isNotEmpty) {
+          updatedData['profile_image'] = _currentProfileImageUrl;
+        }
+
+        // Use AuthProvider's internal API helper method
+        final success = await authProvider.updateUserProfile(updatedData);
+
+        if (success) {
+          // Profile updated successfully
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile updated successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+
+            // Return updated data to ProfilePage
+            context.pop({
+              'fullName': _fullNameController.text,
+              'email': _emailController.text,
+              'mobile': _mobileController.text,
+              'children': updatedChildren,
+              'profileImageUrl': _currentProfileImageUrl,
+            });
+          }
+        } else {
+          _showErrorMessage(authProvider.errorMessage ?? 'Failed to update profile');
+        }
+      } catch (e) {
+        _showErrorMessage('Error updating profile: $e');
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSaving = false;
+          });
+        }
+      }
+    }
+  }
+
+  void _showErrorMessage(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100], // Light grey background
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: AppColors.primaryBlue,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            context.pop(); // Use pop for back navigation
-          },
+          onPressed: () => context.pop(),
         ),
         title: const Text(
           'Edit Profile',
@@ -230,16 +303,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Profile Image Section
               Center(
                 child: Stack(
                   children: [
                     CircleAvatar(
                       radius: 60,
                       backgroundColor: Colors.grey.shade200,
-                      backgroundImage: _currentProfileImageUrl.isNotEmpty
-                          ? Image.asset(_currentProfileImageUrl).image
-                          : null,
-                      child: _currentProfileImageUrl.isEmpty
+                      backgroundImage: _pickedImageFile != null
+                          ? FileImage(_pickedImageFile!)
+                          : (_currentProfileImageUrl.isNotEmpty
+                          ? NetworkImage(_currentProfileImageUrl)
+                          : null) as ImageProvider?,
+                      child: _pickedImageFile == null && _currentProfileImageUrl.isEmpty
                           ? Icon(Icons.person, size: 60, color: Colors.grey.shade400)
                           : null,
                     ),
@@ -247,7 +323,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       bottom: 0,
                       right: 0,
                       child: GestureDetector(
-                        onTap: _pickImage, // Call image picker on tap
+                        onTap: _pickImage,
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
@@ -265,102 +341,71 @@ class _EditProfilePageState extends State<EditProfilePage> {
               const SizedBox(height: 24.0),
 
               // Full Name
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8.0),
-                child: Text(
-                  'Full Name',
-                  style: TextStyle(
-                    fontSize: 14.0,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textColorPrimary,
-                    fontFamily: 'Poppins',
-                  ),
+              const Text(
+                'Full Name',
+                style: TextStyle(
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textColorPrimary,
                 ),
               ),
+              const SizedBox(height: 8.0),
               AuthInputField(
                 controller: _fullNameController,
                 labelText: '',
-                hintText: 'Nicolas David', // Example hint
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your full name';
-                  }
-                  return null;
-                },
+                hintText: 'Your full name',
+                validator: (v) => v == null || v.isEmpty ? 'Enter name' : null,
               ),
               const SizedBox(height: 20.0),
 
               // Email
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8.0),
-                child: Text(
-                  'Email',
-                  style: TextStyle(
-                    fontSize: 14.0,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textColorPrimary,
-                    fontFamily: 'Poppins',
-                  ),
+              const Text(
+                'Email',
+                style: TextStyle(
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textColorPrimary,
                 ),
               ),
+              const SizedBox(height: 8.0),
               AuthInputField(
                 controller: _emailController,
                 labelText: '',
-                hintText: 'nicolas.david@email.com', // Example hint
+                hintText: 'Email',
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                    return 'Enter a valid email address';
-                  }
-                  return null;
-                },
+                validator: (v) => v == null || v.isEmpty ? 'Enter email' : null,
               ),
               const SizedBox(height: 20.0),
 
               // Mobile
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8.0),
-                child: Text(
-                  'Mobile',
-                  style: TextStyle(
-                    fontSize: 14.0,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textColorPrimary,
-                    fontFamily: 'Poppins',
-                  ),
+              const Text(
+                'Mobile',
+                style: TextStyle(
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textColorPrimary,
                 ),
               ),
+              const SizedBox(height: 8.0),
               AuthInputField(
                 controller: _mobileController,
                 labelText: '',
-                hintText: '+1 (555) 123-4567', // Example hint
+                hintText: 'Mobile',
                 keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your mobile number';
-                  }
-                  return null;
-                },
+                validator: (v) => v == null || v.isEmpty ? 'Enter mobile' : null,
               ),
               const SizedBox(height: 20.0),
 
-              // My Children Section
+              // My Children
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 8.0),
-                    child: Text(
-                      'My Children',
-                      style: TextStyle(
-                        fontSize: 14.0,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textColorPrimary,
-                        fontFamily: 'Poppins',
-                      ),
+                  const Text(
+                    'My Children',
+                    style: TextStyle(
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textColorPrimary,
                     ),
                   ),
                   GestureDetector(
@@ -371,31 +416,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         fontSize: 14.0,
                         fontWeight: FontWeight.w500,
                         color: AppColors.primaryBlue,
-                        fontFamily: 'Poppins',
                       ),
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 8.0),
               Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12.0),
                   border: Border.all(color: AppColors.inputOutline, width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
                 ),
                 child: Column(
-                  children: [
-                    for (int i = 0; i < _childNameControllers.length; i++)
-                      _buildChildInputField(i),
-                  ],
+                  children: List.generate(
+                    _childNameControllers.length,
+                        (i) => _buildChildInputField(i),
+                  ),
                 ),
               ),
               const SizedBox(height: 30.0),
@@ -404,32 +442,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _saveProfile,
+                  onPressed: _isSaving ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.0),
                     ),
-                    elevation: 3,
                   ),
-                  child: const Text(
+                  child: _isSaving
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
                     'Save',
                     style: TextStyle(
                       fontSize: 18.0,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      fontFamily: 'Poppins',
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 20.0),
             ],
           ),
         ),
       ),
-      // The bottom navigation bar will be provided by SmoothNavigationWrapper
     );
   }
 
@@ -443,13 +479,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             child: AuthInputField(
               controller: _childNameControllers[index],
               labelText: 'Child\'s Name',
-              hintText: 'Child\'s name please..',
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Enter child\'s name';
-                }
-                return null;
-              },
+              hintText: 'Enter name',
+              validator: (v) => v == null || v.isEmpty ? 'Enter name' : null,
             ),
           ),
           const SizedBox(width: 16.0),
@@ -460,17 +491,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
               labelText: 'Age',
               hintText: 'Age',
               keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Enter age';
-                }
-                return null;
-              },
+              validator: (v) => v == null || v.isEmpty ? 'Enter age' : null,
             ),
           ),
-          if (index > 0) // Show remove button for additional children
+          if (index > 0)
             IconButton(
-              icon: const Icon(Icons.remove_circle_outline, color: AppColors.unavailableRed),
+              icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
               onPressed: () => _removeChildField(index),
             ),
         ],

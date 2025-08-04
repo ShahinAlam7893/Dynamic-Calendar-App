@@ -6,6 +6,57 @@ import 'package:provider/provider.dart';
 import 'package:circleslate/core/constants/shared_utilities.dart';
 import 'package:circleslate/presentation/common_providers/availability_provider.dart';
 import 'package:intl/intl.dart'; // For date formatting
+import 'package:circleslate/presentation/common_providers/auth_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../presentation/common_providers/auth_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+class HeaderSection extends StatelessWidget {
+  const HeaderSection({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+
+    if (authProvider.isLoading) {
+      return const CircularProgressIndicator();
+    }
+
+    final profile = authProvider.userProfile ?? {};
+    final fullName = profile["full_name"] ?? "";
+    final childName = (profile["children"] != null &&
+        (profile["children"] as List).isNotEmpty)
+        ? profile["children"][0]["name"] ?? ""
+        : "";
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Hello, $fullName!",
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w400,
+            color: Colors.white,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        Text(
+          "Manage $childName’s activities",
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: Color(0xCCFFFFFF),
+            fontFamily: 'Poppins',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 
 // --- AuthInputField --- (Copied from previous response for self-containment)
 class AuthInputField extends StatefulWidget {
@@ -33,6 +84,7 @@ class AuthInputField extends StatefulWidget {
   @override
   _AuthInputFieldState createState() => _AuthInputFieldState();
 }
+
 
 class _AuthInputFieldState extends State<AuthInputField> {
   bool _obscureText = true;
@@ -117,6 +169,9 @@ class _AuthInputFieldState extends State<AuthInputField> {
     );
   }
 }
+
+
+
 // --- PlaceholderScreen for other routes, kept here for self-containment
 class PlaceholderScreen extends StatelessWidget {
   final String title;
@@ -158,7 +213,9 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+
 class _HomePageState extends State<HomePage> {
+
   int _selectedIndex = 0; // For the bottom navigation bar
 
   // Controllers for Child Information
@@ -279,29 +336,7 @@ class _HomePageState extends State<HomePage> {
                           ),
 
                           SizedBox(width: screenWidth * 0.03), // Responsive spacing
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Hello, Peter!',
-                                style: TextStyle(
-                                  fontSize: headerNameFontSize, // Responsive font size
-                                  fontWeight: FontWeight.w400,
-                                  color: Colors.white,
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                              Text(
-                                'Manage Ella’s activities',
-                                style: TextStyle(
-                                  fontSize: headerSubtitleFontSize, // Responsive font size
-                                  fontWeight: FontWeight.w400,
-                                  color: const Color(0xCCFFFFFF),
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                            ],
-                          ),
+                          const HeaderSection(),
                         ],
                       ),
                       // Notification Bell Icon (New addition)
@@ -323,6 +358,7 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                   SizedBox(height: largeSpacing), // Responsive spacing
+
                   Row(
                     children: [
                       Icon(Icons.circle, size: screenWidth * 0.03, color: Colors.green), // Responsive icon size

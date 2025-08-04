@@ -53,6 +53,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
         );
         // Navigate to the home page
+        // context.goNamed('home'); // Assuming you have a named route for home
         context.go('/home');
       } else {
         // Handle failed login, show the error message from the provider

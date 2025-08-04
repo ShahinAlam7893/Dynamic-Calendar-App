@@ -5,6 +5,8 @@ import 'package:provider/provider.dart'; // Import Provider
 import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:circleslate/core/constants/app_assets.dart';
 import 'package:circleslate/presentation/common_providers/auth_provider.dart';
+import 'dart:io'; // Import for File class
+import 'package:image_picker/image_picker.dart'; // Import the image_picker package
 
 // In your actual project, these classes would be separate files.
 // For self-containment in this example, we'll keep them here.
@@ -32,9 +34,10 @@ class AuthInputField extends StatefulWidget {
   final bool isPassword;
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
+  final int maxLines;
 
   const AuthInputField({
-    Key? key,
+    super.key,
     required this.controller,
     required this.labelText,
     required this.hintText,
@@ -42,11 +45,13 @@ class AuthInputField extends StatefulWidget {
     this.isPassword = false,
     this.suffixIcon,
     this.validator,
-  }) : super(key: key);
+    this.maxLines = 1,
+  });
 
   @override
   _AuthInputFieldState createState() => _AuthInputFieldState();
 }
+
 class _AuthInputFieldState extends State<AuthInputField> {
   bool _obscureText = true;
   @override
@@ -56,52 +61,75 @@ class _AuthInputFieldState extends State<AuthInputField> {
   }
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: widget.controller,
-      keyboardType: widget.keyboardType,
-      obscureText: _obscureText,
-      validator: widget.validator,
-      decoration: InputDecoration(
-        labelText: widget.labelText,
-        hintText: widget.hintText,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
-        ),
-        labelStyle: const TextStyle(
-          color: AppColors.textColorSecondary,
-          fontSize: 11.0,
-          fontWeight: FontWeight.w500,
-        ),
-        hintStyle: const TextStyle(
-          color: AppColors.inputHintColor,
-          fontSize: 10,
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 16.0),
-        suffixIcon: widget.isPassword
-            ? IconButton(
-          icon: Icon(
-            _obscureText ? Icons.visibility : Icons.visibility_off,
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double labelFontSize = screenWidth * 0.032;
+    final double hintFontSize = screenWidth * 0.03;
+    final double inputContentPaddingVertical = screenWidth * 0.035;
+    final double inputContentPaddingHorizontal = screenWidth * 0.04;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.labelText,
+          style: TextStyle(
             color: AppColors.textColorSecondary,
+            fontSize: labelFontSize,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Poppins',
           ),
-          onPressed: () {
-            setState(() {
-              _obscureText = !_obscureText;
-            });
-          },
-        )
-            : widget.suffixIcon,
-      ),
+        ),
+        SizedBox(height: screenWidth * 0.02),
+        TextFormField(
+          controller: widget.controller,
+          keyboardType: widget.keyboardType,
+          obscureText: _obscureText,
+          validator: widget.validator,
+          maxLines: widget.maxLines,
+          decoration: InputDecoration(
+            hintText: widget.hintText,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(screenWidth * 0.01),
+              borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(screenWidth * 0.01),
+              borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(screenWidth * 0.01),
+              borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+            ),
+            hintStyle: TextStyle(color: AppColors.inputHintColor, fontSize: hintFontSize, fontWeight: FontWeight.w400),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: EdgeInsets.symmetric(vertical: inputContentPaddingVertical, horizontal: inputContentPaddingHorizontal),
+            suffixIcon: widget.isPassword
+                ? IconButton(
+              icon: Icon(
+                _obscureText ? Icons.visibility : Icons.visibility_off,
+                color: AppColors.textColorSecondary,
+                size: screenWidth * 0.05,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscureText = !_obscureText;
+                });
+              },
+            )
+                : (widget.suffixIcon != null
+                ? SizedBox(
+              width: screenWidth * 0.08,
+              height: screenWidth * 0.08,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: widget.suffixIcon,
+              ),
+            )
+                : null),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -120,6 +148,8 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
+  File? _profileImage; // Variable to hold the selected image file
+
   @override
   void dispose() {
     _fullNameController.dispose();
@@ -129,6 +159,17 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
+  // Function to handle image picking
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = File(pickedFile.path);
+      });
+    }
+  }
+
   // This is the function that will be called on button press
   void _handleSignUp(BuildContext context) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -136,14 +177,16 @@ class _SignUpPageState extends State<SignUpPage> {
     if (_formKey.currentState!.validate()) {
       // Show loading indicator
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Processing...')),
+        const SnackBar(content: Text('Processing...')),
       );
 
+      // Pass the image to the AuthProvider
       final success = await authProvider.registerUser(
         fullName: _fullNameController.text,
         email: _emailController.text,
         password: _passwordController.text,
         confirmPassword: _confirmPasswordController.text,
+        profileImage: _profileImage, // FIX: Pass the File object directly
       );
 
       if (success) {
@@ -313,8 +356,8 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                   ),
                   const SizedBox(height: 20.0),
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
+                  GestureDetector(
+                    onTap: _pickImage, // Call the image picker function
                     child: DottedBorder(
                       color: AppColors.primaryBlue.withOpacity(0.3),
                       strokeWidth: 2,
@@ -323,16 +366,20 @@ class _SignUpPageState extends State<SignUpPage> {
                       radius: const Radius.circular(12.0),
                       child: Container(
                         width: double.infinity,
+                        height: 50, // Increased height for better visibility
                         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
                         decoration: BoxDecoration(
                           color: AppColors.lightBlueBackground,
                           borderRadius: BorderRadius.circular(12.0),
                         ),
-                        child: Row(
+                        child: _profileImage == null
+                            ? const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.camera_alt, size: 40.0, color: AppColors.textMedium),
-                            const SizedBox(width: 10.0),
-                            const Column(
+                            Icon(Icons.camera_alt, size: 40.0, color: AppColors.textMedium),
+                            SizedBox(width: 10.0),
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
@@ -353,6 +400,15 @@ class _SignUpPageState extends State<SignUpPage> {
                               ],
                             ),
                           ],
+                        )
+                            : ClipRRect(
+                          borderRadius: BorderRadius.circular(12.0),
+                          child: Image.file(
+                            _profileImage!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
                         ),
                       ),
                     ),
