@@ -241,7 +241,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
           if (name.isNotEmpty) {
             bool success = await authProvider.addChild(
-              // or get token however your provider stores it
+               // or get token however your provider stores it
               name,
               age,
             );

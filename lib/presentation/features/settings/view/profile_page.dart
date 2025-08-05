@@ -116,57 +116,43 @@ class _ProfilePageState extends State<ProfilePage> {
   String _mobile = '';
   List<Map<String, dynamic>> _children = [];
   String _profileImageUrl = '';
+
   @override
   void initState() {
     super.initState();
 
-    // Run asynchronously after widget is fully created
     Future.microtask(() async {
-      try {
-        // Access the AuthProvider (no rebuild here)
-        final authProvider = context.read<AuthProvider>();
+      final authProvider = context.read<AuthProvider>();
+      final success = await authProvider.fetchUserProfile();
+      if (success && mounted) {
+        final profile = authProvider.userProfile ?? {};
 
-        // Fetch the user profile from API
-        final success = await authProvider.fetchUserProfile();
+        // ✅ Children are inside profile["profile"]["children"]
+        final childrenList = (profile["profile"]?["children"] as List?) ?? [];
+        // ✅ Ensure profile image is absolute URL
+        String imageUrl = profile['profile_photo'] ?? '';
+        if (imageUrl.isNotEmpty && !imageUrl.startsWith("http")) {
+          imageUrl = "http://10.10.13.27:8000/api/auth/profile/update/"; // Change base URL
 
-        // Proceed only if fetch successful and widget still mounted
-        if (success && mounted) {
-          final profile = authProvider.userProfile ?? {};
-
-          // Children might be nested inside profile["profile"]["children"], or fallback to empty list
-          final childrenList = (profile["profile"]?["children"] as List?) ?? [];
-
-          // Fix profile image URL — if relative, convert to absolute URL
-          String imageUrl = profile['profile_photo'] ?? '';
-          if (imageUrl.isNotEmpty && !imageUrl.startsWith("http")) {
-            imageUrl = "http://10.10.13.27:8000/auth/profile/update/";
-            // Assuming the API returns relative URL like "/media/profile.jpg"
-            // Append to base URL for full path
-          }
-
-          // Update widget state with fetched data
-          setState(() {
-            _fullName = profile['full_name'] ?? '';
-            _email = profile['email'] ?? '';
-            _mobile = profile['phone_number'] ?? '';
-            _profileImageUrl = imageUrl;
-
-            // Map each child to name-age map safely
-            _children = childrenList.map((child) {
-              return {
-                'name': child['name']?.toString() ?? '',
-                'age': child['age']?.toString() ?? '',
-              };
-            }).toList();
-          });
-
-          debugPrint("✅ Loaded Profile: $_fullName, $_email, $_mobile, $_children");
-        } else {
-          debugPrint("❌ Failed to fetch profile data.");
         }
-      } catch (e, stacktrace) {
-        debugPrint("❌ Exception while fetching profile: $e");
-        debugPrint(stacktrace.toString());
+
+        setState(() {
+          _fullName = profile['full_name'] ?? '';
+          _email = profile['email'] ?? '';
+          _mobile = profile['phone_number'] ?? '';
+          _profileImageUrl = imageUrl;
+
+          _children = childrenList.map((child) {
+            return {
+              'name': child['name']?.toString() ?? '',
+              'age': child['age']?.toString() ?? '',
+            };
+          }).toList();
+        });
+
+        debugPrint("✅ Loaded Profile: $_fullName, $_email, $_mobile, $_children");
+      } else {
+        debugPrint("❌ Failed to fetch profile data.");
       }
     });
   }

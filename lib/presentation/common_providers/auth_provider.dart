@@ -134,6 +134,40 @@ class AuthProvider extends ChangeNotifier {
   }
 
 
+  Future<List<Map<String, dynamic>>> fetchChildren() async {
+    final url = Uri.parse('http://10.10.13.27:8000/api/auth/children/');
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_accessToken',
+        },
+      );
+
+      debugPrint("📡 GET Children Status: ${response.statusCode}");
+      debugPrint("📡 Response: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((child) {
+          return {
+            'name': child['name']?.toString() ?? '',
+            'age': child['age']?.toString() ?? '',
+          };
+        }).toList();
+      } else {
+        debugPrint("❌ Failed to fetch children: ${response.body}");
+        return [];
+      }
+    } catch (e) {
+      debugPrint("❌ Exception fetching children: $e");
+      return [];
+    }
+  }
+
+
+
   // -------------------- FORGOT PASSWORD --------------------
   Future<bool> forgotPassword(String email) async {
     _setLoading(true);
@@ -349,31 +383,6 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
   }
-
-  // Future<bool> updateUserProfile(Map<String, dynamic> updatedData) async {
-  //   _setLoading(true);
-  //   void _clearError() {
-  //     _errorMessage = null;
-  //     notifyListeners();
-  //   }
-  //
-  //   try {
-  //     if (updatedData.containsKey('profile_image') &&
-  //         updatedData['profile_image'] is String &&
-  //         updatedData['profile_image'].isNotEmpty) {
-  //       // Multipart if image is provided
-  //       return await _updateProfileWithImage(updatedData);
-  //     } else {
-  //       // JSON only if no new image
-  //       return await _updateProfileWithJson(updatedData);
-  //     }
-  //   } catch (e) {
-  //     print('Error in updateUserProfile: $e');
-  //     return _setError('An unexpected error occurred during profile update: $e');
-  //   } finally {
-  //     _setLoading(false);
-  //   }
-  // }
 
 // -------------------- UPDATE WITH MULTIPART IMAGE --------------------
 

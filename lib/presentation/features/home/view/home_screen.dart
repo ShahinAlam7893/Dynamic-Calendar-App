@@ -26,9 +26,6 @@ class _HeaderSectionState extends State<HeaderSection> {
   void initState() {
     super.initState();
     _loadChildren();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AuthProvider>().fetchUserProfile();
-    });
   }
 
   Future<void> _loadChildren() async {
