@@ -162,10 +162,10 @@ class _SignUpPageState extends State<SignUpPage> {
   // Function to handle image picking
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery); // Opens gallery
     if (pickedFile != null) {
       setState(() {
-        _profileImage = File(pickedFile.path);
+        _profileImage = File(pickedFile.path); // Assigns the picked file
       });
     }
   }

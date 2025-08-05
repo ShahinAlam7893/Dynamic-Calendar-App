@@ -12,9 +12,36 @@ import 'package:provider/provider.dart';
 import '../../../../presentation/common_providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-class HeaderSection extends StatelessWidget {
+class HeaderSection extends StatefulWidget {
   const HeaderSection({Key? key}) : super(key: key);
+
+  @override
+  State<HeaderSection> createState() => _HeaderSectionState();
+}
+
+class _HeaderSectionState extends State<HeaderSection> {
+  String childName = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChildren();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthProvider>().fetchUserProfile();
+    });
+  }
+
+  Future<void> _loadChildren() async {
+    final authProvider = context.read<AuthProvider>();
+    final children = await authProvider.fetchChildren();
+
+    if (children.isNotEmpty && mounted) {
+      setState(() {
+        childName = children.first['name'] ?? '';
+      });
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +53,6 @@ class HeaderSection extends StatelessWidget {
 
     final profile = authProvider.userProfile ?? {};
     final fullName = profile["full_name"] ?? "";
-    final childName = (profile["children"] != null &&
-        (profile["children"] as List).isNotEmpty)
-        ? profile["children"][0]["name"] ?? ""
-        : "";
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,19 +66,23 @@ class HeaderSection extends StatelessWidget {
             fontFamily: 'Poppins',
           ),
         ),
-        Text(
-          "Manage $childName’s activities",
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            color: Color(0xCCFFFFFF),
-            fontFamily: 'Poppins',
+        if (childName.isNotEmpty)
+          Text(
+            "Manage $childName’s activities",
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: Color(0xCCFFFFFF),
+              fontFamily: 'Poppins',
+            ),
           ),
-        ),
       ],
     );
   }
 }
+
+
+
 
 
 // --- AuthInputField --- (Copied from previous response for self-containment)
@@ -318,20 +345,29 @@ class _HomePageState extends State<HomePage> {
                                 border: Border.all(color: Colors.white, width: screenWidth * 0.005), // Responsive border width
                               ),
                               child: ClipOval(
-                                child: Image.asset(
-                                  AppAssets.profilePicture,
-                                  width: screenWidth * 0.12,
-                                  height: screenWidth * 0.12,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Icon(
-                                      Icons.person,
-                                      size: screenWidth * 0.09, // Responsive icon size
-                                      color: Colors.white,
-                                    );
+                                child: Consumer<AuthProvider>(
+                                  builder: (context, auth, _) {
+                                    final photo = auth.userProfile?["profile_photo"] ?? "";
+
+                                    if (photo.toString().isNotEmpty) {
+                                      final imageUrl = photo.toString().startsWith("http")
+                                          ? photo.toString()
+                                          : "http://10.10.13.27:8000$photo";
+
+                                      return Image.network(
+                                        imageUrl,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Icon(Icons.person, size: screenWidth * 0.09, color: Colors.white);
+                                        },
+                                      );
+                                    } else {
+                                      return Icon(Icons.person, size: screenWidth * 0.09, color: Colors.white);
+                                    }
                                   },
                                 ),
                               ),
+
                             ),
                           ),
 
@@ -581,21 +617,74 @@ class _HomePageState extends State<HomePage> {
                           },
                         ),
                         Center(
-                          child: ElevatedButton(onPressed: (){
-                            // context.push('');
-                          },
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              final authProvider = context.read<AuthProvider>();
+
+                              bool allSuccess = true;
+
+                              // Loop through each child entry
+                              for (int i = 0; i < _childNameControllers.length; i++) {
+                                String name = _childNameControllers[i].text.trim();
+                                String ageText = _childAgeControllers[i].text.trim();
+
+                                if (name.isEmpty || ageText.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text("Please fill in all child details.")),
+                                  );
+                                  allSuccess = false;
+                                  continue;
+                                }
+
+                                int age = int.tryParse(ageText) ?? 0;
+                                bool success = await authProvider.addChild(name, age);
+
+                                if (!success) {
+                                  allSuccess = false;
+                                }
+                              }
+
+                              if (allSuccess) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Children saved successfully!")),
+                                );
+
+                                // Refresh children list in Home Page
+                                final children = await authProvider.fetchChildren();
+                                setState(() {
+                                  // Optionally update local state if you show them immediately
+                                });
+
+                                // Clear text fields
+                                setState(() {
+                                  _childNameControllers.clear();
+                                  _childAgeControllers.clear();
+                                  _addChildField(); // Add at least one empty row
+                                });
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Some children could not be saved.")),
+                                );
+                              }
+                            },
                             style: ElevatedButton.styleFrom(
                               shadowColor: const Color(0x1A000000),
                               backgroundColor: AppColors.primaryBlue,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(screenWidth * 0.02)), // Responsive border radius
-                              padding: EdgeInsets.symmetric(vertical: screenWidth * 0.025, horizontal: screenWidth * 0.1), // Responsive padding
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(screenWidth * 0.02),
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                vertical: screenWidth * 0.025,
+                                horizontal: screenWidth * 0.1,
+                              ),
                             ),
-                            child:  Text(
+                            child: Text(
                               'Save',
-                              style: TextStyle(color: Colors.white, fontSize: saveButtonFontSize), // Responsive font size
+                              style: TextStyle(color: Colors.white, fontSize: saveButtonFontSize),
                             ),
                           ),
-                        ),
+                        )
+
                       ],
                     ),
                   ),

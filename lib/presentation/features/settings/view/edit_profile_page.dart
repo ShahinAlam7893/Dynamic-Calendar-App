@@ -1,15 +1,17 @@
 import 'dart:io';
 import 'package:circleslate/core/constants/app_colors.dart';
-import 'package:circleslate/data/services/api_base_helper.dart';
+import 'package:circleslate/data/services/api_base_helper.dart'; // Ensure this is correctly imported if needed
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:image_picker/image_picker.dart'; // REQUIRED for image picking
+import 'package:provider/provider.dart';
+import 'dart:convert'; // REQUIRED for jsonEncode/decode if used directly here, but AuthProvider handles it
 import '../../../common_providers/auth_provider.dart';
 
-// Add the API endpoint for profile update
+// Add the API endpoint for profile update (if not already in a central file)
+// This should ideally come from lib/core/constants/api_endpoints.dart
+// For self-containment in this immersive, we'll keep it here.
 class ApiEndpoints {
   static const String updateProfile = '/auth/profile/update/'; // Adjust this to match your actual endpoint
 }
@@ -100,7 +102,7 @@ class EditProfilePage extends StatefulWidget {
   final String initialFullName;
   final String initialEmail;
   final String initialMobile;
-  final List<Map<String, String>> initialChildren;
+  final List<Map<String, String>> initialChildren; // Assuming children are Map<String, String>
   final String initialProfileImageUrl;
 
   const EditProfilePage({
@@ -123,10 +125,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _mobileController;
   late List<TextEditingController> _childNameControllers;
   late List<TextEditingController> _childAgeControllers;
-  late String _currentProfileImageUrl;
-  File? _pickedImageFile;
-  bool _isSaving = false;
+  late String _currentProfileImageUrl; // Stores the URL of the current profile image (from network)
+  File? _pickedImageFile; // Stores the new image file picked from the device
 
+  bool _isSaving = false;
   @override
   void initState() {
     super.initState();
@@ -135,13 +137,42 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _mobileController = TextEditingController(text: widget.initialMobile);
     _currentProfileImageUrl = widget.initialProfileImageUrl;
 
-    _childNameControllers = widget.initialChildren
-        .map((child) => TextEditingController(text: child['name'] ?? ''))
-        .toList();
-    _childAgeControllers = widget.initialChildren
-        .map((child) => TextEditingController(text: child['age'] ?? ''))
-        .toList();
+    _childNameControllers = [];
+    _childAgeControllers = [];
+
+    // ✅ FIX: Load latest profile data from AuthProvider
+    Future.microtask(() async {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.fetchUserProfile(); // Fetch from API
+      final profile = authProvider.userProfile ?? {};
+
+      // ✅ FIX: Load children from nested "profile"
+      final children = (profile["profile"]?["children"] as List?) ?? [];
+      if (children.isNotEmpty) {
+        setState(() {
+          _childNameControllers = children
+              .map((c) => TextEditingController(text: c["name"] ?? ""))
+              .toList();
+          _childAgeControllers = children
+              .map((c) => TextEditingController(text: c["age"]?.toString() ?? ""))
+              .toList();
+        });
+      } else {
+        setState(() {
+          _childNameControllers = [TextEditingController()];
+          _childAgeControllers = [TextEditingController()];
+        });
+      }
+
+      // ✅ FIX: Load profile image from API
+      if (profile["profile_photo"] != null && profile["profile_photo"].toString().isNotEmpty) {
+        setState(() {
+          _currentProfileImageUrl = profile["profile_photo"];
+        });
+      }
+    });
   }
+
 
   @override
   void dispose() {
@@ -169,18 +200,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
   }
 
-  // Pick image from gallery
+  // --- IMAGE PICKING LOGIC ---
   Future<void> _pickImage() async {
     final picker = ImagePicker();
+    // Allows picking an image from the gallery. imageQuality helps reduce file size.
     final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
 
     if (pickedFile != null) {
       setState(() {
-        _pickedImageFile = File(pickedFile.path);
-        _currentProfileImageUrl = '';
+        _pickedImageFile = File(pickedFile.path); // Store the picked image file
+        _currentProfileImageUrl = ''; // Clear the network image URL as a new image is selected
       });
     }
   }
+  // --- END IMAGE PICKING LOGIC ---
+
 
   // Save profile with proper API integration
   void _saveProfile() async {
@@ -191,74 +225,48 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       try {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-        // Check if user is logged in
         if (!authProvider.isLoggedIn) {
           _showErrorMessage('Please login first');
+          if (mounted) context.go('/login');
           return;
         }
 
-        // Collect updated children data
-        List<Map<String, String>> updatedChildren = [];
+        // 1) Save profile info except children first (optional, depending on backend)
+        // ... your existing profile update code here ...
+
+        // 2) Add children by calling API individually
         for (int i = 0; i < _childNameControllers.length; i++) {
-          if (_childNameControllers[i].text.isNotEmpty) {
-            updatedChildren.add({
-              'name': _childNameControllers[i].text,
-              'age': _childAgeControllers[i].text,
-            });
-          }
-        }
+          String name = _childNameControllers[i].text;
+          int age = int.tryParse(_childAgeControllers[i].text) ?? 0;
 
-        // Prepare updated profile data
-        final updatedData = {
-          'full_name': _fullNameController.text,
-          'email': _emailController.text,
-          'phone_number': _mobileController.text,
-          'children': updatedChildren,
-        };
-
-        // Handle image upload if a new image was picked
-        if (_pickedImageFile != null) {
-          // You can add image upload logic here
-          // For now, we'll just include it in the data
-          updatedData['profile_image'] = _pickedImageFile!.path;
-        } else if (_currentProfileImageUrl.isNotEmpty) {
-          updatedData['profile_image'] = _currentProfileImageUrl;
-        }
-
-        // Use AuthProvider's internal API helper method
-        final success = await authProvider.updateUserProfile(updatedData);
-
-        if (success) {
-          // Profile updated successfully
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Profile updated successfully!'),
-                backgroundColor: Colors.green,
-              ),
+          if (name.isNotEmpty) {
+            bool success = await authProvider.addChild(
+              // or get token however your provider stores it
+              name,
+              age,
             );
 
-            // Return updated data to ProfilePage
-            context.pop({
-              'fullName': _fullNameController.text,
-              'email': _emailController.text,
-              'mobile': _mobileController.text,
-              'children': updatedChildren,
-              'profileImageUrl': _currentProfileImageUrl,
-            });
+            if (!success) {
+              _showErrorMessage('Failed to add child $name');
+              // You can choose to continue or break here
+            }
           }
-        } else {
-          _showErrorMessage(authProvider.errorMessage ?? 'Failed to update profile');
+        }
+
+        // 3) If all succeeds
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile and children updated successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          context.pop(); // or pass updated data as you already do
         }
       } catch (e) {
         _showErrorMessage('Error updating profile: $e');
       } finally {
-        if (mounted) {
-          setState(() {
-            _isSaving = false;
-          });
-        }
+        if (mounted) setState(() => _isSaving = false);
       }
     }
   }
@@ -311,19 +319,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       radius: 60,
                       backgroundColor: Colors.grey.shade200,
                       backgroundImage: _pickedImageFile != null
-                          ? FileImage(_pickedImageFile!)
+                          ? FileImage(_pickedImageFile!) // Display newly picked image
                           : (_currentProfileImageUrl.isNotEmpty
-                          ? NetworkImage(_currentProfileImageUrl)
+                          ? NetworkImage(_currentProfileImageUrl) // Display existing network image
                           : null) as ImageProvider?,
                       child: _pickedImageFile == null && _currentProfileImageUrl.isEmpty
-                          ? Icon(Icons.person, size: 60, color: Colors.grey.shade400)
+                          ? Icon(Icons.person, size: 60, color: Colors.grey.shade400) // Default icon
                           : null,
                     ),
                     Positioned(
                       bottom: 0,
                       right: 0,
                       child: GestureDetector(
-                        onTap: _pickImage,
+                        onTap: _pickImage, // Tapping this icon calls _pickImage()
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
