@@ -12,6 +12,9 @@ import 'package:provider/provider.dart';
 import '../../../../presentation/common_providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../widgets/calendar_part.dart';
+
+
 class HeaderSection extends StatefulWidget {
   const HeaderSection({Key? key}) : super(key: key);
 
@@ -193,6 +196,8 @@ class _AuthInputFieldState extends State<AuthInputField> {
     );
   }
 }
+
+
 
 
 
@@ -725,51 +730,9 @@ class _HomePageState extends State<HomePage> {
                   SizedBox(height: mediumSpacing), // Responsive spacing
 
                   // Calendar Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'July 2025',
-                        style: TextStyle(
-                          fontSize: calendarMonthFontSize, // Responsive font size
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textColorPrimary,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.arrow_back_ios, size: screenWidth * 0.04), // Responsive icon size
-                            onPressed: () {
-                              // Handle previous month
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.arrow_forward_ios, size: screenWidth * 0.04), // Responsive icon size
-                            onPressed: () {
-                              // Handle next month
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: smallSpacing), // Responsive spacing
-                  // Pass the calendarDateStates from the provider to the calendar grid
-                  _buildCalendarGrid(context, availabilityProvider.calendarDateStates), // **FIXED LINE**
-                  SizedBox(height: mediumSpacing),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.circle, size: screenWidth * 0.03, color: AppColors.availableGreen), // Responsive icon size
-                      SizedBox(width: extraSmallSpacing),
-                      Text('Available', style: TextStyle(color: AppColors.textLight, fontSize: legendFontSize)), // Responsive font size
-                      SizedBox(width: smallSpacing),
-                      Icon(Icons.circle, size: screenWidth * 0.03, color: AppColors.unavailableRed), // Responsive icon size
-                      SizedBox(width: extraSmallSpacing),
-                      Text('Unavailable', style: TextStyle(color: AppColors.textColorSecondary, fontSize: legendFontSize)), // Responsive font size
-                    ],
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: CalendarPart(),
                   ),
                   SizedBox(height: largeSpacing), // Added spacing for bottom
                 ],

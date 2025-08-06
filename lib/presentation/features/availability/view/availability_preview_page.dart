@@ -1,12 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:circleslate/core/constants/shared_utilities.dart'; // Assuming this has AuthInputField or other common widgets
+import 'package:circleslate/core/constants/shared_utilities.dart';
 import 'package:circleslate/presentation/common_providers/availability_provider.dart';
-import 'package:circleslate/core/constants/app_colors.dart'; // Import AppColors
+import 'package:circleslate/core/constants/app_colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class AvailabilityPreviewPage extends StatelessWidget {
+class AvailabilityPreviewPage extends StatefulWidget {
   const AvailabilityPreviewPage({super.key});
+
+  @override
+  State<AvailabilityPreviewPage> createState() =>
+      _AvailabilityPreviewPageState();
+}
+
+class _AvailabilityPreviewPageState extends State<AvailabilityPreviewPage> {
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAvailability();
+  }
+
+  Future<void> _loadAvailability() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('accessToken') ?? '';
+    if (token.isNotEmpty) {
+      await Provider.of<AvailabilityProvider>(context, listen: false)
+          .fetchAvailabilityFromAPI(token);
+    }
+    setState(() => _isLoading = false);
+  }
 
   String _getStatusText(int status) {
     switch (status) {
@@ -28,7 +53,7 @@ class AvailabilityPreviewPage extends StatelessWidget {
         return AppColors.availableGreen;
       case 2:
       default:
-        return AppColors.primaryBlue; // Using primaryBlue for Tentative
+        return AppColors.primaryBlue;
     }
   }
 
@@ -50,19 +75,16 @@ class AvailabilityPreviewPage extends StatelessWidget {
     final double statusPaddingVertical = screenWidth * 0.012;
     final double borderRadiusSmall = screenWidth * 0.03;
     final double borderRadiusMedium = screenWidth * 0.05;
-    final double fabSize = screenWidth * 0.14; // Adjust as needed for FAB size
-    final double fabIconSize = screenWidth * 0.07; // Adjust as needed for FAB icon size
-
+    final double fabSize = screenWidth * 0.14;
+    final double fabIconSize = screenWidth * 0.07;
 
     // Watch the AvailabilityProvider for changes
     final availabilityProvider = Provider.of<AvailabilityProvider>(context);
 
     // Get today's weekday to highlight "Today"
-    final int todayWeekday = DateTime.now().weekday; // 1=Monday, ..., 7=Sunday
+    final int todayWeekday = DateTime.now().weekday;
 
-    // Map DateTime.weekday to a displayable string and an index for _weeklyAvailability
-    // Ensure that DateTime.sunday is handled correctly as 7 or 0 depending on usage if not standard
-    // Flutter's DateTime.sunday is 7, Monday is 1.
+    // Weekdays mapping
     final List<Map<String, dynamic>> weekDaysData = [
       {'name': 'Sunday', 'weekday': DateTime.sunday},
       {'name': 'Monday', 'weekday': DateTime.monday},
@@ -79,7 +101,8 @@ class AvailabilityPreviewPage extends StatelessWidget {
         backgroundColor: AppColors.buttonPrimary,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white, size: screenWidth * 0.06), // Responsive icon size
+          icon: Icon(Icons.arrow_back,
+              color: Colors.white, size: screenWidth * 0.06),
           onPressed: () {
             context.pop();
           },
@@ -88,36 +111,38 @@ class AvailabilityPreviewPage extends StatelessWidget {
           'Preview',
           style: TextStyle(
             color: Colors.white,
-            fontSize: appBarTitleFontSize, // Responsive font size
+            fontSize: appBarTitleFontSize,
             fontWeight: FontWeight.w500,
             fontFamily: 'Poppins',
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(mainPadding), // Responsive padding
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+        padding: EdgeInsets.all(mainPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'This Week\'s Availability',
               style: TextStyle(
-                fontSize: sectionTitleFontSize, // Responsive font size
+                fontSize: sectionTitleFontSize,
                 fontWeight: FontWeight.w500,
                 color: AppColors.textColorPrimary,
                 fontFamily: 'Poppins',
               ),
             ),
-            SizedBox(height: sectionSpacing), // Responsive spacing
+            SizedBox(height: sectionSpacing),
             Container(
-              padding: EdgeInsets.all(screenWidth * 0.04), // Responsive padding
+              padding: EdgeInsets.all(screenWidth * 0.04),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(borderRadiusSmall), // Responsive border radius
+                borderRadius: BorderRadius.circular(borderRadiusSmall),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
-                    blurRadius: 6, // Blur radius can often remain fixed or scale minimally
+                    blurRadius: 6,
                   ),
                 ],
               ),
@@ -130,38 +155,48 @@ class AvailabilityPreviewPage extends StatelessWidget {
                   final dayWeekday = weekDaysData[index]['weekday'];
                   final isToday = dayWeekday == todayWeekday;
 
-                  // Get status and time range from the provider's weekly data
-                  // Make sure your AvailabilityProvider has _weeklyAvailability and _weeklyTimeRanges maps
-                  final int status = availabilityProvider.weeklyAvailability[dayWeekday] ?? 2; // Default to Tentative
-                  final String timeRange = availabilityProvider.weeklyTimeRanges[dayWeekday] ?? 'Not Set';
+                  // Get API data
+                  final apiData =
+                      availabilityProvider.apiAvailability;
+                  final int status =
+                      apiData[dayWeekday]?['status'] ?? 2;
+                  final String timeRange =
+                      apiData[dayWeekday]?['timeRange'] ?? 'Not Set';
 
                   final String statusText = _getStatusText(status);
                   final Color statusColor = _getStatusColor(status);
 
                   return Padding(
-                    padding: EdgeInsets.symmetric(vertical: itemVerticalPadding), // Responsive padding
+                    padding: EdgeInsets.symmetric(
+                        vertical: itemVerticalPadding),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           isToday ? '$dayName (Today)' : dayName,
                           style: TextStyle(
-                            fontSize: dayNameFontSize, // Responsive font size
-                            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                            fontSize: dayNameFontSize,
+                            fontWeight: isToday
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                             color: AppColors.textColorPrimary,
                           ),
                         ),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: statusPaddingHorizontal, vertical: statusPaddingVertical), // Responsive padding
+                          padding: EdgeInsets.symmetric(
+                              horizontal: statusPaddingHorizontal,
+                              vertical: statusPaddingVertical),
                           decoration: BoxDecoration(
                             color: statusColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(borderRadiusMedium), // Responsive border radius
-                            border: Border.all(color: statusColor, width: 1.0), // Border width can remain fixed or scale slightly
+                            borderRadius: BorderRadius.circular(
+                                borderRadiusMedium),
+                            border: Border.all(
+                                color: statusColor, width: 1.0),
                           ),
                           child: Text(
-                            '$statusText ${timeRange}',
+                            '$statusText $timeRange',
                             style: TextStyle(
-                              fontSize: statusTextFontSize, // Responsive font size
+                              fontSize: statusTextFontSize,
                               color: statusColor,
                               fontWeight: FontWeight.w500,
                             ),
@@ -173,20 +208,22 @@ class AvailabilityPreviewPage extends StatelessWidget {
                 },
               ),
             ),
-            SizedBox(height: screenWidth * 0.07), // Responsive spacing before FAB
+            SizedBox(height: screenWidth * 0.07),
             Align(
               alignment: Alignment.centerRight,
               child: SizedBox(
-                width: fabSize, // Responsive FAB size
-                height: fabSize, // Responsive FAB size
+                width: fabSize,
+                height: fabSize,
                 child: FloatingActionButton(
-                  onPressed: () {
-                    // Navigate to the availability settings page to edit
-                    context.push('/availability');
+                  onPressed: () async {
+                    // Go to edit page and refresh when back
+                    await context.push('/availability');
+                    _loadAvailability();
                   },
                   backgroundColor: AppColors.primaryBlue,
-                  shape: const CircleBorder(), // Ensure it remains circular
-                  child: Icon(Icons.add, color: Colors.white, size: fabIconSize), // Responsive icon size
+                  shape: const CircleBorder(),
+                  child: Icon(Icons.add,
+                      color: Colors.white, size: fabIconSize),
                 ),
               ),
             ),
@@ -196,16 +233,16 @@ class AvailabilityPreviewPage extends StatelessWidget {
     );
   }
 
-  // This method is for determining the selected index of a bottom navigation bar,
-  // which is typically part of a Scaffold with a BottomNavigationBar, not this standalone page.
-  // It's fine to keep it here if it's reused, but it won't directly affect this page's UI.
   int _getCurrentIndex(BuildContext context) {
-    final String location = GoRouter.of(context).routerDelegate.currentConfiguration.uri.toString();
+    final String location =
+    GoRouter.of(context).routerDelegate.currentConfiguration.uri.toString();
     if (location == '/home') return 0;
     if (location == '/up_coming_events') return 1;
     if (location == '/group_chat') return 2;
-    if (location == '/availability' || location == '/availability_preview') return 3; // Both availability pages fall under this tab
+    if (location == '/availability' || location == '/availability_preview') {
+      return 3;
+    }
     if (location == '/settings') return 4;
-    return 0; // Default
+    return 0;
   }
 }

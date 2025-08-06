@@ -12,28 +12,81 @@ class AvailabilityPage extends StatefulWidget {
 }
 
 class _AvailabilityPageState extends State<AvailabilityPage> {
-
   int _selectedStatus = 1;
   int _selectedDayIndex = 0;
   int _selectedTimeSlotIndex = -1;
   int _selectedRepeatOption = 0;
 
-  List<Map<String, String>> _days = [
-    {"day": "Sun", "date": "28"},
-    {"day": "Mon", "date": "29"},
-    {"day": "Tue", "date": "30"},
-    {"day": "Wed", "date": "31"},
-    {"day": "Thu", "date": "1"},
-    {"day": "Fri", "date": "2"},
-    {"day": "Sat", "date": "3"},
-  ];
+  List<Map<String, String>> _generateCurrentWeekDays() {
+    final now = DateTime.now();
+
+    // Find the Sunday of the current week
+    final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
+
+    // Create a list for 7 days
+    return List.generate(7, (index) {
+      final date = startOfWeek.add(Duration(days: index));
+      return {
+        "day": _getDayName(date.weekday),
+        "date": date.day.toString(),
+      };
+    });
+  }
+
+  String _getDayName(int weekday) {
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    return days[weekday % 7];
+  }
 
   List<String> _timeSlots = [
     'Morning\n8:00-12:00',
     'Afternoon\n12:00-5:00',
     'Evening\n5:00-8:00',
-    'Night\n8:00-10:00'
+    'Night\n8:00-10:00',
   ];
+
+  int _currentMonth = DateTime.now().month;
+  int _currentYear = DateTime.now().year;
+
+
+  List<Map<String, String>> _days = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _days = _generateCurrentWeekDays();
+    // Load current month availability on page open
+    Provider.of<AvailabilityProvider>(context, listen: false)
+        .fetchMonthAvailabilityFromAPI(_currentYear, _currentMonth);
+  }
+
+  void _goToNextMonth() {
+    setState(() {
+      if (_currentMonth == 12) {
+        _currentMonth = 1;
+        _currentYear++;
+      } else {
+        _currentMonth++;
+      }
+    });
+    Provider.of<AvailabilityProvider>(context, listen: false)
+        .fetchMonthAvailabilityFromAPI(_currentYear, _currentMonth);
+  }
+
+  void _goToPreviousMonth() {
+    setState(() {
+      if (_currentMonth == 1) {
+        _currentMonth = 12;
+        _currentYear--;
+      } else {
+        _currentMonth--;
+      }
+    });
+    Provider.of<AvailabilityProvider>(context, listen: false)
+        .fetchMonthAvailabilityFromAPI(_currentYear, _currentMonth);
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +131,8 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Flexible( // Use Flexible for each status card
+                Flexible(
+                  // Use Flexible for each status card
                   child: _buildStatusCard(
                     status: 1,
                     title: 'Available',
@@ -156,16 +210,22 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
             _buildRepeatScheduleOptions(),
 
             Center(
-              child: ElevatedButton(onPressed: (){
-                context.push('/availability_preview');
-              },
+              child: ElevatedButton(
+                onPressed: () {
+                  context.push('/availability_preview');
+                },
                 style: ElevatedButton.styleFrom(
                   shadowColor: Color(0x1A000000),
                   backgroundColor: AppColors.primaryBlue,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-                  padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0), // Added horizontal padding
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 10.0,
+                    horizontal: 20.0,
+                  ), // Added horizontal padding
                 ),
-                child:  const Text(
+                child: const Text(
                   'Preview',
                   style: TextStyle(color: Colors.white, fontSize: 14.0),
                 ),
@@ -182,50 +242,80 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
                     },
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: AppColors.primaryBlue),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
                     ),
                     child: const Text(
                       'Cancel',
-                      style: TextStyle(color: AppColors.primaryBlue, fontSize: 14.0),
+                      style: TextStyle(
+                        color: AppColors.primaryBlue,
+                        fontSize: 14.0,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 16.0),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
-                      final availabilityProvider = Provider.of<AvailabilityProvider>(context, listen: false);
-                      List<int> datesToUpdate = [];
-
-                      if (_days.isNotEmpty) { // This condition seems unusual; _days is always non-empty
-                        // It seems you want to add _selectedDayIndex's date if selected
-                        // For demonstration, let's use the selected date
-                        int? selectedDate = int.tryParse(_days[_selectedDayIndex]["date"]!);
-                        if (selectedDate != null) {
-                          datesToUpdate.add(selectedDate);
-                        }
-                      } else {
-                        datesToUpdate = [1, 5, 10, 15, 20, 25]; // Fallback if _days was empty
-                      }
-
-                      availabilityProvider.setAvailabilityForDates(datesToUpdate, _selectedStatus);
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Availability Saved!')),
+                    onPressed: () async {
+                      final provider = Provider.of<AvailabilityProvider>(
+                        context,
+                        listen: false,
                       );
-                      context.push('/up_coming_events'); // Navigates to a different page
+
+                      // ✅ Dynamically generate start date
+                      final now = DateTime.now();
+                      final year = now.year;
+                      final month = now.month.toString().padLeft(2, '0');
+                      String selectedDay = padDay(
+                        _days[_selectedDayIndex]["date"]!,
+                      );
+                      String startDate = "$year-$month-$selectedDay";
+
+                      // ✅ Example: End date same as start date
+                      // You can change Duration(days: X) if needed
+                      final endDateObj = DateTime(year, int.parse(month), int.parse(selectedDay));
+                      String endDate =
+                          "${endDateObj.year}-${endDateObj.month.toString().padLeft(2, '0')}-${endDateObj.day.toString().padLeft(2, '0')}";
+
+                      // 🚀 Call API
+                      bool success = await provider.saveAvailabilityToAPI(
+                        selectedStatus: _selectedStatus,
+                        selectedTimeSlotIndex: _selectedTimeSlotIndex,
+                        selectedRepeatOption: _selectedRepeatOption,
+                        startDate: startDate,
+                        endDate: endDate, // ✅ No null now
+                        notes: null,
+                        token: null, // Later: fetch from SharedPreferences
+                      );
+
+                      if (success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Availability Saved!')),
+                        );
+                        context.push('/up_coming_events');
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Failed to save availability'),
+                          ),
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryBlue,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
                     ),
                     child: const Text(
                       'Save',
                       style: TextStyle(color: Colors.white, fontSize: 14.0),
                     ),
-                  ),
+                  )
                 ),
               ],
             ),
@@ -233,6 +323,10 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
         ),
       ),
     );
+  }
+
+  String padDay(String day) {
+    return day.length == 1 ? '0$day' : day;
   }
 
   // ⬇️ STATUS CARD (Added responsive width to inner Container)
@@ -253,7 +347,10 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
       },
       child: Container(
         // Removed fixed width: 100
-        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 4.0), // Reduced horizontal padding
+        padding: const EdgeInsets.symmetric(
+          vertical: 16.0,
+          horizontal: 4.0,
+        ), // Reduced horizontal padding
         decoration: BoxDecoration(
           color: isSelected ? borderColor.withOpacity(0.1) : Colors.white,
           borderRadius: BorderRadius.circular(12.0),
@@ -263,12 +360,12 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
           ),
           boxShadow: isSelected
               ? [
-            BoxShadow(
-              color: borderColor.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ]
+                  BoxShadow(
+                    color: borderColor.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
               : [],
         ),
         child: Column(
@@ -304,7 +401,8 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
   }
 
   // ⬇️ DAY SELECTOR (Modified to use Expanded for each day cell)
-  Widget _buildDaySelector(double screenWidth) { // Accepts screenWidth
+  Widget _buildDaySelector(double screenWidth) {
+    // Accepts screenWidth
     return Container(
       padding: const EdgeInsets.all(10.0), // Slightly reduced overall padding
       margin: const EdgeInsets.only(bottom: 16.0),
@@ -320,10 +418,12 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Still use spaceBetween
+        mainAxisAlignment:
+            MainAxisAlignment.spaceBetween, // Still use spaceBetween
         children: List.generate(_days.length, (index) {
           bool isSelected = _selectedDayIndex == index;
-          return Expanded( // <-- CRITICAL CHANGE: Use Expanded for each day item
+          return Expanded(
+            // <-- CRITICAL CHANGE: Use Expanded for each day item
             child: GestureDetector(
               onTap: () {
                 setState(() {
@@ -332,7 +432,10 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
               },
               child: Container(
                 // No fixed width here, Expanded will manage it
-                padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: screenWidth * 0.005), // Make horizontal padding very small and responsive
+                padding: EdgeInsets.symmetric(
+                  vertical: 12.0,
+                  horizontal: screenWidth * 0.005,
+                ), // Make horizontal padding very small and responsive
                 decoration: BoxDecoration(
                   color: isSelected ? Colors.blue.shade100 : Colors.transparent,
                   borderRadius: BorderRadius.circular(8.0),
@@ -341,13 +444,15 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
                   ),
                 ),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min, // Ensure Column takes min height
+                  mainAxisSize:
+                      MainAxisSize.min, // Ensure Column takes min height
                   children: [
                     Text(
                       _days[index]["day"]!,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: screenWidth * 0.035, // Responsive font size for day
+                        fontSize:
+                            screenWidth * 0.035, // Responsive font size for day
                         color: isSelected ? Colors.blue : Colors.black87,
                       ),
                       textAlign: TextAlign.center,
@@ -358,8 +463,11 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
                     Text(
                       _days[index]["date"]!,
                       style: TextStyle(
-                        fontSize: screenWidth * 0.03, // Responsive font size for date
-                        color: isSelected ? Colors.blue : AppColors.textColorPrimary,
+                        fontSize:
+                            screenWidth * 0.03, // Responsive font size for date
+                        color: isSelected
+                            ? Colors.blue
+                            : AppColors.textColorPrimary,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
@@ -376,7 +484,8 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
   }
 
   // ⬇️ TIME SLOT SELECTOR (Added responsive adjustments)
-  Widget _buildTimeSlotSelector(double screenWidth) { // Accepts screenWidth
+  Widget _buildTimeSlotSelector(double screenWidth) {
+    // Accepts screenWidth
     return Container(
       padding: const EdgeInsets.all(10.0), // Slightly reduced overall padding
       decoration: BoxDecoration(
@@ -395,7 +504,9 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
         crossAxisCount: 2,
         mainAxisSpacing: 10, // Reduced spacing
         crossAxisSpacing: 10, // Reduced spacing
-        childAspectRatio: (screenWidth / 2 - 20) / (screenWidth * 0.18), // Responsive aspect ratio
+        childAspectRatio:
+            (screenWidth / 2 - 20) /
+            (screenWidth * 0.18), // Responsive aspect ratio
         physics: const NeverScrollableScrollPhysics(),
         children: List.generate(_timeSlots.length, (index) {
           bool isSelected = _selectedTimeSlotIndex == index;
@@ -408,10 +519,14 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
             child: Container(
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0x80D8ECFF) : const Color(0xFFFFFFFF),
+                color: isSelected
+                    ? const Color(0x80D8ECFF)
+                    : const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(8.0),
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF5A8DEE) : const Color(0x1A1B1D2A),
+                  color: isSelected
+                      ? const Color(0xFF5A8DEE)
+                      : const Color(0x1A1B1D2A),
                 ),
               ),
               child: Text(
@@ -419,8 +534,11 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
-                  fontSize: screenWidth * 0.035, // Responsive font size for time slot
-                  color: isSelected ? AppColors.buttonPrimary : AppColors.textColorPrimary,
+                  fontSize:
+                      screenWidth * 0.035, // Responsive font size for time slot
+                  color: isSelected
+                      ? AppColors.buttonPrimary
+                      : AppColors.textColorPrimary,
                 ),
               ),
             ),
@@ -494,7 +612,9 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
                   });
                 },
                 activeColor: AppColors.primaryBlue,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10.0), // Reduced padding
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 10.0,
+                ), // Reduced padding
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),

@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_assets.dart';
+import '../../../common_providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -23,19 +27,21 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _startLoadingAndNavigate() async {
-    const totalDuration = Duration(seconds: 3);
-    const updateInterval = Duration(milliseconds: 50); // Update progress every 50ms
-    int steps = (totalDuration.inMilliseconds / updateInterval.inMilliseconds).round();
+    Timer(const Duration(seconds: 3), () async {
+      final prefs = await SharedPreferences.getInstance();
+      final savedAccessToken = prefs.getString('accessToken');
+      String? token = savedAccessToken;
 
-    for (int i = 0; i <= steps; i++) {
-      if (!mounted) return; // Check if the widget is still in the tree
-      _loadingProgress.value = i / steps;
-      await Future.delayed(updateInterval);
-    }
+      // If token exists, the user is logged in
+      if (token != null && token.isNotEmpty) {
+        // Redirect to the main screen (e.g., Bottom Navbar or Home)
+        context.goNamed('home'); // Use GoRouter to navigate to the home route
+      } else {
+        // Redirect to the Welcome Screen if no token is found
+        context.goNamed('onboarding'); // Use GoRouter to navigate to the home route
 
-    if (mounted) {
-      context.go(RoutePaths.onboarding);
-    }
+      }
+    });
   }
 
   @override

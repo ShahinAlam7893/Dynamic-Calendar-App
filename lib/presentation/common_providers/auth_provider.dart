@@ -20,13 +20,14 @@ class ApiEndpoints {
 
 class AuthProvider extends ChangeNotifier {
   final ApiBaseHelper _apiBaseHelper = ApiBaseHelper();
-  final UserService _userService;
+  final AuthService _userService;
 
   bool _isLoading = false;
   String? _errorMessage;
   String? _userEmail;
   String? _userOtp;
   String? _accessToken;
+  String? aToken;
   String? _refreshToken;
   Map<String, dynamic>? _userProfile;
 
@@ -35,9 +36,10 @@ class AuthProvider extends ChangeNotifier {
   Map<String, dynamic>? get userProfile => _userProfile;
   bool get isLoggedIn => _accessToken != null;
 
-  AuthProvider() : _userService = UserService(ApiBaseHelper()) {
-    _loadTokensFromStorage();
+  AuthProvider() : _userService = AuthService(ApiBaseHelper()) {
+    Future.microtask(() => loadTokensFromStorage());
   }
+
 
   // -------------------- REGISTER --------------------
   Future<bool> registerUser({
@@ -88,8 +90,10 @@ class AuthProvider extends ChangeNotifier {
         _accessToken = data['tokens']['access'];
         _refreshToken = data['tokens']['refresh'];
         await _saveTokensToStorage();
+        aToken = await loadTokensFromStorage();
+        print("Token from storage after login: $aToken");
 
-        print(_accessToken);
+
 
         _setLoading(false);
         notifyListeners();
@@ -102,20 +106,29 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+
+
+
+
+
   Future<bool> addChild(String name, int age) async {
     final url = Uri.parse('http://10.10.13.27:8000/api/auth/children/');
+
+    final prefs = await SharedPreferences.getInstance();
+    final savedAccessToken = prefs.getString('accessToken');
+    String? token = savedAccessToken;
 
     // 🛠 Debug: Print request details
     print('--- ADD CHILD API CALL ---');
     print('URL: $url');
-    print('Headers: {Content-Type: application/json, Authorization: Bearer $_accessToken}');
+    print('Headers: {Content-Type: application/json, Authorization: Bearer $token}');
     print('Body: ${jsonEncode({'name': name, 'age': age})}');
 
     final response = await http.post(
       url,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $_accessToken',
+        'Authorization': 'Bearer $token',
       },
       body: jsonEncode({'name': name, 'age': age}),
     );
@@ -137,11 +150,14 @@ class AuthProvider extends ChangeNotifier {
   Future<List<Map<String, dynamic>>> fetchChildren() async {
     final url = Uri.parse('http://10.10.13.27:8000/api/auth/children/');
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedAccessToken = prefs.getString('accessToken');
+      String? token = savedAccessToken;
       final response = await http.get(
         url,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_accessToken',
+          'Authorization': 'Bearer $token',
         },
       );
 
@@ -497,15 +513,27 @@ class AuthProvider extends ChangeNotifier {
   // -------------------- TOKEN STORAGE --------------------
   Future<void> _saveTokensToStorage() async {
     final prefs = await SharedPreferences.getInstance();
-    if (_accessToken != null) prefs.setString("accessToken", _accessToken!);
-    if (_refreshToken != null) prefs.setString("refreshToken", _refreshToken!);
+    await prefs.setString('accessToken', _accessToken ?? '');
+    await prefs.setString('refreshToken', _refreshToken ?? '');
   }
 
-  Future<void> _loadTokensFromStorage() async {
+  Future<String?> loadTokensFromStorage() async {
     final prefs = await SharedPreferences.getInstance();
-    _accessToken = prefs.getString("accessToken");
-    _refreshToken = prefs.getString("refreshToken");
+    final savedAccessToken = prefs.getString('accessToken');
+    final savedRefreshToken = prefs.getString('refreshToken');
+
+    // print("Loaded Access Token: $savedAccessToken");
+    // print("Loaded Refresh Token: $savedRefreshToken");
+
+    _accessToken = savedAccessToken;
+    _refreshToken = savedRefreshToken;
+
+    // return the token so caller can print/use it
+    return savedAccessToken;
   }
+
+
+
 
   // -------------------- HELPERS --------------------
   void _setLoading(bool value) {
@@ -518,5 +546,11 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = false;
     notifyListeners();
     return false;
+  }
+
+  void setTokens(String? accessToken, String? refreshToken) {
+    _accessToken = accessToken;
+    _refreshToken = refreshToken;
+    notifyListeners();
   }
 }

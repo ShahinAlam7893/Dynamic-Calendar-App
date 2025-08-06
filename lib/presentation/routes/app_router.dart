@@ -295,10 +295,10 @@ class AppRouter {
         path: RoutePaths.profile,
         builder: (context, state) => const ProfilePage(),
       ),
-      // GoRoute(
-      //   path: RoutePaths.availability,
-      //   builder: (context, state) => const AvailabilityPage(),
-      // ),
+      GoRoute(
+        path: RoutePaths.availability,
+        builder: (context, state) => const AvailabilityPage(),
+      ),
       GoRoute(
         path: RoutePaths.availabilitypreview,
         builder: (context, state) => const AvailabilityPreviewPage(),

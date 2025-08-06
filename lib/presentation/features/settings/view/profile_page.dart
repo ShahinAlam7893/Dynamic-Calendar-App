@@ -102,7 +102,6 @@ class _AuthInputFieldState extends State<AuthInputField> {
     );
   }
 }
-
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -114,47 +113,65 @@ class _ProfilePageState extends State<ProfilePage> {
   String _fullName = '';
   String _email = '';
   String _mobile = '';
-  List<Map<String, dynamic>> _children = [];
   String _profileImageUrl = '';
+  List<Map<String, dynamic>> _children = [];
+  bool _isLoading = true;
+  bool _isLoadingChildren = true; // ✅ Track loading state for children
 
   @override
   void initState() {
     super.initState();
+    _fetchProfileData();
+  }
 
-    Future.microtask(() async {
-      final authProvider = context.read<AuthProvider>();
-      final success = await authProvider.fetchUserProfile();
-      if (success && mounted) {
-        final profile = authProvider.userProfile ?? {};
+  /// ✅ Fetch profile and children
+  Future<void> _fetchProfileData() async {
+    setState(() => _isLoading = true);
 
-        // ✅ Children are inside profile["profile"]["children"]
-        final childrenList = (profile["profile"]?["children"] as List?) ?? [];
-        // ✅ Ensure profile image is absolute URL
-        String imageUrl = profile['profile_photo'] ?? '';
-        if (imageUrl.isNotEmpty && !imageUrl.startsWith("http")) {
-          imageUrl = "http://10.10.13.27:8000/api/auth/profile/update/"; // Change base URL
+    final authProvider = context.read<AuthProvider>();
+    final success = await authProvider.fetchUserProfile();
 
-        }
+    if (success && mounted) {
+      final profile = authProvider.userProfile ?? {};
 
-        setState(() {
-          _fullName = profile['full_name'] ?? '';
-          _email = profile['email'] ?? '';
-          _mobile = profile['phone_number'] ?? '';
-          _profileImageUrl = imageUrl;
+      // ✅ Children inside profile["profile"]["children"]
+      final childrenList = (profile["profile"]?["children"] as List?) ?? [];
 
-          _children = childrenList.map((child) {
-            return {
-              'name': child['name']?.toString() ?? '',
-              'age': child['age']?.toString() ?? '',
-            };
-          }).toList();
-        });
-
-        debugPrint("✅ Loaded Profile: $_fullName, $_email, $_mobile, $_children");
-      } else {
-        debugPrint("❌ Failed to fetch profile data.");
+      // ✅ Ensure profile image is absolute URL
+      String imageUrl = profile['profile_photo'] ?? '';
+      if (imageUrl.isNotEmpty && !imageUrl.startsWith("http")) {
+        imageUrl =
+        "http://10.10.13.27:8000${imageUrl}"; // ← Change base URL if needed
       }
-    });
+
+      setState(() {
+        _fullName = profile['full_name'] ?? '';
+        _email = profile['email'] ?? '';
+        _mobile = profile['phone_number'] ?? '';
+        _profileImageUrl = imageUrl;
+        _children = childrenList.map((child) {
+          return {
+            'name': child['name']?.toString() ?? '',
+            'age': child['age']?.toString() ?? '',
+          };
+        }).toList();
+        _isLoading = false;
+      });
+
+      debugPrint(
+          "✅ Loaded Profile: $_fullName, $_email, $_mobile, $_children");
+    } else {
+      debugPrint("❌ Failed to fetch profile data.");
+      setState(() => _isLoading = false);
+    }
+  }
+
+  /// ✅ Add new child & refresh
+  Future<void> _addNewChild(String name, int age) async {
+    //final success = await AuthProvider.addChild(name, age);
+    // if (success) {
+    //   await _fetchProfileData(); // refresh children after adding
+    // }
   }
 
 
@@ -447,9 +464,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 20.0),
 
                   // My Children
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 8.0),
-                    child: Text(
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: const Text(
                       'My Children',
                       style: TextStyle(
                         fontSize: 14.0,
@@ -476,38 +493,39 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ],
                     ),
-                    child: Column(
-                      children: _children.isEmpty
-                          ? [
-                              const Text(
-                                "No children added.",
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  color: AppColors.textColorPrimary,
+                    child: _isLoadingChildren
+                        ? const Center(child: CircularProgressIndicator())
+                        : _children.isEmpty
+                        ? const Text(
+                      "No children added.",
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        color: AppColors.textColorPrimary,
+                      ),
+                    )
+                        : Column(
+                      children: _children.map((child) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${child['name']}: ${child['age']}',
+                                  style: const TextStyle(
+                                    fontSize: 16.0,
+                                    color: AppColors.textColorPrimary,
+                                    fontFamily: 'Poppins',
+                                  ),
                                 ),
                               ),
-                            ]
-                          : _children.map((child) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 8.0),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        '${child['name']}: ${child['age']}',
-                                        style: const TextStyle(
-                                          fontSize: 16.0,
-                                          color: AppColors.textColorPrimary,
-                                          fontFamily: 'Poppins',
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ),
+
 
                   const SizedBox(height: 30.0),
 
