@@ -1,13 +1,13 @@
-import 'package:circleslate/presentation/features/chat/view/chat_screen.dart';
-import 'package:circleslate/presentation/routes/app_router.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart'; // For date and time formatting
+import 'package:intl/intl.dart';
 import 'package:circleslate/core/constants/app_assets.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
-// ... (existing imports)
+import 'package:circleslate/core/services/websocket_service.dart';
+import 'package:circleslate/core/services/chat_api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import the API service
 
-// --- Message Model ---
+// Your Message class and enums remain the same
 enum MessageSender { user, other }
 enum MessageStatus { sent, delivered, seen }
 
@@ -17,188 +17,376 @@ class Message {
   final MessageSender sender;
   final String? senderImageUrl;
   final MessageStatus status;
+
   const Message({
     required this.text,
     required this.timestamp,
     required this.sender,
     this.senderImageUrl,
-    this.status = MessageStatus.sent, // Default to sent
+    this.status = MessageStatus.sent,
   });
 }
 
 class OneToOneConversationPage extends StatefulWidget {
   final String chatPartnerName;
-  final bool isGroupChat; // New parameter to indicate if it's a group chat
-  final bool isCurrentUserAdminInGroup; // New parameter for admin status
+  final String currentUserId;
+  final String chatPartnerId;
+  final String? conversationId; // Add this parameter
 
   const OneToOneConversationPage({
     super.key,
     required this.chatPartnerName,
-    this.isGroupChat = false, // Default to false
-    this.isCurrentUserAdminInGroup = false, // Default to false
+    required this.currentUserId,
+    required this.chatPartnerId,
+    this.conversationId, // Optional for now
   });
 
   @override
-  State<OneToOneConversationPage> createState() =>
-      _OneToOneConversationPageState();
+  State<OneToOneConversationPage> createState() => _OneToOneConversationPageState();
 }
-
-class _OneToOneConversationPageState extends State<OneToOneConversationPage> {
+class _OneToOneConversationPageState extends State<OneToOneConversationPage> with WidgetsBindingObserver {
   final TextEditingController _messageController = TextEditingController();
+  final List<Message> _messages = [];
+  final ChatSocketService _chatSocketService = ChatSocketService();
+  final ChatApiService _chatApiService = ChatApiService();
+  final ScrollController _scrollController = ScrollController();
 
-  final List<Message> messages = [
-    Message(
-      text:
-      'Hi! Thanks for accepting to give Jenny a ride home from soccer practice! 😊',
-      timestamp: DateTime(2025, 7, 25, 9, 0), // July 25, 9:00 AM
-      sender: MessageSender.other,
-      senderImageUrl:
-      AppAssets.sarahMartinez, // Assuming Sarah Martinez is the other person
-      status: MessageStatus.seen,
-    ),
-    Message(
-      text:
-      'No problem at all! Happy to help. Jenny and Ella are good friends 👍',
-      timestamp: DateTime(2025, 7, 25, 9, 36), // July 25, 9:36 AM
-      sender: MessageSender.user,
-      senderImageUrl:
-      AppAssets.jennyProfile, // Assuming Jenny is the current user
-      status: MessageStatus.seen,
-    ),
-    Message(
-      text:
-      'Perfect! Practice should end around 4:00 PM. Should I tell Jenny to wait by the main entrance?',
-      timestamp: DateTime(2025, 7, 25, 9, 56), // July 25, 9:56 AM
-      sender: MessageSender.other,
-      senderImageUrl: AppAssets.sarahMartinez,
-      status: MessageStatus.seen,
-    ),
-    Message(
-      text:
-      'Yes, that works perfectly. I\'ll be there around 4:05 PM to pick up both girls. I drive a blue Honda Civic.',
-      timestamp: DateTime(2025, 7, 25, 10, 6), // July 25, 10:06 AM
-      sender: MessageSender.user,
-      senderImageUrl: AppAssets.jennyProfile,
-      status: MessageStatus.seen,
-    ),
-    // Example messages for different statuses
-    Message(
-      text: 'Just left home, see you soon!',
-      timestamp: DateTime(2025, 7, 25, 10, 30),
-      sender: MessageSender.user,
-      senderImageUrl: AppAssets.jennyProfile,
-      status: MessageStatus.delivered, // Sent but not seen (double gray check)
-    ),
-    Message(
-      text: 'Okay, sounds good!',
-      timestamp: DateTime(2025, 7, 25, 10, 35),
-      sender: MessageSender.other,
-      senderImageUrl: AppAssets.sarahMartinez,
-      status: MessageStatus.sent, // Sent (single check)
-    ),
-  ];
+  late final String _conversationId;
+  bool _isLoading = true;
+  DateTime? _lastMessageTime;
 
-  void _sendMessage() {
-    if (_messageController.text.isNotEmpty) {
-      setState(() {
-        messages.add(
-          Message(
-            text: _messageController.text,
-            timestamp: DateTime.now(),
-            sender: MessageSender.user, // Assuming current user sends messages
-            senderImageUrl: AppAssets.jennyProfile, // Current user's profile
-            status: MessageStatus.sent, // Default to sent when sending
-          ),
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _conversationId = widget.conversationId ?? _getOrCreateConversationId();
+    _loadMessagesFromLocal().then((_) => _loadMessages());
+  }
+
+  Future<void> _loadMessagesFromLocal() async {
+    final prefs = await SharedPreferences.getInstance();
+    final messageJsonList = prefs.getStringList('messages_$_conversationId') ?? [];
+    final pendingMessages = prefs.getStringList('pending_messages_$_conversationId') ?? [];
+
+    final loadedMessages = messageJsonList.map((jsonStr) {
+      final data = jsonDecode(jsonStr);
+      return Message(
+        text: data['text'],
+        timestamp: DateTime.parse(data['timestamp']),
+        sender: data['sender'] == 'user' ? MessageSender.user : MessageSender.other,
+        senderImageUrl: data['senderImageUrl'],
+        status: MessageStatus.values.firstWhere((e) => e.toString() == data['status']),
+      );
+    }).toList();
+
+    for (var jsonStr in pendingMessages) {
+      final data = jsonDecode(jsonStr);
+      loadedMessages.add(Message(
+        text: data['content'],
+        timestamp: DateTime.parse(data['timestamp']),
+        sender: MessageSender.user,
+        senderImageUrl: AppAssets.jennyProfile,
+        status: MessageStatus.sent,
+      ));
+    }
+
+    setState(() {
+      _messages.clear();
+      _messages.addAll(loadedMessages);
+      _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      if (_messages.isNotEmpty) {
+        _lastMessageTime = _messages.last.timestamp;
+      }
+    });
+    _scrollToBottom();
+  }
+
+  Future<void> _saveMessagesToLocal() async {
+    final prefs = await SharedPreferences.getInstance();
+    final messageJsonList = _messages.map((msg) => jsonEncode({
+      'text': msg.text,
+      'timestamp': msg.timestamp.toIso8601String(),
+      'sender': msg.sender == MessageSender.user ? 'user' : 'other',
+      'senderImageUrl': msg.senderImageUrl,
+      'status': msg.status.toString(),
+    })).toList();
+    await prefs.setStringList('messages_$_conversationId', messageJsonList);
+  }
+
+  Future<void> _removePendingMessage(String clientMessageId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final pendingMessages = prefs.getStringList('pending_messages_$_conversationId') ?? [];
+    pendingMessages.removeWhere((jsonStr) => jsonDecode(jsonStr)['client_message_id'] == clientMessageId);
+    await prefs.setStringList('pending_messages_$_conversationId', pendingMessages);
+  }
+
+  void _loadMessages() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final history = await _chatApiService.fetchChatHistory(_conversationId);
+      final uiMessages = history.map((messageModel) {
+        return Message(
+          text: messageModel.content,
+          timestamp: messageModel.timestamp,
+          sender: messageModel.senderId == widget.currentUserId ? MessageSender.user : MessageSender.other,
+          senderImageUrl: messageModel.senderId == widget.currentUserId ? AppAssets.jennyProfile : AppAssets.sarahMartinez,
+          status: messageModel.isRead ? MessageStatus.seen : MessageStatus.delivered,
         );
-        _messageController.clear();
+      }).toList();
+
+      setState(() {
+        _messages.clear();
+        _messages.addAll(uiMessages);
+        _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+        _lastMessageTime = _messages.isNotEmpty ? _messages.last.timestamp : null;
+        _isLoading = false;
+      });
+      _saveMessagesToLocal();
+      _scrollToBottom();
+    } catch (e) {
+      print("Failed to load chat history: $e");
+      setState(() {
+        _isLoading = false;
       });
     }
+
+    _connectWebSocket();
+  }
+
+  void _connectWebSocket() async {
+    try {
+      await _chatSocketService.connect(_conversationId);
+
+      _chatSocketService.messages.listen((data) {
+        try {
+          final decoded = jsonDecode(data);
+          print('Received WebSocket data: $decoded');
+
+          if (decoded['type'] == 'conversation_messages' && decoded['messages'] != null) {
+            final messages = decoded['messages'] as List;
+            for (var msgData in messages) {
+              _addMessageFromServer(msgData);
+            }
+          } else if (decoded['content'] != null && decoded['sender'] != null) {
+            _addMessageFromServer(decoded);
+          } else if (decoded['type'] == 'new_message' || decoded['message'] != null) {
+            final msgData = decoded['message'] ?? decoded;
+            if (msgData['content'] != null) {
+              _addMessageFromServer(msgData);
+            }
+          }
+        } catch (e) {
+          print('Error parsing WebSocket message: $e');
+        }
+      });
+    } catch (e) {
+      print("WebSocket connection failed: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to connect to chat: $e')),
+        );
+      }
+    }
+  }
+
+  void _addMessageFromServer(Map<String, dynamic> msgData) {
+    try {
+      final message = Message(
+        text: msgData['content'] ?? '',
+        timestamp: DateTime.parse(msgData['timestamp'] ?? DateTime.now().toIso8601String()),
+        sender: msgData['sender']['id'].toString() == widget.currentUserId
+            ? MessageSender.user
+            : MessageSender.other,
+        senderImageUrl: msgData['sender']['id'].toString() == widget.currentUserId
+            ? AppAssets.jennyProfile
+            : AppAssets.sarahMartinez,
+        status: msgData['is_read'] == true ? MessageStatus.seen : MessageStatus.delivered,
+      );
+
+      setState(() {
+        if (msgData['client_message_id'] != null) {
+          _messages.removeWhere((msg) =>
+          msg.text == message.text &&
+              msg.sender == message.sender &&
+              msg.timestamp.difference(message.timestamp).abs().inSeconds < 5);
+        }
+        _messages.add(message);
+        _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+        _lastMessageTime = message.timestamp;
+      });
+      _saveMessagesToLocal();
+      _scrollToBottom();
+
+      if (msgData['client_message_id'] != null) {
+        _removePendingMessage(msgData['client_message_id']);
+      }
+    } catch (e) {
+      print('Error adding message from server: $e');
+    }
+  }
+
+  void _sendMessage() async {
+    if (_messageController.text.trim().isEmpty) return;
+
+    final messageText = _messageController.text.trim();
+
+    setState(() {
+      _messages.add(Message(
+        text: messageText,
+        timestamp: DateTime.now(),
+        sender: MessageSender.user,
+        senderImageUrl: AppAssets.jennyProfile,
+        status: MessageStatus.sent,
+      ));
+      _messageController.clear();
+      _lastMessageTime = DateTime.now();
+    });
+    _saveMessagesToLocal();
+    _scrollToBottom();
+
+    try {
+      if (_chatSocketService.isConnected) {
+        _chatSocketService.sendMessage(messageText, widget.chatPartnerId);
+      } else {
+        await _chatApiService.sendMessage(_conversationId, messageText, widget.chatPartnerId);
+        _reloadRecentMessages();
+      }
+    } catch (e) {
+      print('Error sending message: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send message: $e')),
+        );
+      }
+    }
+  }
+
+  void _reloadRecentMessages() async {
+    try {
+      final history = await _chatApiService.fetchChatHistory(_conversationId);
+      final newMessages = <Message>[];
+
+      for (var messageModel in history) {
+        final message = Message(
+          text: messageModel.content,
+          timestamp: messageModel.timestamp,
+          sender: messageModel.senderId == widget.currentUserId ? MessageSender.user : MessageSender.other,
+          senderImageUrl: messageModel.senderId == widget.currentUserId ? AppAssets.jennyProfile : AppAssets.sarahMartinez,
+          status: messageModel.isRead ? MessageStatus.seen : MessageStatus.delivered,
+        );
+
+        bool messageExists = _messages.any((existingMsg) =>
+        existingMsg.text == message.text &&
+            existingMsg.timestamp.difference(message.timestamp).abs().inSeconds < 2 &&
+            existingMsg.sender == message.sender);
+
+        if (!messageExists) {
+          newMessages.add(message);
+        }
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      final pendingMessages = prefs.getStringList('pending_messages_$_conversationId') ?? [];
+      for (var jsonStr in pendingMessages) {
+        final data = jsonDecode(jsonStr);
+        await _chatApiService.sendMessage(_conversationId, data['content'], data['receiver_id']);
+      }
+      await prefs.setStringList('pending_messages_$_conversationId', []);
+
+      if (newMessages.isNotEmpty) {
+        setState(() {
+          _messages.addAll(newMessages);
+          _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+          _lastMessageTime = _messages.isNotEmpty ? _messages.last.timestamp : null;
+        });
+        _saveMessagesToLocal();
+        _scrollToBottom();
+      }
+    } catch (e) {
+      print("Failed to reload recent messages: $e");
+    }
+  }
+
+  String _getOrCreateConversationId() {
+    return "31e899e2-71a1-43f5-bf3a-99cccb3ef711"; // Replace with actual logic
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _messageController.dispose();
+    _chatSocketService.dispose();
+    _scrollController.dispose();
+    _saveMessagesToLocal();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100], // Light grey background
       appBar: AppBar(
         backgroundColor: AppColors.primaryBlue,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          // Dynamic title based on chatPartnerName
           widget.chatPartnerName,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20.0,
-            fontWeight: FontWeight.w500,
-            fontFamily: 'Poppins',
-          ),
+          style: const TextStyle(color: Colors.white, fontSize: 20.0, fontWeight: FontWeight.w500),
         ),
         centerTitle: true,
         actions: [
-          // Conditionally show group management icon
-          if (widget.isGroupChat && widget.isCurrentUserAdminInGroup)
-            IconButton(
-              icon: const Icon(Icons.settings, color: Colors.white), // Group settings icon
-              onPressed: () {
-                context.push(RoutePaths.groupManagement);
-              },
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Center(
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _chatSocketService.isConnected ? Colors.green : Colors.red,
+                ),
+              ),
             ),
+          ),
         ],
       ),
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _messages.isEmpty
+                ? const Center(
+              child: Text(
+                'No messages yet. Start the conversation!',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+            )
+                : ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16.0),
-              itemCount: messages.length + 1, // +1 for the "Today" separator
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return _buildDateSeparator('Today');
-                }
-                final message =
-                messages[index - 1]; // Adjust index for messages list
-                return _buildMessageBubble(message);
-              },
+              itemCount: _messages.length,
+              itemBuilder: (context, index) => _buildMessageBubble(_messages[index]),
             ),
           ),
           _buildMessageInput(),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDateSeparator(String date) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20.0),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-          decoration: BoxDecoration(
-            color: const Color(
-                0x1A36D399), // Light green/teal background for date separator
-            borderRadius: BorderRadius.circular(30.0),
-          ),
-          child: Text(
-            date,
-            style: const TextStyle(
-              fontSize: 11.0,
-              color: Color(0xFF5A8DEE), // Blue text for date separator
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Poppins',
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -211,109 +399,37 @@ class _OneToOneConversationPageState extends State<OneToOneConversationPage> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Column(
-          crossAxisAlignment:
-          isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisSize: MainAxisSize.min, // Wrap content
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                if (!isUser) // Profile picture for other sender
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: CircleAvatar(
-                      radius: 16,
-                      backgroundImage: Image.asset(
-                        message.senderImageUrl ?? AppAssets.profilePicture,
-                        errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.person),
-                      ).image,
-                    ),
-                  ),
+                if (!isUser)
+                  CircleAvatar(radius: 16, backgroundImage: AssetImage(message.senderImageUrl!)),
+                const SizedBox(width: 8.0),
                 Flexible(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 10.0,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
                     decoration: BoxDecoration(
-                      color: isUser
-                          ? AppColors.receiverBubbleColor
-                          : AppColors.senderBubbleColor,
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(8.0),
-                        topRight: const Radius.circular(8.0),
-                        bottomLeft: isUser
-                            ? const Radius.circular(12.0)
-                            : const Radius.circular(4.0),
-                        bottomRight: isUser
-                            ? const Radius.circular(4.0)
-                            : const Radius.circular(8.0),
-                      ),
+                      color: isUser ? AppColors.receiverBubbleColor : AppColors.senderBubbleColor,
+                      borderRadius: BorderRadius.circular(12.0),
                     ),
                     child: Text(
                       message.text,
-                      style: const TextStyle(
-                        fontSize: 14.0,
-                        color: Color(
-                          0xFF1A1A1A,
-                        ), // Dark text for message content
-                        fontFamily: 'Poppins',
-                      ),
+                      style: const TextStyle(fontSize: 14.0, fontFamily: 'Poppins'),
                     ),
                   ),
                 ),
-                if (isUser) // Profile picture for user sender
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: CircleAvatar(
-                      radius: 16,
-                      backgroundImage: Image.asset(
-                        message.senderImageUrl ?? AppAssets.profilePicture,
-                        errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.person),
-                      ).image,
-                    ),
-                  ),
+                if (isUser) const SizedBox(width: 8.0),
+                if (isUser)
+                  CircleAvatar(radius: 16, backgroundImage: AssetImage(message.senderImageUrl!)),
               ],
             ),
             const SizedBox(height: 4.0),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (isUser) // Read receipt for user's messages
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.check,
-                        size: 14,
-                        color: message.status == MessageStatus.seen
-                            ? AppColors.primaryBlue
-                            : AppColors.chatTimeColor,
-                      ),
-                      if (message.status == MessageStatus.seen ||
-                          message.status == MessageStatus.delivered)
-                        Icon(
-                          Icons.check,
-                          size: 14,
-                          color: message.status == MessageStatus.seen
-                              ? AppColors.primaryBlue
-                              : AppColors.chatTimeColor,
-                        ),
-                    ],
-                  ),
-                const SizedBox(width: 4.0),
-                Text(
-                  DateFormat(
-                    'h:mm a',
-                  ).format(message.timestamp), // Format DateTime to string
-                  style: const TextStyle(
-                    fontSize: 10.0,
-                    color: Color(0x991A1A1A), // Grey for time text
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ],
+            Text(
+              DateFormat('h:mm a').format(message.timestamp),
+              style: const TextStyle(fontSize: 10.0, color: Color(0x991A1A1A)),
             ),
           ],
         ),
@@ -324,64 +440,28 @@ class _OneToOneConversationPageState extends State<OneToOneConversationPage> {
   Widget _buildMessageInput() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      color: Colors.white, // White background for the input bar
+      color: Colors.white,
       child: Row(
         children: [
-          Icon(
-            Icons.add_circle_outline,
-            color: AppColors.textColorSecondary,
-            size: 24,
-          ), // Plus icon
-          const SizedBox(width: 8.0),
-          Icon(
-            Icons.camera_alt_outlined,
-            color: AppColors.textColorSecondary,
-            size: 24,
-          ), // Camera icon
-          const SizedBox(width: 8.0),
-          Icon(
-            Icons.photo_library_outlined,
-            color: AppColors.textColorSecondary,
-            size: 24,
-          ), // Gallery icon
-          const SizedBox(width: 8.0),
           Expanded(
             child: TextField(
               controller: _messageController,
               decoration: InputDecoration(
-                hintText: 'Message',
-                hintStyle: const TextStyle(
-                  color: AppColors.textColorSecondary,
-                  fontSize: 14.0,
-                  fontFamily: 'Poppins',
-                ),
+                hintText: 'Type a message',
                 filled: true,
-                fillColor: AppColors.chatInputFillColor, // Light grey fill
+                fillColor: AppColors.chatInputFillColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25.0),
-                  borderSide: BorderSide.none, // No border
+                  borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 10.0,
-                ),
-                suffixIcon: Icon(
-                  Icons.sentiment_satisfied_alt_outlined,
-                  color: AppColors.textColorSecondary,
-                  size: 24,
-                ), // Emoji icon
               ),
-              onSubmitted: (_) => _sendMessage(), // Send message on enter
+              onSubmitted: (_) => _sendMessage(),
             ),
           ),
           const SizedBox(width: 8.0),
           GestureDetector(
-            onTap: _sendMessage, // Send message on tap
-            child: Icon(
-              Icons.send,
-              color: AppColors.primaryBlue,
-              size: 24,
-            ), // Send icon
+            onTap: _sendMessage,
+            child: Icon(Icons.send, color: AppColors.primaryBlue),
           ),
         ],
       ),

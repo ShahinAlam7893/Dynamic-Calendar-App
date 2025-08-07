@@ -5,8 +5,7 @@ import 'package:http/http.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:circleslate/data/services/user_service.dart';
 import 'package:circleslate/data/services/api_base_helper.dart';
-import 'package:http/http.dart'as http;
-
+import 'package:http/http.dart' as http;
 
 class ApiEndpoints {
   static const String register = '/auth/register/';
@@ -16,6 +15,7 @@ class ApiEndpoints {
   static const String resetPassword = '/auth/reset-password/';
   static const String userProfile = '/auth/profile/';
   static const String updateProfile = '/auth/profile/update/';
+  static const String conversations = '/auth/conversations/'; // New API endpoint for conversations
 }
 
 class AuthProvider extends ChangeNotifier {
@@ -30,16 +30,17 @@ class AuthProvider extends ChangeNotifier {
   String? aToken;
   String? _refreshToken;
   Map<String, dynamic>? _userProfile;
+  List<dynamic> _conversations = []; // New: To store fetched conversations
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   Map<String, dynamic>? get userProfile => _userProfile;
+  List<dynamic> get conversations => _conversations; // New: Getter for conversations
   bool get isLoggedIn => _accessToken != null;
 
   AuthProvider() : _userService = AuthService(ApiBaseHelper()) {
     Future.microtask(() => loadTokensFromStorage());
   }
-
 
   // -------------------- REGISTER --------------------
   Future<bool> registerUser({
@@ -89,11 +90,10 @@ class AuthProvider extends ChangeNotifier {
       if (response.statusCode == 200 && data['tokens'] != null) {
         _accessToken = data['tokens']['access'];
         _refreshToken = data['tokens']['refresh'];
+        await fetchUserProfile();
         await _saveTokensToStorage();
         aToken = await loadTokensFromStorage();
         print("Token from storage after login: $aToken");
-
-
 
         _setLoading(false);
         notifyListeners();
@@ -105,11 +105,6 @@ class AuthProvider extends ChangeNotifier {
       return _setError(e.toString());
     }
   }
-
-
-
-
-
 
   Future<bool> addChild(String name, int age) async {
     final url = Uri.parse('http://10.10.13.27:8000/api/auth/children/');
@@ -146,13 +141,13 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-
   Future<List<Map<String, dynamic>>> fetchChildren() async {
     final url = Uri.parse('http://10.10.13.27:8000/api/auth/children/');
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedAccessToken = prefs.getString('accessToken');
       String? token = savedAccessToken;
+      print(token);
       final response = await http.get(
         url,
         headers: {
@@ -160,6 +155,7 @@ class AuthProvider extends ChangeNotifier {
           'Authorization': 'Bearer $token',
         },
       );
+
 
       debugPrint("📡 GET Children Status: ${response.statusCode}");
       debugPrint("📡 Response: ${response.body}");
@@ -181,8 +177,6 @@ class AuthProvider extends ChangeNotifier {
       return [];
     }
   }
-
-
 
   // -------------------- FORGOT PASSWORD --------------------
   Future<bool> forgotPassword(String email) async {
@@ -271,8 +265,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-
-
   // -------------------- FETCH USER PROFILE (For Home Screen) --------------------
   Future<bool> fetchUserProfile() async {
     print("🔍 fetchUserProfile() called");
@@ -321,16 +313,48 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // -------------------- FETCH CONVERSATIONS --------------------
+  Future<bool> fetchConversations() async {
+    _errorMessage = null; // Clear previous errors
+    _conversations = []; // Clear previous conversations
+    // Defer loading notification to avoid calling during build
+    Future.microtask(() => _setLoading(true));
 
-// -------------------- UPDATE USER PROFILE --------------------
+    if (_accessToken == null) {
+      return _setError("No access token found. Please login to view conversations.");
+    }
+
+    try {
+      final response = await _apiBaseHelper.get(
+        ApiEndpoints.conversations,
+        token: _accessToken,
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        _conversations = data; // Assuming the API returns a list of conversations
+        Future.microtask(() => _setLoading(false));
+        Future.microtask(() => notifyListeners());
+        return true;
+      } else {
+        return _setError("Failed to load conversations: ${response.body}");
+      }
+    } catch (e) {
+      return _setError("An unexpected error occurred while fetching conversations: $e");
+    }
+  }
+
+  // -------------------- UPDATE USER PROFILE --------------------
   Future<bool> updateUserProfile(Map<String, dynamic> updatedData) async {
     try {
       print('🔄 Starting profile update...');
       print('📦 Updated data: $updatedData');
 
-      final token = await _accessToken; // Get saved token
+      final token = _accessToken; // Direct access, no await needed
       print('🔑 Token loaded: ${token != null ? 'Yes' : 'No'}');
       print('🔑 Token loaded: ${token}');
+
+
 
       if (token == null) {
         print('❌ No token found. Cannot update profile.');
@@ -389,8 +413,7 @@ class AuthProvider extends ChangeNotifier {
         print('✅ Profile updated successfully!');
         await fetchUserProfile(); // <--- refresh after update
         return true;
-      }
-      else {
+      } else {
         print('❌ Update failed.');
         return false;
       }
@@ -399,116 +422,6 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
   }
-
-// -------------------- UPDATE WITH MULTIPART IMAGE --------------------
-
-  Future<bool> _updateProfileWithImage(Map<String, dynamic> updatedData) async {
-    try {
-      final profileImageFile = File(updatedData['profile_image']);
-
-      final Map<String, dynamic> profileData = {
-        'bio': updatedData['bio'] ?? '',
-        'phone_number': updatedData['phone_number'] ?? '',
-        'date_of_birth': updatedData['date_of_birth'] ?? '',
-        'created_at': updatedData['created_at'] ?? '',
-        'updated_at': updatedData['updated_at'] ?? '',
-        'children': updatedData['children'] ?? [], // Already a List<Map<String, dynamic>>
-      };
-
-      final Map<String, String> fields = {
-        'full_name': updatedData['full_name'] ?? '',
-        'profile': jsonEncode(profileData),
-      };
-
-      final response = await _apiBaseHelper.putMultipart(
-        ApiEndpoints.updateProfile,
-        fields,
-        token: _accessToken,
-        file: profileImageFile,
-        fileField: 'profile_photo',
-      );
-
-      print("📡 Multipart Status Code: ${response.statusCode}");
-      print("📡 Multipart Response Body: ${response.body}");
-
-      if (response.statusCode == 200) {
-        if (response.body.isEmpty) {
-          return _setError('Profile update with image failed: Empty response.');
-        }
-        final data = jsonDecode(response.body);
-        if (data is Map<String, dynamic> && data.containsKey('user')) {
-          _userProfile = data['user'];
-          notifyListeners();
-          return true;
-        } else {
-          return _setError('Invalid API response for image upload: ${data['message'] ?? 'No user data.'}');
-        }
-      } else {
-        if (response.body.isNotEmpty) {
-          final data = jsonDecode(response.body);
-          return _setError(data['message'] ?? 'Failed to update profile with image.');
-        }
-        return _setError('Failed to update profile with image: Empty error response.');
-      }
-    } catch (e) {
-      print('Error in _updateProfileWithImage: $e');
-      return _setError('Failed to send multipart data: $e');
-    }
-  }
-
-// -------------------- UPDATE WITH JSON ONLY --------------------
-
-  Future<bool> _updateProfileWithJson(Map<String, dynamic> updatedData) async {
-    try {
-      final Map<String, dynamic> requestBody = {
-        'full_name': updatedData['full_name'] ?? '',
-        'profile': {
-          'bio': updatedData['bio'] ?? '',
-          'phone_number': updatedData['phone_number'] ?? '',
-          'date_of_birth': updatedData['date_of_birth'] ?? '',
-          'created_at': updatedData['created_at'] ?? '',
-          'updated_at': updatedData['updated_at'] ?? '',
-          'children': updatedData['children'] ?? [],
-        },
-        if (updatedData.containsKey('profile_image') &&
-            updatedData['profile_image'] is String)
-          'profile_photo': updatedData['profile_image'],
-      };
-
-      final response = await _apiBaseHelper.put(
-        ApiEndpoints.updateProfile,
-        requestBody,
-        token: _accessToken,
-      );
-
-      print('📡 JSON Status Code: ${response.statusCode}');
-      print('📡 JSON Response Body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        if (response.body.isEmpty) {
-          return _setError('Profile update failed: Empty response.');
-        }
-        final data = jsonDecode(response.body);
-        if (data is Map<String, dynamic> && data.containsKey('user')) {
-          _userProfile = data['user'];
-          notifyListeners();
-          return true;
-        } else {
-          return _setError('Invalid API response: ${data['message'] ?? 'No user data.'}');
-        }
-      } else {
-        if (response.body.isNotEmpty) {
-          final data = jsonDecode(response.body);
-          return _setError(data['message'] ?? 'Failed to update profile.');
-        }
-        return _setError('Failed to update profile: Empty error response.');
-      }
-    } catch (e) {
-      print('Error in _updateProfileWithJson: $e');
-      return _setError('Unexpected error during profile update: $e');
-    }
-  }
-
 
   // -------------------- TOKEN STORAGE --------------------
   Future<void> _saveTokensToStorage() async {
@@ -522,9 +435,6 @@ class AuthProvider extends ChangeNotifier {
     final savedAccessToken = prefs.getString('accessToken');
     final savedRefreshToken = prefs.getString('refreshToken');
 
-    // print("Loaded Access Token: $savedAccessToken");
-    // print("Loaded Refresh Token: $savedRefreshToken");
-
     _accessToken = savedAccessToken;
     _refreshToken = savedRefreshToken;
 
@@ -532,25 +442,23 @@ class AuthProvider extends ChangeNotifier {
     return savedAccessToken;
   }
 
-
-
-
   // -------------------- HELPERS --------------------
   void _setLoading(bool value) {
     _isLoading = value;
-    notifyListeners();
+    // Defer notifyListeners to avoid calling during build phase
+    Future.microtask(() => notifyListeners());
   }
 
   bool _setError(String message) {
     _errorMessage = message;
     _isLoading = false;
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
     return false;
   }
 
   void setTokens(String? accessToken, String? refreshToken) {
     _accessToken = accessToken;
     _refreshToken = refreshToken;
-    notifyListeners();
+    Future.microtask(() => notifyListeners());
   }
 }

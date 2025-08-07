@@ -32,17 +32,21 @@ class _SplashScreenState extends State<SplashScreen> {
       final savedAccessToken = prefs.getString('accessToken');
       String? token = savedAccessToken;
 
-      // If token exists, the user is logged in
-      if (token != null && token.isNotEmpty) {
-        // Redirect to the main screen (e.g., Bottom Navbar or Home)
-        context.goNamed('home'); // Use GoRouter to navigate to the home route
-      } else {
-        // Redirect to the Welcome Screen if no token is found
-        context.goNamed('onboarding'); // Use GoRouter to navigate to the home route
+      for(int i= 0; i <= 100; i++) {
+        // Simulate loading progress
+        await Future.delayed(const Duration(milliseconds: 30));
+        _loadingProgress.value = i / 100; // Update the progress
+      }
 
+      if (token != null && token.isNotEmpty) {
+        context.goNamed('home');
+
+      } else {
+        context.goNamed('onboarding');
       }
     });
   }
+
 
   @override
   void dispose() {
@@ -50,17 +54,18 @@ class _SplashScreenState extends State<SplashScreen> {
     super.dispose();
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Container(decoration: BoxDecoration(
-    gradient: LinearGradient(
-    begin: Alignment(-0.5, -1.0),
-    end: Alignment(0.8, 1.0),
-    colors: [
-    Color(0xFF5A8DEE),
-    Color(0xFFC2DBFF),
-    ],
-    ),
+      gradient: LinearGradient(
+        begin: Alignment(-0.5, -1.0),
+        end: Alignment(0.8, 1.0),
+        colors: [
+          Color(0xFF5A8DEE),
+          Color(0xFFC2DBFF),
+        ],
+      ),
     ),
       child: Scaffold(
         backgroundColor: Colors.transparent,

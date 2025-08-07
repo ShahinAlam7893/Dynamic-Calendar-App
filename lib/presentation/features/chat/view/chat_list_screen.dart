@@ -3,6 +3,8 @@ import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+import '../conversation_service.dart';
 // ... (existing imports)
 
 // --- Chat Model ---
@@ -31,7 +33,24 @@ class Chat {
     this.isGroupChat = false, // Default to false for demo data
     this.isCurrentUserAdminInGroup, // Initialize the new field
   });
+  factory Chat.fromJson(Map<String, dynamic> json) {
+    final lastMsg = json['last_message'];
+
+    return Chat(
+      name: json['display_name'] ?? 'Unknown',
+      lastMessage: lastMsg != null ? lastMsg['content'] ?? '' : '',
+      time: lastMsg != null ? lastMsg['timestamp'] ?? '' : '',
+      imageUrl: 'assets/images/default_user.png', // Replace with `json['display_photo']` if URL exists
+      unreadCount: json['unread_count'] ?? 0,
+      isOnline: json['participants']?[0]?['is_online'] ?? false,
+      status: ChatMessageStatus.seen, // You can update logic based on lastMsg status
+      isGroupChat: json['is_group'] ?? false,
+      isCurrentUserAdminInGroup: json['user_role'] == 'admin', // Adjust as needed
+    );
+  }
+
 }
+
 
 class ChatListPage extends StatefulWidget {
   const ChatListPage({super.key});
@@ -112,9 +131,22 @@ class _ChatListPageState extends State<ChatListPage> {
   @override
   void initState() {
     super.initState();
-    _filteredChats = chats; // Initialize filtered chats with all chats
-    _searchController.addListener(_filterChats); // Add listener for search input changes
+    _fetchChats();
+    _searchController.addListener(_filterChats);
   }
+
+  Future<void> _fetchChats() async {
+    try {
+      final chats = await ChatService.fetchChats(); // Fetch chats from the service
+      setState(() {
+        _filteredChats = chats;
+      });
+    } catch (e) {
+      debugPrint('Error fetching chats: $e');
+      // Optional: Show error using Snackbar
+    }
+  }
+
 
   @override
   void dispose() {
@@ -264,7 +296,7 @@ class _ChatListPageState extends State<ChatListPage> {
                   //     ),
                   //   ),
 
-                  
+
                 ],
               ),
               const SizedBox(width: 16.0),

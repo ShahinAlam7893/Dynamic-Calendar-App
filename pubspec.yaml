@@ -15,6 +15,7 @@ dependencies:
   provider: 6.1.5
   dotted_border: ^2.0.0
   http:
+  web_socket_channel: ^3.0.3
   shared_preferences: ^2.5.3
   json_annotation: ^4.9.0
   cupertino_icons: ^1.0.8
@@ -38,11 +39,7 @@ flutter:
     - assets/icons/
     - assets/fonts/
 
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/to/resolution-aware-images
 
-  # For details regarding adding assets from package dependencies, see
-  # https://flutter.dev/to/asset-from-package
 
 
   fonts:
@@ -80,6 +77,4 @@ flutter:
     - family: Roboto-Medium
       fonts:
         - asset: assets/fonts/Roboto-Medium.ttf
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
+

@@ -232,20 +232,25 @@ class AppRouter {
       GoRoute(
         path: RoutePaths.onetooneconversationpage,
         builder: (context, state) {
-          // Correctly extract the parameters from the 'extra' Map
+          // Extract parameters from the extra Map
           final Map<String, dynamic>? extraData = state.extra as Map<String, dynamic>?;
 
           final String chatPartnerName = extraData?['chatPartnerName'] as String? ?? 'Unknown Chat Partner';
+          final String currentUserId = extraData?['currentUserId'] as String? ?? '';
+          final String chatPartnerId = extraData?['chatPartnerId'] as String? ?? '';
           final bool isGroupChat = extraData?['isGroupChat'] as bool? ?? false;
           final bool isCurrentUserAdminInGroup = extraData?['isCurrentUserAdminInGroup'] as bool? ?? false;
 
           return OneToOneConversationPage(
             chatPartnerName: chatPartnerName,
-            isGroupChat: isGroupChat,
-            isCurrentUserAdminInGroup: isCurrentUserAdminInGroup,
+            currentUserId: currentUserId,
+            chatPartnerId: chatPartnerId,
+            // isGroupChat: isGroupChat,
+            // isCurrentUserAdminInGroup: isCurrentUserAdminInGroup,
           );
         },
       ),
+
       // GoRoute(
       //   path: RoutePaths.onetooneconversationpage,
       //   builder: (context, state) {

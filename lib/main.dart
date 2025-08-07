@@ -1,3 +1,4 @@
+import 'package:circleslate/presentation/common_providers/conversation_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:circleslate/presentation/common_providers/auth_provider.dart';
@@ -13,21 +14,32 @@ void main() async {
   final tokens = await tokenManager.getTokens();
 
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (_) {
-            final authProvider = AuthProvider();
-            if (tokens != null) {
-              authProvider.setTokens(tokens.accessToken, tokens.refreshToken);
-            }
-            return authProvider;
-          },
-        ),
-        ChangeNotifierProvider(create: (_) => AvailabilityProvider()),
-      ],
-      child: MyApp(),
-    ),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>(
+            create: (_) {
+              final authProvider = AuthProvider();
+              if (tokens != null) {
+                authProvider.setTokens(tokens.accessToken, tokens.refreshToken);
+              }
+              return authProvider;
+            },
+          ),
+          ChangeNotifierProvider<AvailabilityProvider>(
+            create: (_) => AvailabilityProvider(),
+          ),
+          ChangeNotifierProxyProvider<AuthProvider, ConversationProvider>(
+            create: (context) => ConversationProvider(
+              Provider.of<AuthProvider>(context, listen: false),
+            ),
+            update: (context, authProvider, conversationProvider) {
+              // Just reuse existing ConversationProvider instance
+              return conversationProvider!;
+            },
+          ),
+        ],
+        child: MyApp(),
+      )
   );
 }
 

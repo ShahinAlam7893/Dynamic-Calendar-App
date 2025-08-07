@@ -5,6 +5,7 @@ import 'package:circleslate/core/constants/app_assets.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:circleslate/presentation/common_providers/auth_provider.dart';
 import 'package:circleslate/presentation/widgets/auth_input_field.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Note: Assuming AppColors, AppAssets, and AuthInputField exist in your project
 // as separate files. We will not redefine them here.
@@ -45,6 +46,7 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (success) {
+
         // Handle successful login
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
