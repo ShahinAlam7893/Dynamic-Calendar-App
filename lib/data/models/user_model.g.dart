@@ -49,6 +49,7 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
   profilePhoto: json['profile_photo'] as String?,
   dateJoined: json['date_joined'] as String,
   profile: Profile.fromJson(json['profile'] as Map<String, dynamic>),
+  isOnline: json['is_online'] as bool,
 );
 
 Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
@@ -58,4 +59,5 @@ Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
   'profile_photo': instance.profilePhoto,
   'date_joined': instance.dateJoined,
   'profile': instance.profile,
+  'is_online': instance.isOnline,
 };

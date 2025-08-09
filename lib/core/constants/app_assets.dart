@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+
 class AppAssets {
   // Splash & Onboarding
   static const String appLogo = 'assets/images/logo.png'; // Your main app logo
@@ -30,5 +32,5 @@ class AppAssets {
   static const String sophieMiller = 'assets/images/sophie.jpg';
   static const String jenniferprofile = 'assets/images/jennefer.jpg';
   static const String openInviteIcon = 'assets/images/open_invite_icon.png';
-
+  static const String eventIcon = 'assets/images/event_icon.png';
 }

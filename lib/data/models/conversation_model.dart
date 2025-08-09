@@ -3,6 +3,21 @@ import 'package:json_annotation/json_annotation.dart';
 part 'conversation_model.g.dart';
 
 @JsonSerializable()
+class Participant {
+  final String id;
+  @JsonKey(name: 'full_name')
+  final String fullName;
+
+  Participant({
+    required this.id,
+    required this.fullName,
+  });
+
+  factory Participant.fromJson(Map<String, dynamic> json) => _$ParticipantFromJson(json);
+  Map<String, dynamic> toJson() => _$ParticipantToJson(this);
+}
+
+@JsonSerializable()
 class Conversation {
   final String id;
   final String name;
@@ -17,6 +32,8 @@ class Conversation {
   @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
+  final List<Participant> participants;
+
   Conversation({
     required this.id,
     required this.name,
@@ -25,6 +42,7 @@ class Conversation {
     required this.unreadCount,
     required this.createdAt,
     required this.updatedAt,
+    required this.participants,
   });
 
   factory Conversation.fromJson(Map<String, dynamic> json) => _$ConversationFromJson(json);
@@ -43,39 +61,4 @@ class ConversationListResponse {
 
   factory ConversationListResponse.fromJson(Map<String, dynamic> json) => _$ConversationListResponseFromJson(json);
   Map<String, dynamic> toJson() => _$ConversationListResponseToJson(this);
-}
-
-
-class Conversation2 {
-  final String id;
-  final String displayName;
-  final bool isGroup;
-  final int unreadCount;
-  final DateTime updatedAt;
-  final String? lastMessage;
-  final String? lastMessageStatus;
-
-
-  Conversation2({
-    required this.id,
-    required this.displayName,
-    required this.isGroup,
-    required this.unreadCount,
-    required this.updatedAt,
-    required this.lastMessage,
-    required this.lastMessageStatus,
-  });
-
-  factory Conversation2.fromJson(Map<String, dynamic> json) {
-    return Conversation2(
-      id: json['id'],
-      displayName: json['display_name'],
-      isGroup: json['is_group'],
-      unreadCount: json['unread_count'],
-      updatedAt: DateTime.parse(json['updated_at']),
-      lastMessage: json['last_message'],
-      lastMessageStatus: json['last_message_status'],
-    );
-  }
-
 }

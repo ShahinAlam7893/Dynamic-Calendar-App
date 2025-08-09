@@ -245,6 +245,7 @@ class AppRouter {
             chatPartnerName: chatPartnerName,
             currentUserId: currentUserId,
             chatPartnerId: chatPartnerId,
+            conversationId: '',
             // isGroupChat: isGroupChat,
             // isCurrentUserAdminInGroup: isCurrentUserAdminInGroup,
           );

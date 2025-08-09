@@ -84,6 +84,10 @@ class User {
   @JsonKey(name: 'profile')
   final Profile profile;
 
+  @JsonKey(name: 'is_online')
+  final bool isOnline;
+
+
   User({
     required this.id,
     required this.email,
@@ -91,6 +95,7 @@ class User {
     this.profilePhoto,
     required this.dateJoined,
     required this.profile,
+    required this.isOnline,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);

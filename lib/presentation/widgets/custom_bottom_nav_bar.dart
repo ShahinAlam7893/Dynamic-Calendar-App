@@ -10,8 +10,6 @@ import 'package:circleslate/presentation/features/settings/view/settings_screen.
 import 'package:circleslate/presentation/features/home/view/home_screen.dart';
 
 
-
-
 // --- AppColors (Copied for self-containment) ---
 class AppColors {
   static const Color primaryBlue = Color(0xFF4285F4);
@@ -120,7 +118,7 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
   final List<Widget> _pages = [
     const HomePage(), // Your actual Home Page
     const UpcomingEventsPage(), // Your actual Events Page
-    const ChatListPage(),
+    const ChatListPage(currentUserId: '3',),
     const AvailabilityPage(),
     const SettingsPage(),// Your actual Groups Page
     // const GroupManagementPage(),
