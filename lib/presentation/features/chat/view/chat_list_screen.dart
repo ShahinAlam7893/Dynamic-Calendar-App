@@ -4,6 +4,7 @@ import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/services/user_search_service.dart';
 import '../../../../data/models/user_search_result_model.dart';
 import '../conversation_service.dart';
@@ -20,7 +21,8 @@ class Chat {
   final ChatMessageStatus status;
   final bool isGroupChat;
   final bool? isCurrentUserAdminInGroup;
-  final List<dynamic> participants; // Add this to hold participants info
+  final List<dynamic> participants;
+  final String currentUserId;
 
   const Chat({
     required this.name,
@@ -33,6 +35,7 @@ class Chat {
     this.isGroupChat = false,
     this.isCurrentUserAdminInGroup,
     this.participants = const [],
+    this.currentUserId = '',
   });
 
   factory Chat.fromJson(Map<String, dynamic> json) {
@@ -40,7 +43,7 @@ class Chat {
     final participants = json['participants'] as List<dynamic>? ?? [];
     final firstParticipant = participants.isNotEmpty ? participants[0] : null;
     return Chat(
-      name: json['display_name'] ?? 'Unknown',
+      name: json['display_name'] ?? json['name'] ?? 'Unknown',
       lastMessage: lastMsg != null ? lastMsg['content'] ?? '' : '',
       time: lastMsg != null ? lastMsg['timestamp'] ?? '' : '',
       imageUrl: 'assets/images/default_user.png',
@@ -74,7 +77,6 @@ class _ChatListPageState extends State<ChatListPage> {
   @override
   void initState() {
     super.initState();
-    // Fetch chat list via HTTP API
     print('ChatListPage currentUserId: ${widget.currentUserId}');
     ChatService.fetchChats().then((chatList) {
       setState(() {
@@ -157,7 +159,14 @@ class _ChatListPageState extends State<ChatListPage> {
         actions: [
           TextButton(
             onPressed: () {
-              context.push('/group_chat');
+              if (widget.currentUserId.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('User ID is missing. Please log in again.')),
+                );
+                return;
+              }
+              debugPrint('[ChatListPage] Navigating to CreateGroupPage with currentUserId: ${widget.currentUserId}');
+              context.push('/group_chat', extra: {'currentUserId': widget.currentUserId});
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Create Group Tapped!')),
               );
@@ -176,7 +185,6 @@ class _ChatListPageState extends State<ChatListPage> {
       ),
       body: Column(
         children: [
-          // Search bar
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
@@ -206,7 +214,6 @@ class _ChatListPageState extends State<ChatListPage> {
               ),
             ),
           ),
-          // Content area
           Expanded(
             child: isSearchMode ? _buildSearchResults() : _buildChatList(),
           ),
@@ -341,13 +348,12 @@ class _ChatListPageState extends State<ChatListPage> {
           size: 12,
         ),
         onTap: () {
-          // Navigate to chat with this user
           context.push(
             RoutePaths.onetooneconversationpage,
             extra: {
               'chatPartnerName': user.fullName,
               'chatPartnerId': user.id.toString(),
-              'currentUserId': widget.currentUserId, // Use widget's currentUserId
+              'currentUserId': widget.currentUserId,
               'isGroupChat': false,
               'isCurrentUserAdminInGroup': false,
             },
@@ -394,7 +400,6 @@ class _ChatListPageState extends State<ChatListPage> {
   Widget _buildChatItem(BuildContext context, Chat chat) {
     return GestureDetector(
       onTap: () {
-        // For one-to-one chat, get current user ID and partner ID from participants
         if (!chat.isGroupChat && chat.participants.isNotEmpty) {
           final partner = chat.participants.firstWhere(
                 (p) => p['id'].toString() != widget.currentUserId,
@@ -416,11 +421,10 @@ class _ChatListPageState extends State<ChatListPage> {
               'currentUserId': widget.currentUserId,
               'isGroupChat': false,
               'isCurrentUserAdminInGroup': false,
-              'conversationId': chat.name, // Optionally add conversation id if you have one
+              'conversationId': chat.name,
             },
           );
         } else {
-          // For group chat, just pass group info
           context.push(
             RoutePaths.onetooneconversationpage,
             extra: {
@@ -428,7 +432,6 @@ class _ChatListPageState extends State<ChatListPage> {
               'isGroupChat': true,
               'isCurrentUserAdminInGroup': chat.isCurrentUserAdminInGroup ?? false,
               'currentUserId': widget.currentUserId,
-              // You can add more group-specific info here
             },
           );
         }

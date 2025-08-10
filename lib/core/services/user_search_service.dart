@@ -9,19 +9,25 @@ class UserSearchService {
 
   // Search users using REST API
   Future<List<UserSearchResult>> searchUsers(String query) async {
+    print('[UserSearchService] searchUsers called with query: "$query"');
+
     if (query.trim().isEmpty) {
+      print('[UserSearchService] Query is empty. Returning empty list.');
       return [];
     }
 
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('accessToken');
+      print('[UserSearchService] Retrieved token: $token');
 
       if (token == null) {
         throw Exception('No access token found');
       }
 
-      final url = Uri.parse('$baseUrl/search-users/?q=${Uri.encodeComponent(query)}');
+      final url = Uri.parse(
+          '$baseUrl/search-users/?q=${Uri.encodeComponent(query)}');
+      print('[UserSearchService] Sending GET request to: $url');
 
       final response = await http.get(
         url,
@@ -32,21 +38,33 @@ class UserSearchService {
         },
       );
 
+      print('[UserSearchService] Response status: ${response.statusCode}');
+      print('[UserSearchService] Raw response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final results = data['results'] as List;
+        print('[UserSearchService] Decoded JSON: $data');
 
-        return results.map((userJson) => UserSearchResult.fromJson(userJson)).toList();
+        final results = data['results'] as List;
+        print('[UserSearchService] Found ${results.length} user(s) in results.');
+
+        return results
+            .map((userJson) {
+          print('[UserSearchService] Parsing user: $userJson');
+          return UserSearchResult.fromJson(userJson);
+        })
+            .toList();
       } else {
-        throw Exception('Failed to search users: ${response.statusCode}');
+        throw Exception(
+            'Failed to search users: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error searching users: $e');
+      print('[UserSearchService] Error searching users: $e');
       rethrow;
     }
   }
 
   void dispose() {
-    // Clean up any resources if needed
+    print('[UserSearchService] dispose() called.');
   }
 }

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart';
 
+
 class ChatSocketService {
   WebSocketChannel? _channel;
   String? _conversationId;

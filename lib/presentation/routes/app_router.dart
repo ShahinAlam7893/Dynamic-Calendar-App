@@ -2,7 +2,6 @@ import 'package:circleslate/presentation/features/availability/view/availability
 import 'package:circleslate/presentation/features/availability/view/create_edit_availability_screen.dart';
 import 'package:circleslate/presentation/features/chat/view/chat_list_screen.dart';
 import 'package:circleslate/presentation/features/chat/view/chat_screen.dart';
-import 'package:circleslate/presentation/features/chat/view/create_group.dart';
 import 'package:circleslate/presentation/features/event_management/view/create_edit_event_screen.dart';
 import 'package:circleslate/presentation/features/event_management/view/direct_invite_page.dart';
 import 'package:circleslate/presentation/features/event_management/view/event_details_screen.dart';
@@ -17,8 +16,8 @@ import 'package:circleslate/presentation/features/settings/view/privacy_policy_p
 import 'package:circleslate/presentation/features/settings/view/profile_page.dart' hide EditProfilePage;
 import 'package:circleslate/presentation/features/settings/view/terms_and_conditions_page.dart';
 import 'package:circleslate/presentation/widgets/custom_bottom_nav_bar.dart';
-import 'package:flutter/material.dart'; // For GlobalKey, NavigatorState, BuildContext
-import 'package:go_router/go_router.dart'; // For GoRouter
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:circleslate/presentation/features/authentication/view/EmailVerificationPage.dart';
 import 'package:circleslate/presentation/features/authentication/view/forgot_password_screen.dart';
 import 'package:circleslate/presentation/features/authentication/view/login_screen.dart';
@@ -28,7 +27,8 @@ import 'package:circleslate/presentation/features/authentication/view/reset_pass
 import 'package:circleslate/presentation/features/authentication/view/signup_screen.dart';
 import 'package:circleslate/presentation/features/onboarding/view/splash_screen.dart';
 import 'package:circleslate/presentation/features/onboarding/view/onboarding_screen.dart';
-
+import '../../core/services/group/group_conversation_manager.dart';
+import '../features/chat/group/view/create_group_page.dart';
 import '../features/notification/notification_page.dart';
 
 // --- RoutePaths Class (Restored to your original structure) ---
@@ -261,14 +261,40 @@ class AppRouter {
       //     );
       //   },
       // ),
+
       GoRoute(
         path: RoutePaths.groupManagement, // Your original route name
         builder: (context, state) => const GroupManagementPage(),
       ),
+
       GoRoute(
-        path: RoutePaths.creategrouppage, // Your original route name
-        builder: (context, state) => const CreateGroupPage(),
+        path: '/group_chat',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final currentUserId = extra['currentUserId'] as String? ?? '';
+          return CreateGroupPage(currentUserId: currentUserId);
+        },
       ),
+
+      // GoRoute(
+      //   path: '/group_chat_page',
+      //   builder: (context, state) {
+      //     final extra = state.extra as Map<String, dynamic>? ?? {};
+      //     final currentUserId = extra['currentUserId'] as String? ?? '';
+      //     final conversationId = extra['conversationId'] as String? ?? '';
+      //     final isGroupChat = extra['isGroupChat'] as bool? ?? true;
+      //     final isCurrentUserAdminInGroup = extra['isCurrentUserAdminInGroup'] as bool? ?? true;
+      //     return OneToOneConversationPage(
+      //       currentUserId: currentUserId,
+      //       conversationId: conversationId,
+      //       isGroupChat: isGroupChat,
+      //       isCurrentUserAdminInGroup: isCurrentUserAdminInGroup, chatPartnerName: '', chatPartnerId: '',
+      //     );
+      //   },
+      // ),
+
+
+
       GoRoute(
         path: RoutePaths.addmemberpage, // Your original route name
         builder: (context, state) => const AddMemberPage(),
