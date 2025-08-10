@@ -1,6 +1,7 @@
 // lib/ui/group_conversation_page.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:circleslate/core/constants/app_assets.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
@@ -16,6 +17,7 @@ import 'package:circleslate/core/services/message_storage_service.dart';
 
 import '../../../../../core/services/group/group_chat_socket_service.dart';
 import '../../../../../data/models/group_model.dart';
+import '../../../../routes/app_router.dart';
 
 
 class GroupConversationPage extends StatefulWidget {
@@ -211,19 +213,16 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
         ),
         centerTitle: false,
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Center(
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _groupChatSocketService.isConnected ? Colors.green : Colors.red,
-                ),
-              ),
-            ),
+          // Add Group Manager icon button here:
+          IconButton(
+            icon: const Icon(Icons.manage_accounts, color: Colors.white),
+            tooltip: 'Group Manager',
+            onPressed: () {
+              // Navigate to group management page and pass groupId as extra data if needed
+              context.push(RoutePaths.groupManagement, extra: {'groupId': widget.groupId});
+            },
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Column(

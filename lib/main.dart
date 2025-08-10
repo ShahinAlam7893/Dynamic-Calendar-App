@@ -6,45 +6,46 @@ import 'package:circleslate/presentation/common_providers/availability_provider.
 import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:circleslate/data/datasources/shared_pref/local/token_manager.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load saved tokens before app starts
   final tokenManager = TokenManager();
-  final tokens = await tokenManager.getTokens();
+  final tokens = await tokenManager.getTokens().catchError((error) {
+    debugPrint('Error loading tokens: $error');
+    return null;
+  });
 
   runApp(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<AuthProvider>(
-            create: (_) {
-              final authProvider = AuthProvider();
-              if (tokens != null) {
-                authProvider.setTokens(tokens.accessToken, tokens.refreshToken);
-              }
-              return authProvider;
-            },
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthProvider>(
+          create: (_) {
+            final authProvider = AuthProvider();
+            if (tokens != null) {
+              authProvider.setTokens(tokens.accessToken, tokens.refreshToken);
+            }
+            return authProvider;
+          },
+        ),
+        ChangeNotifierProvider<AvailabilityProvider>(
+          create: (_) => AvailabilityProvider(),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, ConversationProvider>(
+          create: (context) => ConversationProvider(
+            Provider.of<AuthProvider>(context, listen: false),
           ),
-          ChangeNotifierProvider<AvailabilityProvider>(
-            create: (_) => AvailabilityProvider(),
-          ),
-          ChangeNotifierProxyProvider<AuthProvider, ConversationProvider>(
-            create: (context) => ConversationProvider(
-              Provider.of<AuthProvider>(context, listen: false),
-            ),
-            update: (context, authProvider, conversationProvider) {
-              // Just reuse existing ConversationProvider instance
-              return conversationProvider!;
-            },
-          ),
-        ],
-        child: MyApp(),
-      )
+          update: (context, authProvider, conversationProvider) {
+            return conversationProvider!;
+          },
+        ),
+      ],
+      child: const MyApp(),
+    ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({Key? key}) : super(key: key);
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
