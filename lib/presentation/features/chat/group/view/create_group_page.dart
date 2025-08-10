@@ -1,3 +1,4 @@
+import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:circleslate/core/constants/app_assets.dart';
@@ -104,8 +105,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
         );
 
         if (mounted) {
-          context.push('/onetooneconversationpage', extra: {
-            'chatPartnerName': newGroupChat.name,
+          context.push(RoutePaths.groupConversationPage, extra: {
+            'groupName': newGroupChat.name,            // pass groupName here
             'isGroupChat': true,
             'isCurrentUserAdminInGroup': true,
             'currentUserId': widget.currentUserId,
@@ -134,6 +135,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       }
     }
   }
+
 
   void _removeSelectedUser(UserSearchResult user) {
     setState(() {

@@ -215,7 +215,7 @@ class ChatSocketService {
   }
 
   /// Send typing indicator
-  void sendTypingIndicator(String receiverId, bool isTyping) {
+  void sendTypingIndicator(String receiverId, bool isTyping, {required bool isGroup}) {
     if (!isConnected) return;
 
     final payload = {

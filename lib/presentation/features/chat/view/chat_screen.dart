@@ -60,7 +60,7 @@ class _OneToOneConversationPageState extends State<OneToOneConversationPage> wit
       _markMessagesAsRead();
     } else if (state == AppLifecycleState.paused) {
       debugPrint('[OneToOneConversationPage] App paused - sending typing=false');
-      _chatSocketService.sendTypingIndicator(widget.chatPartnerId, false);
+      _chatSocketService.sendTypingIndicator(widget.chatPartnerId, false, isGroup: false);
     }
   }
 
@@ -319,7 +319,7 @@ class _OneToOneConversationPageState extends State<OneToOneConversationPage> wit
     if (isTypingNow != _isTyping) {
       _isTyping = isTypingNow;
       debugPrint('[OneToOneConversationPage] Typing changed: $_isTyping');
-      _chatSocketService.sendTypingIndicator(widget.chatPartnerId, _isTyping);
+      _chatSocketService.sendTypingIndicator(widget.chatPartnerId, _isTyping, isGroup: false);
     }
   }
 

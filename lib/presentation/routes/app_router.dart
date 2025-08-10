@@ -29,6 +29,7 @@ import 'package:circleslate/presentation/features/onboarding/view/splash_screen.
 import 'package:circleslate/presentation/features/onboarding/view/onboarding_screen.dart';
 import '../../core/services/group/group_conversation_manager.dart';
 import '../features/chat/group/view/create_group_page.dart';
+import '../features/chat/group/view/group_conversation_page.dart';
 import '../features/notification/notification_page.dart';
 
 // --- RoutePaths Class (Restored to your original structure) ---
@@ -50,6 +51,7 @@ class RoutePaths {
   static const String onetooneconversationpage = '/one-to-one-conversation';
   static const String chatlistpage = '/chat';
   static const String creategrouppage = '/group_chat'; // Your original name
+  static const String groupConversationPage = '/group_conversation'; // New route for Group Conversation
   static const String groupManagement = '/group-management';
   static const String addmemberpage = '/add_member'; // Your original name
   static const String directInvite = '/direct-invite';
@@ -86,6 +88,7 @@ class AppRoutes {
   static const String eventdetailspage = 'eventdetailspage';
   static const String ridesharingpage = 'ridesharingpage';
   static const String onetooneconversationpage = 'onetooneconversationpage';
+  static const String groupConversationPage = 'groupConversationPage'; // New route for Group Conversation
   static const String creategrouppage = 'creategrouppage'; // Your original name
   static const String addmemberpage = 'addmemberpage'; // Your original name
   static const String directInvite = 'directInvite';
@@ -276,22 +279,24 @@ class AppRouter {
         },
       ),
 
-      // GoRoute(
-      //   path: '/group_chat_page',
-      //   builder: (context, state) {
-      //     final extra = state.extra as Map<String, dynamic>? ?? {};
-      //     final currentUserId = extra['currentUserId'] as String? ?? '';
-      //     final conversationId = extra['conversationId'] as String? ?? '';
-      //     final isGroupChat = extra['isGroupChat'] as bool? ?? true;
-      //     final isCurrentUserAdminInGroup = extra['isCurrentUserAdminInGroup'] as bool? ?? true;
-      //     return OneToOneConversationPage(
-      //       currentUserId: currentUserId,
-      //       conversationId: conversationId,
-      //       isGroupChat: isGroupChat,
-      //       isCurrentUserAdminInGroup: isCurrentUserAdminInGroup, chatPartnerName: '', chatPartnerId: '',
-      //     );
-      //   },
-      // ),
+      GoRoute(
+        path: RoutePaths.groupConversationPage, // Your original route name
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final currentUserId = extra['currentUserId'] as String? ?? '';
+          final conversationId = extra['conversationId'] as String? ?? '';
+          final isGroupChat = extra['isGroupChat'] as bool? ?? true;
+          final isCurrentUserAdminInGroup = extra['isCurrentUserAdminInGroup'] as bool? ?? true;
+
+          return GroupConversationPage(  // <- use your group chat page here
+            groupId: conversationId,
+            currentUserId: currentUserId,
+            groupName: extra['groupName'] as String? ?? '',
+            // Pass any other needed parameters here
+          );
+        },
+      ),
+
 
 
 

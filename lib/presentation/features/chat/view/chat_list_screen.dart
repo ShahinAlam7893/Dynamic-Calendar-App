@@ -74,14 +74,58 @@ class _ChatListPageState extends State<ChatListPage> {
   bool _isSearching = false;
   String? _searchError;
 
+  /// Parses time string into DateTime, supporting ISO8601 or unix timestamps (seconds or ms).
+  DateTime _parseChatTime(String timeStr) {
+    if (timeStr.isEmpty) {
+      return DateTime.fromMillisecondsSinceEpoch(0);
+    }
+
+    // Try ISO8601 parse first
+    DateTime? dateTime = DateTime.tryParse(timeStr);
+    if (dateTime != null) {
+      return dateTime;
+    }
+
+    // Try parsing as int (unix timestamp)
+    int? timestamp = int.tryParse(timeStr);
+    if (timestamp != null) {
+      // Heuristic: if timestamp looks like seconds (10 digits), convert to ms
+      if (timestamp < 1000000000000) {
+        // Timestamp is in seconds, convert to milliseconds
+        return DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+      } else {
+        // Timestamp already in milliseconds
+        return DateTime.fromMillisecondsSinceEpoch(timestamp);
+      }
+    }
+
+    // Fallback to epoch start if parsing fails
+    return DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  void _sortChatsByRecent() {
+    _userList.sort((a, b) {
+      final dateA = _parseChatTime(a.time);
+      final dateB = _parseChatTime(b.time);
+      return dateB.compareTo(dateA); // descending: newest first
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     print('ChatListPage currentUserId: ${widget.currentUserId}');
     ChatService.fetchChats().then((chatList) {
+      print('Fetched chats before sorting:');
+      chatList.forEach((chat) => print('Chat ${chat.name}, time: ${chat.time}'));
+
       setState(() {
         _userList = chatList;
+        _sortChatsByRecent();
       });
+
+      print('Chats after sorting:');
+      _userList.forEach((chat) => print('Chat ${chat.name}, time: ${chat.time}'));
     }).catchError((e) {
       debugPrint('Error loading chat list: $e');
     });
@@ -348,16 +392,8 @@ class _ChatListPageState extends State<ChatListPage> {
           size: 12,
         ),
         onTap: () {
-          context.push(
-            RoutePaths.onetooneconversationpage,
-            extra: {
-              'chatPartnerName': user.fullName,
-              'chatPartnerId': user.id.toString(),
-              'currentUserId': widget.currentUserId,
-              'isGroupChat': false,
-              'isCurrentUserAdminInGroup': false,
-            },
-          );
+          // Handle user search item tap, e.g. start a one-to-one chat or show user profile
+          // For example, you could navigate to the one-to-one chat page here.
         },
       ),
     );
@@ -401,6 +437,7 @@ class _ChatListPageState extends State<ChatListPage> {
     return GestureDetector(
       onTap: () {
         if (!chat.isGroupChat && chat.participants.isNotEmpty) {
+          // For one-to-one chat, find the partner (participant other than current user)
           final partner = chat.participants.firstWhere(
                 (p) => p['id'].toString() != widget.currentUserId,
             orElse: () => null,
@@ -421,17 +458,19 @@ class _ChatListPageState extends State<ChatListPage> {
               'currentUserId': widget.currentUserId,
               'isGroupChat': false,
               'isCurrentUserAdminInGroup': false,
-              'conversationId': chat.name,
+              'conversationId': chat.name, // You may want to use chat.id here if available
             },
           );
         } else {
+          // Group chat
           context.push(
-            RoutePaths.onetooneconversationpage,
+            RoutePaths.groupConversationPage,
             extra: {
-              'chatPartnerName': chat.name,
+              'groupName': chat.name,
               'isGroupChat': true,
               'isCurrentUserAdminInGroup': chat.isCurrentUserAdminInGroup ?? false,
               'currentUserId': widget.currentUserId,
+              'conversationId': chat.name, // Use chat.id if available
             },
           );
         }
@@ -466,13 +505,18 @@ class _ChatListPageState extends State<ChatListPage> {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          chat.name,
-                          style: const TextStyle(
-                            fontSize: 12.0,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF1A1A1A),
-                            fontFamily: 'Poppins',
+                        Flexible(
+                          child: Text(
+                            chat.name,
+                            style: const TextStyle(
+                              fontSize: 12.0,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1A1A1A),
+                              fontFamily: 'Poppins',
+                            ),
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                         if (chat.isGroupChat)
@@ -501,67 +545,77 @@ class _ChatListPageState extends State<ChatListPage> {
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      softWrap: false,
                     ),
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        chat.time,
-                        style: const TextStyle(
-                          fontSize: 12.0,
-                          fontFamily: 'Poppins',
+              const SizedBox(width: 12.0),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            chat.time,
+                            style: const TextStyle(
+                              fontSize: 12.0,
+                              fontFamily: 'Poppins',
+                            ),
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 4.0),
-                      if (chat.status == ChatMessageStatus.sent)
-                        Icon(Icons.check,
-                            size: 14, color: AppColors.textColorSecondary),
-                      if (chat.status == ChatMessageStatus.delivered)
-                        Row(
-                          children: const [
-                            Icon(Icons.check,
-                                size: 14, color: AppColors.textColorSecondary),
-                            Icon(Icons.check,
-                                size: 14, color: AppColors.textColorSecondary),
-                          ],
-                        ),
-                      if (chat.status == ChatMessageStatus.seen)
-                        Row(
-                          children: const [
-                            Icon(Icons.check,
-                                size: 12, color: AppColors.primaryBlue),
-                            Icon(Icons.check,
-                                size: 12, color: AppColors.primaryBlue),
-                          ],
-                        ),
-                    ],
-                  ),
-                  if (chat.unreadCount > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Container(
-                        padding: const EdgeInsets.all(6.0),
-                        decoration: BoxDecoration(
-                          color: AppColors.unreadCountBg,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          chat.unreadCount.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10.0,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Poppins',
+                        const SizedBox(width: 4.0),
+                        if (chat.status == ChatMessageStatus.sent)
+                          Icon(Icons.check,
+                              size: 14, color: AppColors.textColorSecondary),
+                        if (chat.status == ChatMessageStatus.delivered)
+                          Row(
+                            children: const [
+                              Icon(Icons.check,
+                                  size: 14, color: AppColors.textColorSecondary),
+                              Icon(Icons.check,
+                                  size: 14, color: AppColors.textColorSecondary),
+                            ],
+                          ),
+                        if (chat.status == ChatMessageStatus.seen)
+                          Row(
+                            children: const [
+                              Icon(Icons.check,
+                                  size: 12, color: AppColors.primaryBlue),
+                              Icon(Icons.check,
+                                  size: 12, color: AppColors.primaryBlue),
+                            ],
+                          ),
+                      ],
+                    ),
+                    if (chat.unreadCount > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Container(
+                          padding: const EdgeInsets.all(6.0),
+                          decoration: BoxDecoration(
+                            color: AppColors.unreadCountBg,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            chat.unreadCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10.0,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Poppins',
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
