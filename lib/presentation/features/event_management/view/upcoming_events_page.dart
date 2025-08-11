@@ -1,4 +1,6 @@
 import 'package:circleslate/main.dart';
+import 'package:circleslate/presentation/features/event_management/controllers/eventManagementControllers.dart';
+import 'package:circleslate/presentation/features/event_management/models/eventsModels.dart';
 import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart'; // Import go_router for navigation
@@ -33,130 +35,80 @@ class AppColors {
   static const Color rideNeededStatusText = Color(0xFFF87171);
 }
 
-// --- Event Model ---
-class Event {
-  final String title;
-  final String date;
-  final String time;
-  final String location;
-  final String status; // e.g., "Open", "Ride Needed"
-
-  // Marked the constructor as const
-  const Event({
-    required this.title,
-    required this.date,
-    required this.time,
-    required this.location,
-    required this.status,
-  });
-}
-
-
-class UpcomingEventsPage extends StatelessWidget {
+class UpcomingEventsPage extends StatefulWidget {
   const UpcomingEventsPage({super.key});
 
-  // Sample event data (increased to demonstrate "View More")
-  final List<Event> upcomingEvents = const [
-    Event(
-      title: 'Soccer Practice & Fun',
-      date: 'Today',
-      time: '4:00 PM',
-      location: 'City Sports Complex',
-      status: 'Open',
-    ),
-    Event(
-      title: 'Emma\'s 10th Birthday Party',
-      date: 'Saturday, July 19, 2025',
-      time: '3:00 PM - 6:00 PM',
-      location: '123 Oak Street, Springfield',
-      status: 'Ride Needed',
-    ),
-    Event(
-      title: 'Science Museum Adventure',
-      date: 'Saturday, July 26, 2025',
-      time: '10:00 AM - 2:00 PM',
-      location: 'Downtown Science Museum',
-      status: 'Open',
-    ),
-    Event(
-      title: 'Pool Party & Swimming',
-      date: 'Friday, July 25, 2025',
-      time: '4:00 PM - 7:00 PM',
-      location: 'Community Pool Center',
-      status: 'Open',
-    ),
-    // Added more events to trigger "View More" button
-    Event(
-      title: 'Book Club Meeting',
-      date: 'Monday, July 28, 2025',
-      time: '7:00 PM',
-      location: 'Local Library',
-      status: 'Open',
-    ),
-    Event(
-      title: 'Art Workshop',
-      date: 'Tuesday, July 29, 2025',
-      time: '2:00 PM - 4:00 PM',
-      location: 'Art Studio Downtown',
-      status: 'Open',
-    ),
-  ];
+  @override
+  State<UpcomingEventsPage> createState() => _UpcomingEventsPageState();
+}
+
+class _UpcomingEventsPageState extends State<UpcomingEventsPage> {
+  late Future<List<Event>> _eventsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _eventsFuture = EventService.fetchEvents();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Determine how many items to show initially
-    final int itemsToShow = upcomingEvents.length > 4 ? 4 : upcomingEvents.length;
-
     return Scaffold(
-      backgroundColor: Colors.grey[100], // Light grey background
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         backgroundColor: AppColors.primaryBlue,
         title: const Text(
           'Upcoming Events',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20.0,
-            fontWeight: FontWeight.w500,
-            fontFamily: 'Poppins',
-          ),
+          style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
         actions: [
-          // Reload Button
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
-              // Implement reload logic here, e.g., refetch data
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Reloading Events...')),
-              );
+              setState(() {
+                _eventsFuture = EventService.fetchEvents();
+              });
             },
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: itemsToShow, // Show only `itemsToShow` events initially
-                itemBuilder: (context, index) {
-                  return _buildEventCard(context, upcomingEvents[index]); // Pass context
-                },
-              ),
+      body: FutureBuilder<List<Event>>(
+        future: _eventsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+          final events = snapshot.data ?? [];
+
+          final itemsToShow = events.length > 4 ? 4 : events.length;
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: itemsToShow,
+                    itemBuilder: (context, index) {
+                      return _buildEventCard(context, events[index]);
+                    },
+                  ),
+                ),
+                if (events.length > 4) _buildViewMoreAndAddButton(context),
+              ],
             ),
-            // "View More" button and "+" icon, conditionally displayed
-            if (upcomingEvents.length > 4)
-              _buildViewMoreAndAddButton(context),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildEventCard(BuildContext context, Event event) { // Added BuildContext context
+  Widget _buildEventCard(BuildContext context, Event event) {
+    // Added BuildContext context
     Color statusBackgroundColor;
     Color statusTextColor;
 
@@ -171,11 +123,13 @@ class UpcomingEventsPage extends StatelessWidget {
       statusTextColor = Colors.grey[700]!;
     }
 
-    return GestureDetector( // Wrap with GestureDetector for tap detection
+    return GestureDetector(
+      // Wrap with GestureDetector for tap detection
       onTap: () {
-        context.push(RoutePaths.eventDetails, extra: event); // Pass the event data
-        // context.go(RoutePaths.eventDetails); // Navigate to EventDetailsPage
+        print("Tapped event id: ${event.id}");
+        context.push("${RoutePaths.eventDetails}/${event.id}");
       },
+
       child: Card(
         margin: const EdgeInsets.symmetric(vertical: 8.0),
         shape: RoundedRectangleBorder(
@@ -184,7 +138,7 @@ class UpcomingEventsPage extends StatelessWidget {
         ),
         elevation: 0,
         color: Colors.white,
-        shadowColor: Color(0x14000000),// No shadow for the card itself
+        shadowColor: Color(0x14000000), // No shadow for the card itself
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -193,7 +147,8 @@ class UpcomingEventsPage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded( // CRITICAL CHANGE: Wrap event.title in Expanded
+                  Expanded(
+                    // CRITICAL CHANGE: Wrap event.title in Expanded
                     child: Text(
                       event.title,
                       style: const TextStyle(
@@ -203,12 +158,16 @@ class UpcomingEventsPage extends StatelessWidget {
                         fontFamily: 'Poppins',
                       ),
                       maxLines: 1, // Ensure it doesn't wrap more than one line
-                      overflow: TextOverflow.ellipsis, // Add ellipsis if it overflows
+                      overflow:
+                          TextOverflow.ellipsis, // Add ellipsis if it overflows
                     ),
                   ),
                   // The status container will take its natural size
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0,
+                      vertical: 4.0,
+                    ),
                     decoration: BoxDecoration(
                       color: statusBackgroundColor,
                       borderRadius: BorderRadius.circular(8.0),
@@ -222,17 +181,30 @@ class UpcomingEventsPage extends StatelessWidget {
                         fontFamily: 'Poppins',
                       ),
                       maxLines: 1, // Ensure status text doesn't wrap
-                      overflow: TextOverflow.ellipsis, // Add ellipsis if status is unexpectedly long
+                      overflow: TextOverflow
+                          .ellipsis, // Add ellipsis if status is unexpectedly long
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12.0),
-              _buildInfoRow(Icons.calendar_month ,event.date, iconColor: Color(0xFF5A8DEE)),
+              _buildInfoRow(
+                Icons.calendar_month,
+                event.date,
+                iconColor: Color(0xFF5A8DEE),
+              ),
               const SizedBox(height: 8.0),
-              _buildInfoRow(Icons.access_time, event.time, iconColor: Color(0xFFFFE082)),
+              _buildInfoRow(
+                Icons.access_time,
+                event.time,
+                iconColor: Color(0xFFFFE082),
+              ),
               const SizedBox(height: 8.0),
-              _buildInfoRow(Icons.location_on_outlined, event.location, iconColor: Color(0xFFF87171)),
+              _buildInfoRow(
+                Icons.location_on_outlined,
+                event.location,
+                iconColor: Color(0xFFF87171),
+              ),
             ],
           ),
         ),
@@ -246,7 +218,8 @@ class UpcomingEventsPage extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: iconColor),
         const SizedBox(width: 8.0),
-        Expanded( // CRITICAL CHANGE: Wrap Text in Expanded here too
+        Expanded(
+          // CRITICAL CHANGE: Wrap Text in Expanded here too
           child: Text(
             text,
             style: const TextStyle(
@@ -267,11 +240,15 @@ class UpcomingEventsPage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 40.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start, // Align to start, Expanded will push
+        mainAxisAlignment:
+            MainAxisAlignment.start, // Align to start, Expanded will push
         children: [
-          Expanded( // Expanded to take available space and allow centering
-            child: Center( // Center the ElevatedButton within the Expanded space
-              child: SizedBox( // Wrap with SizedBox for fixed dimensions
+          Expanded(
+            // Expanded to take available space and allow centering
+            child: Center(
+              // Center the ElevatedButton within the Expanded space
+              child: SizedBox(
+                // Wrap with SizedBox for fixed dimensions
                 width: 72.0, // Set width as requested
                 height: 32.0, // Set height as requested
                 child: ElevatedButton(
@@ -286,7 +263,8 @@ class UpcomingEventsPage extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.0),
                     ),
-                    padding: EdgeInsets.zero, // Remove default padding if using SizedBox for size
+                    padding: EdgeInsets
+                        .zero, // Remove default padding if using SizedBox for size
                   ),
                   child: const Text(
                     'View More',
@@ -303,7 +281,8 @@ class UpcomingEventsPage extends StatelessWidget {
           ),
           // const SizedBox(width: 0.0), // Spacing between the centered button and the right-aligned button
           Center(
-            child: SizedBox( // This will naturally be on the right after the Expanded
+            child: SizedBox(
+              // This will naturally be on the right after the Expanded
               width: 40,
               height: 40,
               child: FloatingActionButton(

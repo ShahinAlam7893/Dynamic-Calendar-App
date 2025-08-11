@@ -1,7 +1,10 @@
 import 'package:circleslate/main.dart' hide AppAssets;
+import 'package:circleslate/presentation/features/event_management/models/eventsModels.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:circleslate/core/constants/app_assets.dart';
+
+import '../controllers/eventManagementControllers.dart';
 
 // --- AppColors (Copied for self-containment) ---
 class AppColors {
@@ -36,13 +39,25 @@ class AppColors {
   static const Color toggleButtonInactiveText = Color(0xFF4285F4);
   static const Color toggleButtonBorder = Color(0xFFE0E0E0);
   static const Color goingButtonColor = Color(0xFF4CAF50); // Green for "Going"
-  static const Color notGoingButtonColor = Color(0xFFF44336); // Red for "Not Going"
-  static const Color chatButtonColor = Color(0xFFE3F2FD); // Light blue for chat button background
-  static const Color chatButtonTextColor = Color(0xFF4285F4); // Blue for chat button text
-  static const Color requestRideButtonColor = Color(0xFF5A8DEE); // Accent blue for Request Ride
+  static const Color notGoingButtonColor = Color(
+    0xFFF44336,
+  ); // Red for "Not Going"
+  static const Color chatButtonColor = Color(
+    0xFFE3F2FD,
+  ); // Light blue for chat button background
+  static const Color chatButtonTextColor = Color(
+    0xFF4285F4,
+  ); // Blue for chat button text
+  static const Color requestRideButtonColor = Color(
+    0xFF5A8DEE,
+  ); // Accent blue for Request Ride
   static const Color requestRideButtonTextColor = Colors.white;
-  static const Color rideRequestCardBackground = Color(0xFFE3F2FD); // Light blue for ride request card
-  static const Color rideRequestCardBorder = Color(0xFF90CAF9); // Slightly darker blue for card border
+  static const Color rideRequestCardBackground = Color(
+    0xFFE3F2FD,
+  ); // Light blue for ride request card
+  static const Color rideRequestCardBorder = Color(
+    0xFF90CAF9,
+  ); // Slightly darker blue for card border
 }
 
 // --- CustomBottomNavigationBar (Copied for self-containment) ---
@@ -60,10 +75,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return BottomNavigationBar(
       items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          label: 'Home',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
         BottomNavigationBarItem(
           icon: Icon(Icons.event_note_outlined),
           label: 'Events',
@@ -107,9 +119,9 @@ class Participant {
   });
 }
 
-
 class EventDetailsPage extends StatefulWidget {
-  const EventDetailsPage({super.key});
+  final String eventId;
+  const EventDetailsPage({super.key, required this.eventId});
 
   @override
   State<EventDetailsPage> createState() => _EventDetailsPageState();
@@ -152,6 +164,14 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     ),
   ];
 
+  late Future<Event> _eventDetails;
+
+  @override
+  void initState() {
+    super.initState();
+    _eventDetails = EventService.fetchEventDetails(widget.eventId);
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -159,12 +179,16 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     // Define base font scale factors for different text types
     final double titleFontSize = screenWidth * 0.055; // For main event title
     final double appBarTitleFontSize = screenWidth * 0.05; // For app bar title
-    final double subtitleFontSize = screenWidth * 0.04; // For section headers, participant name
-    final double bodyFontSize = screenWidth * 0.035; // For date/time, general text, buttons
-    final double smallFontSize = screenWidth * 0.03; // For descriptions, status tags
+    final double subtitleFontSize =
+        screenWidth * 0.04; // For section headers, participant name
+    final double bodyFontSize =
+        screenWidth * 0.035; // For date/time, general text, buttons
+    final double smallFontSize =
+        screenWidth * 0.03; // For descriptions, status tags
 
     // Define responsive icon sizes
-    final double generalIconSize = screenWidth * 0.04; // For calendar, time, location
+    final double generalIconSize =
+        screenWidth * 0.04; // For calendar, time, location
     final double sectionIconSize = screenWidth * 0.06; // For people, car icons
 
     return Scaffold(
@@ -189,135 +213,468 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(screenWidth * 0.04), // Responsive overall padding
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Event Header Card
-            Card(
-              margin: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              elevation: 0,
-              color: Colors.white,
-              child: Padding(
-                padding: EdgeInsets.all(screenWidth * 0.04), // Responsive card padding
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Birthday Party at Sarah\'s',
-                      style: TextStyle(
-                        fontSize: titleFontSize, // Responsive font size
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textDark,
-                        fontFamily: 'Poppins',
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: screenWidth * 0.02), // Responsive spacing
-                    // Date and Time using Wrap for responsiveness
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: screenWidth * 0.03, // Horizontal spacing between items
-                      runSpacing: screenWidth * 0.015, // Vertical spacing if items wrap
+      body: FutureBuilder<Event>(
+        future: _eventDetails,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          final event = snapshot.data!;
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(screenWidth * 0.04),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Event Header Card
+                Card(
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  elevation: 0,
+                  color: Colors.white,
+                  child: Padding(
+                    padding: EdgeInsets.all(screenWidth * 0.04),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // Date
-                        Row(
-                          mainAxisSize: MainAxisSize.min, // Important for Wrap
+                        Text(
+                          event.title,
+                          style: TextStyle(
+                            fontSize: screenWidth * 0.055,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textDark,
+                            fontFamily: 'Poppins',
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: screenWidth * 0.02),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: screenWidth * 0.03,
+                          runSpacing: screenWidth * 0.015,
                           children: [
-                            Icon(Icons.calendar_month, size: generalIconSize, color: AppColors.primaryBlue), // Responsive icon size
-                            SizedBox(width: screenWidth * 0.015), // Responsive spacing
-                            Text(
-                              'Saturday, March 15, 2025',
-                              style: TextStyle(
-                                fontSize: bodyFontSize, // Responsive font size
-                                color: AppColors.primaryBlue,
-                                fontFamily: 'Poppins',
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.calendar_month,
+                                  size: screenWidth * 0.04,
+                                  color: AppColors.primaryBlue,
+                                ),
+                                SizedBox(width: screenWidth * 0.015),
+                                Text(
+                                  event.date,
+                                  style: TextStyle(
+                                    fontSize: screenWidth * 0.035,
+                                    color: AppColors.primaryBlue,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  size: screenWidth * 0.04,
+                                  color: AppColors.primaryBlue,
+                                ),
+                                SizedBox(width: screenWidth * 0.015),
+                                Text(
+                                  '${event.startTime} - ${event.endTime}',
+                                  style: TextStyle(
+                                    fontSize: screenWidth * 0.035,
+                                    color: AppColors.primaryBlue,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                        // Time
+                        SizedBox(height: screenWidth * 0.02),
                         Row(
-                          mainAxisSize: MainAxisSize.min, // Important for Wrap
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.access_time, size: generalIconSize, color: AppColors.primaryBlue), // Responsive icon size
-                            SizedBox(width: screenWidth * 0.015), // Responsive spacing
-                            Text(
-                              '3:00 PM - 6:00 PM',
-                              style: TextStyle(
-                                fontSize: bodyFontSize, // Responsive font size
-                                color: AppColors.primaryBlue,
-                                fontFamily: 'Poppins',
+                            Icon(
+                              Icons.location_on,
+                              size: screenWidth * 0.04,
+                              color: const Color(0xFFF87171),
+                            ),
+                            SizedBox(width: screenWidth * 0.015),
+                            Expanded(
+                              child: Text(
+                                event.location,
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.035,
+                                  color: AppColors.textMedium,
+                                  fontFamily: 'Poppins',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ],
                     ),
-                    SizedBox(height: screenWidth * 0.02), // Responsive spacing
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  ),
+                ),
+                SizedBox(height: screenWidth * 0.04), // Responsive spacing
+                // Host Information Card
+                Card(
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  elevation: 0,
+                  color: Colors.white,
+                  child: Padding(
+                    padding: EdgeInsets.all(
+                      screenWidth * 0.04,
+                    ), // Responsive card padding
+                    child: Column(
                       children: [
-                        Icon(Icons.location_on, size: generalIconSize, color: const Color(0xFFF87171)), // Responsive icon size
-                        SizedBox(width: screenWidth * 0.015), // Responsive spacing
-                        Expanded( // Ensure location text expands
-                          child: Text(
-                            '123 Oak Street, Springfield',
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius:
+                                  screenWidth * 0.06, // Responsive avatar size
+                              backgroundImage: Image.asset(
+                                AppAssets.sarahMartinezMom, // Host image
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.person),
+                              ).image,
+                            ),
+                            SizedBox(
+                              width: screenWidth * 0.03,
+                            ), // Responsive spacing
+                            Expanded(
+                              // Host name and description should take remaining space
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Sarah Martinez',
+                                    style: TextStyle(
+                                      fontSize:
+                                          subtitleFontSize, // Responsive font size
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.textDark,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    'Host • Emma’s Mom',
+                                    style: TextStyle(
+                                      fontSize:
+                                          smallFontSize, // Responsive font size
+                                      color: AppColors.textMedium,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: screenWidth * 0.04,
+                        ), // Responsive spacing
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isJoining = true;
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _isJoining
+                                      ? AppColors.primaryBlue
+                                      : Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    side: BorderSide(
+                                      color: _isJoining
+                                          ? AppColors.primaryBlue
+                                          : AppColors.inputOutline,
+                                    ),
+                                  ),
+                                  elevation: 0,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: screenWidth * 0.03,
+                                  ), // Responsive vertical padding
+                                ),
+                                child: FittedBox(
+                                  // Use FittedBox to ensure text fits on very small buttons
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'I\'m Joining',
+                                    style: TextStyle(
+                                      fontSize:
+                                          bodyFontSize, // Responsive font size
+                                      fontWeight: FontWeight.w500,
+                                      color: _isJoining
+                                          ? Colors.white
+                                          : AppColors.textDark,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: screenWidth * 0.03,
+                            ), // Responsive spacing
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isJoining = false;
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: !_isJoining
+                                      ? AppColors.notGoingButtonColor
+                                      : Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    side: BorderSide(
+                                      color: !_isJoining
+                                          ? AppColors.notGoingButtonColor
+                                          : AppColors.inputOutline,
+                                    ),
+                                  ),
+                                  elevation: 0,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: screenWidth * 0.03,
+                                  ), // Responsive vertical padding
+                                ),
+                                child: FittedBox(
+                                  // Use FittedBox to ensure text fits
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'Decline',
+                                    style: TextStyle(
+                                      fontSize:
+                                          bodyFontSize, // Responsive font size
+                                      fontWeight: FontWeight.w500,
+                                      color: !_isJoining
+                                          ? Colors.white
+                                          : const Color(0xFFF87171),
+                                      fontFamily: 'Poppins',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: screenWidth * 0.04), // Responsive spacing
+                // Who's Joining Section
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: screenWidth * 0.02,
+                  ), // Responsive padding
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // This section for "Who's Joining" and count
+                      Flexible(
+                        flex: 3, // Give more flexibility to this side
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.people,
+                              size: generalIconSize,
+                              color: const Color(0xFF5A8DEE),
+                            ), // Responsive icon size
+                            SizedBox(
+                              width: screenWidth * 0.01,
+                            ), // Responsive spacing
+                            Flexible(
+                              // Ensure "Who's Joining" text can shrink
+                              child: Text(
+                                'Who\'s Joining',
+                                style: TextStyle(
+                                  fontSize:
+                                      subtitleFontSize, // Responsive font size
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textDark,
+                                  fontFamily: 'Poppins',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            SizedBox(
+                              width: screenWidth * 0.02,
+                            ), // Responsive spacing
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: screenWidth * 0.015,
+                                vertical: screenWidth * 0.008,
+                              ), // Responsive padding
+                              decoration: BoxDecoration(
+                                color: AppColors.lightBlueBackground,
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: Text(
+                                '${participants.where((p) => p.status == 'Going').length} Going',
+                                style: TextStyle(
+                                  fontSize:
+                                      smallFontSize, // Responsive font size
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primaryBlue,
+                                  fontFamily: 'Poppins',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        width: screenWidth * 0.02,
+                      ), // Small space before chat button
+                      // Chat button
+                      Flexible(
+                        flex:
+                            2, // Give less flexibility to chat button, allowing it to maintain size better
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            // Handle chat action
+                          },
+                          icon: Icon(
+                            Icons.chat,
+                            size: screenWidth * 0.045,
+                            color: AppColors.chatButtonTextColor,
+                          ), // Responsive icon size
+                          label: Text(
+                            'Chat',
                             style: TextStyle(
-                              fontSize: bodyFontSize, // Responsive font size
-                              color: AppColors.textMedium,
+                              fontSize: bodyFontSize, // Consistent font size
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textDark,
                               fontFamily: 'Poppins',
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.chatButtonColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30.0),
+                            ),
+                            elevation: 0,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: screenWidth * 0.025,
+                              vertical: screenWidth * 0.015,
+                            ), // Responsive padding
                           ),
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            SizedBox(height: screenWidth * 0.04), // Responsive spacing
-            // Host Information Card
-            Card(
-              margin: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              elevation: 0,
-              color: Colors.white,
-              child: Padding(
-                padding: EdgeInsets.all(screenWidth * 0.04), // Responsive card padding
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: screenWidth * 0.06, // Responsive avatar size
-                          backgroundImage: Image.asset(
-                            AppAssets.sarahMartinezMom, // Host image
-                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.person),
-                          ).image,
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: participants.length,
+                  itemBuilder: (context, index) {
+                    return _buildParticipantTile(
+                      context,
+                      participants[index],
+                    ); // Pass context
+                  },
+                ),
+                SizedBox(height: screenWidth * 0.04), // Responsive spacing
+                // Ride Requests Section
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: screenWidth * 0.02,
+                  ), // Responsive padding
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.directions_car_outlined,
+                        size: sectionIconSize,
+                        color: AppColors.primaryBlue,
+                      ), // Responsive icon size
+                      SizedBox(width: screenWidth * 0.02), // Responsive spacing
+                      Expanded(
+                        // Make text responsive
+                        child: Text(
+                          'Ride Requests',
+                          style: TextStyle(
+                            fontSize: subtitleFontSize, // Responsive font size
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textDark,
+                            fontFamily: 'Poppins',
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        SizedBox(width: screenWidth * 0.03), // Responsive spacing
-                        Expanded( // Host name and description should take remaining space
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Sarah Martinez',
+                      ),
+                    ],
+                  ),
+                ),
+                Card(
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    side: BorderSide(
+                      color: AppColors.rideRequestCardBorder,
+                      width: 1,
+                    ),
+                  ),
+                  elevation: 0,
+                  color: AppColors.rideRequestCardBackground,
+                  child: Padding(
+                    padding: EdgeInsets.all(
+                      screenWidth * 0.04,
+                    ), // Responsive card padding
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Image(
+                              image: const AssetImage(
+                                'assets/images/3d-house.png',
+                              ),
+                              height: screenWidth * 0.05,
+                              width: screenWidth * 0.05,
+                            ), // Responsive image size
+                            SizedBox(
+                              width: screenWidth * 0.02,
+                            ), // Responsive spacing
+                            Expanded(
+                              // Make text responsive
+                              child: Text(
+                                'Available for ride home',
                                 style: TextStyle(
-                                  fontSize: subtitleFontSize, // Responsive font size
+                                  fontSize:
+                                      bodyFontSize, // Responsive font size
                                   fontWeight: FontWeight.w500,
                                   color: AppColors.textDark,
                                   fontFamily: 'Poppins',
@@ -325,79 +682,53 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              Text(
-                                'Host • Emma’s Mom',
-                                style: TextStyle(
-                                  fontSize: smallFontSize, // Responsive font size
-                                  color: AppColors.textMedium,
-                                  fontFamily: 'Poppins',
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    SizedBox(height: screenWidth * 0.04), // Responsive spacing
-                    Row(
-                      children: [
-                        Expanded(
+                        SizedBox(
+                          height: screenWidth * 0.02,
+                        ), // Responsive spacing
+                        Text(
+                          'Mike Wilson + Can drop off anyone near downtown area',
+                          style: TextStyle(
+                            fontSize: smallFontSize, // Responsive font size
+                            color: AppColors.textMedium,
+                            fontFamily: 'Poppins',
+                          ),
+                          maxLines: 2, // Allow to wrap for description
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(
+                          height: screenWidth * 0.04,
+                        ), // Responsive spacing
+                        SizedBox(
+                          width: double.infinity,
+                          height:
+                              screenWidth * 0.1, // Responsive height for button
                           child: ElevatedButton(
                             onPressed: () {
-                              setState(() {
-                                _isJoining = true;
-                              });
+                              context.push('/ride_share');
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: _isJoining ? AppColors.primaryBlue : Colors.white,
+                              backgroundColor: AppColors.requestRideButtonColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8.0),
-                                side: BorderSide(color: _isJoining ? AppColors.primaryBlue : AppColors.inputOutline),
                               ),
                               elevation: 0,
-                              padding: EdgeInsets.symmetric(vertical: screenWidth * 0.03), // Responsive vertical padding
+                              padding: EdgeInsets.symmetric(
+                                horizontal: screenWidth * 0.04,
+                              ), // Responsive horizontal padding
                             ),
-                            child: FittedBox( // Use FittedBox to ensure text fits on very small buttons
+                            child: FittedBox(
+                              // Use FittedBox for button text
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                'I\'m Joining',
+                                'Request Ride',
                                 style: TextStyle(
-                                  fontSize: bodyFontSize, // Responsive font size
-                                  fontWeight: FontWeight.w500,
-                                  color: _isJoining ? Colors.white : AppColors.textDark,
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: screenWidth * 0.03), // Responsive spacing
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _isJoining = false;
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: !_isJoining ? AppColors.notGoingButtonColor : Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                                side: BorderSide(color: !_isJoining ? AppColors.notGoingButtonColor : AppColors.inputOutline),
-                              ),
-                              elevation: 0,
-                              padding: EdgeInsets.symmetric(vertical: screenWidth * 0.03), // Responsive vertical padding
-                            ),
-                            child: FittedBox( // Use FittedBox to ensure text fits
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                'Decline',
-                                style: TextStyle(
-                                  fontSize: bodyFontSize, // Responsive font size
-                                  fontWeight: FontWeight.w500,
-                                  color: !_isJoining ? Colors.white : const Color(0xFFF87171),
+                                  fontSize:
+                                      bodyFontSize, // Consistent font size
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.requestRideButtonTextColor,
                                   fontFamily: 'Poppins',
                                 ),
                               ),
@@ -406,207 +737,15 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                SizedBox(
+                  height: screenWidth * 0.05,
+                ), // Spacing for bottom nav bar
+              ],
             ),
-            SizedBox(height: screenWidth * 0.04), // Responsive spacing
-
-            // Who's Joining Section
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: screenWidth * 0.02), // Responsive padding
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // This section for "Who's Joining" and count
-                  Flexible(
-                    flex: 3, // Give more flexibility to this side
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.people, size: generalIconSize, color: const Color(0xFF5A8DEE)), // Responsive icon size
-                        SizedBox(width: screenWidth * 0.01), // Responsive spacing
-                        Flexible( // Ensure "Who's Joining" text can shrink
-                          child: Text(
-                            'Who\'s Joining',
-                            style: TextStyle(
-                              fontSize: subtitleFontSize, // Responsive font size
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textDark,
-                              fontFamily: 'Poppins',
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        SizedBox(width: screenWidth * 0.02), // Responsive spacing
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.015, vertical: screenWidth * 0.008), // Responsive padding
-                          decoration: BoxDecoration(
-                            color: AppColors.lightBlueBackground,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: Text(
-                            '${participants.where((p) => p.status == 'Going').length} Going',
-                            style: TextStyle(
-                              fontSize: smallFontSize, // Responsive font size
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.primaryBlue,
-                              fontFamily: 'Poppins',
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: screenWidth * 0.02), // Small space before chat button
-                  // Chat button
-                  Flexible(
-                    flex: 2, // Give less flexibility to chat button, allowing it to maintain size better
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // Handle chat action
-                      },
-                      icon: Icon(Icons.chat, size: screenWidth * 0.045, color: AppColors.chatButtonTextColor), // Responsive icon size
-                      label: Text(
-                        'Chat',
-                        style: TextStyle(
-                          fontSize: bodyFontSize, // Consistent font size
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textDark,
-                          fontFamily: 'Poppins',
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.chatButtonColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30.0),
-                        ),
-                        elevation: 0,
-                        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.025, vertical: screenWidth * 0.015), // Responsive padding
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: participants.length,
-              itemBuilder: (context, index) {
-                return _buildParticipantTile(context, participants[index]); // Pass context
-              },
-            ),
-            SizedBox(height: screenWidth * 0.04), // Responsive spacing
-
-            // Ride Requests Section
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: screenWidth * 0.02), // Responsive padding
-              child: Row(
-                children: [
-                  Icon(Icons.directions_car_outlined, size: sectionIconSize, color: AppColors.primaryBlue), // Responsive icon size
-                  SizedBox(width: screenWidth * 0.02), // Responsive spacing
-                  Expanded( // Make text responsive
-                    child: Text(
-                      'Ride Requests',
-                      style: TextStyle(
-                        fontSize: subtitleFontSize, // Responsive font size
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textDark,
-                        fontFamily: 'Poppins',
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Card(
-              margin: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-                side: BorderSide(color: AppColors.rideRequestCardBorder, width: 1),
-              ),
-              elevation: 0,
-              color: AppColors.rideRequestCardBackground,
-              child: Padding(
-                padding: EdgeInsets.all(screenWidth * 0.04), // Responsive card padding
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Image(image: const AssetImage('assets/images/3d-house.png',),height: screenWidth * 0.05, width: screenWidth * 0.05,), // Responsive image size
-                        SizedBox(width: screenWidth * 0.02), // Responsive spacing
-                        Expanded( // Make text responsive
-                          child: Text(
-                            'Available for ride home',
-                            style: TextStyle(
-                              fontSize: bodyFontSize, // Responsive font size
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textDark,
-                              fontFamily: 'Poppins',
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: screenWidth * 0.02), // Responsive spacing
-                    Text(
-                      'Mike Wilson + Can drop off anyone near downtown area',
-                      style: TextStyle(
-                        fontSize: smallFontSize, // Responsive font size
-                        color: AppColors.textMedium,
-                        fontFamily: 'Poppins',
-                      ),
-                      maxLines: 2, // Allow to wrap for description
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: screenWidth * 0.04), // Responsive spacing
-                    SizedBox(
-                      width: double.infinity,
-                      height: screenWidth * 0.1, // Responsive height for button
-                      child: ElevatedButton(
-                        onPressed: () {
-                          context.push('/ride_share');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.requestRideButtonColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          elevation: 0,
-                          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04), // Responsive horizontal padding
-                        ),
-                        child: FittedBox( // Use FittedBox for button text
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            'Request Ride',
-                            style: TextStyle(
-                              fontSize: bodyFontSize, // Consistent font size
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.requestRideButtonTextColor,
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: screenWidth * 0.05), // Spacing for bottom nav bar
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -638,10 +777,10 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     }
 
     return Card(
-      margin: EdgeInsets.symmetric(vertical: screenWidth * 0.01), // Responsive vertical margin
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
+      margin: EdgeInsets.symmetric(
+        vertical: screenWidth * 0.01,
+      ), // Responsive vertical margin
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       elevation: 0,
       color: Colors.white,
       child: Padding(
@@ -652,7 +791,8 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
               radius: participantAvatarRadius, // Responsive avatar size
               backgroundImage: Image.asset(
                 participant.imageUrl ?? AppAssets.profilePicture,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.person),
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.person),
               ).image,
             ),
             SizedBox(width: screenWidth * 0.03), // Responsive spacing
@@ -675,7 +815,8 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                     Text(
                       participant.description!,
                       style: TextStyle(
-                        fontSize: participantDescFontSize, // Responsive font size
+                        fontSize:
+                            participantDescFontSize, // Responsive font size
                         color: AppColors.textMedium,
                         fontFamily: 'Poppins',
                       ),
@@ -686,7 +827,10 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
               ),
             ),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.02, vertical: screenWidth * 0.01), // Responsive padding
+              padding: EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.02,
+                vertical: screenWidth * 0.01,
+              ), // Responsive padding
               decoration: BoxDecoration(
                 color: statusColor,
                 borderRadius: BorderRadius.circular(8.0),
