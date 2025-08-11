@@ -63,11 +63,9 @@ class Event {
       location: json['location'] ?? '',
       eventType: json['event_type'] ?? '',
       eventTypeDisplay: json['event_type_display'] ?? '',
-      host: json['host'] != null
-          ? Host.fromJson(json['host'])
-          : Host(id: '', email: '', fullName: ''),
+      host: Host.fromJson(json['host']),
       rideNeededForEvent: json['ride_needed_for_event'] ?? false,
-      responses: responses,
+      responses: responses, // Including responses here
       goingCount: json['going_count'] ?? 0,
       notGoingCount: json['not_going_count'] ?? 0,
       pendingCount: json['pending_count'] ?? 0,
@@ -80,37 +78,60 @@ class Host {
   final String id;
   final String email;
   final String fullName;
+  final String profilePhotoUrl; // Added profile photo URL
+  final List<String> childrenNames; // Added children names
 
-  Host({required this.id, required this.email, required this.fullName});
+  Host({
+    required this.id,
+    required this.email,
+    required this.fullName,
+    required this.profilePhotoUrl,
+    required this.childrenNames,
+  });
 
   factory Host.fromJson(Map<String, dynamic> json) {
     return Host(
       id: json['id']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       fullName: json['full_name']?.toString() ?? '',
+      profilePhotoUrl: json['profile_photo_url'] ?? '',
+      childrenNames: List<String>.from(json['children_names'] ?? []),
     );
   }
 }
 
 class Response {
-  final String id;
+  final String username;
   final String userId;
   final String response;
-  final String responseDisplay;
+  String responseDisplay;
+  final String profilePhotoUrl; // Added profile photo URL
+  final List<String> childrenNames; // Added children names
 
   Response({
-    required this.id,
+    required this.username,
     required this.userId,
     required this.response,
     required this.responseDisplay,
+    required this.profilePhotoUrl,
+    required this.childrenNames,
   });
 
   factory Response.fromJson(Map<String, dynamic> json) {
     return Response(
-      id: json['id']?.toString() ?? '',
+      username: json['user'] != null
+          ? json['user']['full_name']?.toString() ?? ''
+          : '',
+
       userId: json['user'] != null ? json['user']['id']?.toString() ?? '' : '',
       response: json['response']?.toString() ?? '',
       responseDisplay: json['response_display']?.toString() ?? '',
+      profilePhotoUrl:
+          json['user']?['profile_photo_url'] ??
+          '', // Fetch profile photo URL from the user object
+      childrenNames: List<String>.from(
+        json['user']?['children_names'] ?? [],
+      ), // Fetch children names from the user object
     );
   }
 }

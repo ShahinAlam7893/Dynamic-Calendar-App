@@ -7,6 +7,47 @@ import 'package:shared_preferences/shared_preferences.dart';
 class EventService {
   static const String baseUrl = Urls.baseUrl;
 
+  static Future<void> sendResponse(String eventId, String responseType) async {
+    final token = await _getToken(); // Get the token
+    final url = Uri.parse('$baseUrl/event/events/$eventId/respond/');
+
+    // Debugging output: print the token and the URL
+    print('Sending response for event ID: $eventId');
+    print('URL: $url');
+    print('Response Type: $responseType');
+
+    final headers = {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
+
+    // Debugging output: print the headers
+    print('Headers: $headers');
+
+    final body = jsonEncode({'response': responseType});
+
+    // Debugging output: print the body being sent
+    print('Body: $body');
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      // Debugging output: print the response status and body
+      print('Response Status: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        // Successfully sent the response
+        print('Response sent successfully');
+      } else {
+        // Handle failure
+        print('Failed to send response: ${response.body}');
+      }
+    } catch (error) {
+      print('Error sending response: $error');
+    }
+  }
+
   /// Fetches upcoming events from the API
   static Future<List<Event>> fetchEvents() async {
     print("🔍 Starting fetchEvents...");

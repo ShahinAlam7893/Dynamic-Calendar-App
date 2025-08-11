@@ -105,19 +105,19 @@ class CustomBottomNavigationBar extends StatelessWidget {
 }
 
 // --- Participant Model ---
-class Participant {
-  final String name;
-  final String? description; // e.g., "Emma's Mom", "Emma (10 years old)"
-  final String status; // "Going", "Not Going", "Host"
-  final String? imageUrl; // Path to profile picture asset
+// class Participant {
+//   final String name;
+//   final String? description; // e.g., "Emma's Mom", "Emma (10 years old)"
+//   final String status; // "Going", "Not Going", "Host"
+//   final String? imageUrl; // Path to profile picture asset
 
-  const Participant({
-    required this.name,
-    this.description,
-    required this.status,
-    this.imageUrl,
-  });
-}
+//   const Participant({
+//     required this.name,
+//     this.description,
+//     required this.status,
+//     this.imageUrl,
+//   });
+// }
 
 class EventDetailsPage extends StatefulWidget {
   final String eventId;
@@ -130,39 +130,7 @@ class EventDetailsPage extends StatefulWidget {
 class _EventDetailsPageState extends State<EventDetailsPage> {
   int _selectedIndex = 1; // Assuming Events tab is selected
   bool _isJoining = true; // State for "I'm Joining" / "Decline" buttons
-
-  final List<Participant> participants = [
-    Participant(
-      name: 'Sarah Martinez',
-      description: 'Emma’s Mom',
-      status: 'Host',
-      imageUrl: AppAssets.sarahMartinezMom,
-    ),
-    const Participant(
-      name: 'Peter Johnson',
-      description: 'Ella (10 years old)',
-      status: 'Going',
-      imageUrl: AppAssets.peterJohnson, // Assuming asset path
-    ),
-    const Participant(
-      name: 'Mike Wilson',
-      description: 'Jake (9 years old)',
-      status: 'Going',
-      imageUrl: AppAssets.mikeWilson, // Assuming asset path
-    ),
-    const Participant(
-      name: 'Sarah Martinez',
-      description: 'Mia (10 years old)',
-      status: 'Not Going',
-      imageUrl: AppAssets.sarahMartinez, // Assuming asset path
-    ),
-    const Participant(
-      name: 'Jennifer Davis',
-      description: 'Sophia (9 years old)',
-      status: 'Going',
-      imageUrl: AppAssets.jenniferDavis, // Assuming asset path
-    ),
-  ];
+  String? _responseStatus;
 
   late Future<Event> _eventDetails;
 
@@ -170,6 +138,20 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   void initState() {
     super.initState();
     _eventDetails = EventService.fetchEventDetails(widget.eventId);
+  }
+
+  void _handleResponse(String responseType) {
+    EventService.sendResponse(widget.eventId, responseType)
+        .then((_) {
+          setState(() {
+            _isJoining = responseType == 'going';
+          });
+          // You can show a success message here if needed
+        })
+        .catchError((error) {
+          print('Error submitting response: $error');
+          // Handle error (show message or alert to the user)
+        });
   }
 
   @override
@@ -224,6 +206,8 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
           }
 
           final event = snapshot.data!;
+          final host = event.host;
+          final Response = event.responses;
           return SingleChildScrollView(
             padding: EdgeInsets.all(screenWidth * 0.04),
             child: Column(
@@ -307,7 +291,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                               size: screenWidth * 0.04,
                               color: const Color(0xFFF87171),
                             ),
-                            SizedBox(width: screenWidth * 0.015),
+                            // SizedBox(width: screenWidth * 0.015),
                             Expanded(
                               child: Text(
                                 event.location,
@@ -345,13 +329,13 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                         Row(
                           children: [
                             CircleAvatar(
-                              radius:
-                                  screenWidth * 0.06, // Responsive avatar size
-                              backgroundImage: Image.asset(
-                                AppAssets.sarahMartinezMom, // Host image
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.person),
-                              ).image,
+                              radius: screenWidth * 0.06, // Adjust size
+                              backgroundImage: NetworkImage(
+                                host.profilePhotoUrl,
+                              ),
+                              onBackgroundImageError: (exception, stackTrace) {
+                                // Handle error if image doesn't load
+                              },
                             ),
                             SizedBox(
                               width: screenWidth * 0.03,
@@ -362,7 +346,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Sarah Martinez',
+                                    host.fullName,
                                     style: TextStyle(
                                       fontSize:
                                           subtitleFontSize, // Responsive font size
@@ -373,17 +357,28 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  Text(
-                                    'Host • Emma’s Mom',
-                                    style: TextStyle(
-                                      fontSize:
-                                          smallFontSize, // Responsive font size
-                                      color: AppColors.textMedium,
-                                      fontFamily: 'Poppins',
+                                  if (host.childrenNames.isNotEmpty)
+                                    Text(
+                                      '${host.childrenNames.join(", ")}\'s Parents',
+                                      style: TextStyle(
+                                        fontSize: screenWidth * 0.03,
+                                        color: AppColors.textMedium,
+                                        fontFamily: 'Poppins',
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                  // Text(
+                                  //   'Host • Emma’s Mom',
+                                  //   style: TextStyle(
+                                  //     fontSize:
+                                  //         smallFontSize, // Responsive font size
+                                  //     color: AppColors.textMedium,
+                                  //     fontFamily: 'Poppins',
+                                  //   ),
+                                  //   maxLines: 1,
+                                  //   overflow: TextOverflow.ellipsis,
+                                  // ),
                                 ],
                               ),
                             ),
@@ -392,14 +387,15 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                         SizedBox(
                           height: screenWidth * 0.04,
                         ), // Responsive spacing
+
                         Row(
                           children: [
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () {
-                                  setState(() {
-                                    _isJoining = true;
-                                  });
+                                  _handleResponse(
+                                    'going',
+                                  ); // Send 'going' response
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: _isJoining
@@ -416,16 +412,14 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                                   elevation: 0,
                                   padding: EdgeInsets.symmetric(
                                     vertical: screenWidth * 0.03,
-                                  ), // Responsive vertical padding
+                                  ),
                                 ),
                                 child: FittedBox(
-                                  // Use FittedBox to ensure text fits on very small buttons
                                   fit: BoxFit.scaleDown,
                                   child: Text(
                                     'I\'m Joining',
                                     style: TextStyle(
-                                      fontSize:
-                                          bodyFontSize, // Responsive font size
+                                      fontSize: screenWidth * 0.035,
                                       fontWeight: FontWeight.w500,
                                       color: _isJoining
                                           ? Colors.white
@@ -436,15 +430,13 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                                 ),
                               ),
                             ),
-                            SizedBox(
-                              width: screenWidth * 0.03,
-                            ), // Responsive spacing
+                            SizedBox(width: screenWidth * 0.03),
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () {
-                                  setState(() {
-                                    _isJoining = false;
-                                  });
+                                  _handleResponse(
+                                    'not_going',
+                                  ); // Send 'not_going' response
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: !_isJoining
@@ -461,16 +453,14 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                                   elevation: 0,
                                   padding: EdgeInsets.symmetric(
                                     vertical: screenWidth * 0.03,
-                                  ), // Responsive vertical padding
+                                  ),
                                 ),
                                 child: FittedBox(
-                                  // Use FittedBox to ensure text fits
                                   fit: BoxFit.scaleDown,
                                   child: Text(
                                     'Decline',
                                     style: TextStyle(
-                                      fontSize:
-                                          bodyFontSize, // Responsive font size
+                                      fontSize: screenWidth * 0.035,
                                       fontWeight: FontWeight.w500,
                                       color: !_isJoining
                                           ? Colors.white
@@ -538,7 +528,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                                 borderRadius: BorderRadius.circular(8.0),
                               ),
                               child: Text(
-                                '${participants.where((p) => p.status == 'Going').length} Going',
+                                '${event.goingCount} Going',
                                 style: TextStyle(
                                   fontSize:
                                       smallFontSize, // Responsive font size
@@ -599,11 +589,12 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: participants.length,
+                  itemCount: Response.length,
                   itemBuilder: (context, index) {
                     return _buildParticipantTile(
                       context,
-                      participants[index],
+                      Response[index],
+                      host,
                     ); // Pass context
                   },
                 ),
@@ -751,16 +742,25 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   }
 
   // Passing BuildContext to _buildParticipantTile for responsive sizing
-  Widget _buildParticipantTile(BuildContext context, Participant participant) {
+  Widget _buildParticipantTile(
+    BuildContext context,
+    Response response,
+    Host host,
+  ) {
     final screenWidth = MediaQuery.of(context).size.width;
     final double participantAvatarRadius = screenWidth * 0.05;
     final double participantNameFontSize = screenWidth * 0.038;
     final double participantDescFontSize = screenWidth * 0.03;
     final double statusTagFontSize = screenWidth * 0.03;
 
+    String participantStatus = response.responseDisplay;
+    if (response.userId == host.id) {
+      participantStatus = 'Host'; // Mark the first participant as Host
+    }
+
     Color statusColor;
     Color statusTestColor;
-    switch (participant.status) {
+    switch (participantStatus) {
       case 'Going':
         statusColor = const Color(0x8036D399);
         statusTestColor = const Color(0xCC1B1D2A);
@@ -769,7 +769,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
         statusColor = const Color(0x80F87171);
         statusTestColor = const Color(0xCC1B1D2A);
         break;
-      case 'Host':
+      case 'Host': // Marking as Host
       default:
         statusColor = const Color(0xFF36D399);
         statusTestColor = const Color(0xFF1B1D2A);
@@ -788,20 +788,21 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
         child: Row(
           children: [
             CircleAvatar(
-              radius: participantAvatarRadius, // Responsive avatar size
-              backgroundImage: Image.asset(
-                participant.imageUrl ?? AppAssets.profilePicture,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.person),
-              ).image,
+              radius: participantAvatarRadius,
+              backgroundImage: response.profilePhotoUrl.isNotEmpty
+                  ? NetworkImage(response.profilePhotoUrl)
+                  : AssetImage(
+                      'assets/images/default_profile_picture.png',
+                    ), // Fallback image
             ),
+
             SizedBox(width: screenWidth * 0.03), // Responsive spacing
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    participant.name,
+                    response.username,
                     style: TextStyle(
                       fontSize: participantNameFontSize, // Responsive font size
                       fontWeight: FontWeight.w500,
@@ -811,12 +812,11 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (participant.description != null)
+                  if (response.childrenNames.isNotEmpty)
                     Text(
-                      participant.description!,
+                      response.childrenNames.join(", ") + "'s Parents",
                       style: TextStyle(
-                        fontSize:
-                            participantDescFontSize, // Responsive font size
+                        fontSize: participantDescFontSize,
                         color: AppColors.textMedium,
                         fontFamily: 'Poppins',
                       ),
@@ -836,7 +836,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                 borderRadius: BorderRadius.circular(8.0),
               ),
               child: Text(
-                participant.status,
+                participantStatus,
                 style: TextStyle(
                   fontSize: statusTagFontSize, // Responsive font size
                   fontWeight: FontWeight.w500,
