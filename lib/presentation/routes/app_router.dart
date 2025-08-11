@@ -32,8 +32,9 @@ import '../../core/services/group/group_conversation_manager.dart';
 import '../features/chat/group/view/create_group_page.dart';
 import '../features/chat/group/view/group_conversation_page.dart';
 import '../features/notification/notification_page.dart';
+import 'package:circleslate/presentation/routes/route_observer.dart';
 
-// --- RoutePaths Class (Restored to your original structure) ---
+// --- RoutePaths Class ---
 class RoutePaths {
   static const String splash = '/';
   static const String onboarding = '/onboarding';
@@ -45,26 +46,36 @@ class RoutePaths {
   static const String OtpVerificationPage = '/otp_page';
   static const String resetPasswordPage = '/password_reset';
   static const String passwordResetSuccessPage = '/pass_cng_succussful';
+<<<<<<< HEAD
   static const String upcomingeventspage =
       '/up_coming_events'; // Your original name
   static const String createeventspage = '/create_event'; // Your original name
+=======
+  static const String upcomingeventspage = '/up_coming_events';
+  static const String createeventspage = '/create_event';
+>>>>>>> eb0b0963131fea06fd0fcb1233936db3498e3a6f
   static const String eventDetails = '/event-details';
   static var ridesharingpage = '/ride_share';
   static const String onetooneconversationpage = '/one-to-one-conversation';
   static const String chatlistpage = '/chat';
+<<<<<<< HEAD
   static const String creategrouppage = '/group_chat'; // Your original name
   static const String groupConversationPage =
       '/group_conversation'; // New route for Group Conversation
+=======
+  static const String creategrouppage = '/group_chat';
+  static const String groupConversationPage = '/group_conversation';
+>>>>>>> eb0b0963131fea06fd0fcb1233936db3498e3a6f
   static const String groupManagement = '/group-management';
-  static const String addmemberpage = '/add_member'; // Your original name
+  static const String addmemberpage = '/add_member';
   static const String directInvite = '/direct-invite';
   static const String openInvite = '/open-invite';
-  // Added these as they are part of your navbar, assuming they are intended routes
-  static const String availability = '/availability';
+  static const String availability = '/availability'; // keep only once
   static const String availabilitypreview = '/availability_preview';
   static const String settings = '/settings';
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
+<<<<<<< HEAD
   static const String changePassword =
       '/change-password'; // New route for Change Password
   static const String privacyControls =
@@ -76,9 +87,17 @@ class RoutePaths {
   static const String deleteAccount = '/delete-account';
   static const String notification =
       '/notifications'; // New route for Notifications
+=======
+  static const String changePassword = '/change-password';
+  static const String privacyControls = '/privacy-controls';
+  static const String privacyPolicy = '/privacy-policy';
+  static const String termsAndConditions = '/terms-and-conditions';
+  static const String deleteAccount = '/delete-account';
+  static const String notification = '/notifications';
+>>>>>>> eb0b0963131fea06fd0fcb1233936db3498e3a6f
 }
 
-// --- AppRoutes Class (Restored to your original structure) ---
+// --- AppRoutes Class ---
 class AppRoutes {
   static const String splash = 'splash';
   static const String onboarding = 'onboarding';
@@ -89,6 +108,7 @@ class AppRoutes {
   static const String emailVerification = 'emailVerification';
   static const String resetPasswordPage = 'resetPasswordPage';
   static const String passwordResetSuccessPage = 'passwordResetSuccessPage';
+<<<<<<< HEAD
   static const String upcomingeventspage =
       'upcomingeventspage'; // Your original name
   static const String createeventpage = 'createeventpage';
@@ -100,6 +120,17 @@ class AppRoutes {
       'groupConversationPage'; // New route for Group Conversation
   static const String creategrouppage = 'creategrouppage'; // Your original name
   static const String addmemberpage = 'addmemberpage'; // Your original name
+=======
+  static const String upcomingeventspage = 'upcomingeventspage';
+  static const String createeventpage = 'createeventpage';
+  static const String chatlistpage = 'chatlistpage';
+  static const String eventdetailspage = 'eventdetailspage';
+  static const String ridesharingpage = 'ridesharingpage';
+  static const String onetooneconversationpage = 'onetooneconversationpage';
+  static const String groupConversationPage = 'groupConversationPage';
+  static const String creategrouppage = 'creategrouppage';
+  static const String addmemberpage = 'addmemberpage';
+>>>>>>> eb0b0963131fea06fd0fcb1233936db3498e3a6f
   static const String directInvite = 'directInvite';
   static const String openInvite = 'openInvite';
   static const String availability = 'availability';
@@ -109,41 +140,45 @@ class AppRoutes {
   static const String privacyControls = 'privacyControls';
   static const String termsAndConditions = 'termsAndConditions';
   static const String deleteAccount = 'deleteAccount';
+<<<<<<< HEAD
   static const String notification =
       'notification'; // New route for Notifications
+=======
+  static const String notification = 'notification';
+>>>>>>> eb0b0963131fea06fd0fcb1233936db3498e3a6f
 }
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-// --- AppRouter Class ---
-// This configures the GoRouter instance for your application.
 class AppRouter {
   static GoRouter get router => _router;
 
   static final GoRouter _router = GoRouter(
-    initialLocation: RoutePaths.splash, // Starting point of your app
+    initialLocation: RoutePaths.splash,
     navigatorKey: _rootNavigatorKey,
+<<<<<<< HEAD
     debugLogDiagnostics: true, // Enable for helpful debug logs
     // Redirection logic (can be expanded for authentication, etc.)
+=======
+    debugLogDiagnostics: true,
+    observers: [routeObserver], // <-- Add routeObserver here
+
+>>>>>>> eb0b0963131fea06fd0fcb1233936db3498e3a6f
     redirect: (BuildContext context, GoRouterState state) {
+      // You can add auth redirects here if needed
       return null;
     },
 
     routes: [
-      // Splash Screen
       GoRoute(
         path: RoutePaths.splash,
         builder: (context, state) => const SplashScreen(),
       ),
-
-      // Onboarding Screen
       GoRoute(
         path: RoutePaths.onboarding,
         name: AppRoutes.onboarding,
         builder: (context, state) => const OnboardingScreen(),
       ),
-
-      // Authentication Routes
       GoRoute(
         path: RoutePaths.login,
         builder: (context, state) => const LoginPage(),
@@ -152,55 +187,41 @@ class AppRouter {
         path: RoutePaths.signup,
         builder: (context, state) => const SignUpPage(),
       ),
-      // Route for the forgot password page.
       GoRoute(
         path: RoutePaths.forgotpassword,
-        builder: (BuildContext context, GoRouterState state) {
-          return const ForgotPasswordPage(isLoggedIn: false);
-        },
+        builder: (context, state) => const ForgotPasswordPage(isLoggedIn: false),
       ),
-
-      // Route for the email verification page.
       GoRoute(
         path: RoutePaths.emailVerification,
-        builder: (BuildContext context, GoRouterState state) {
+        builder: (context, state) {
           final String? userEmail = state.extra as String?;
           if (userEmail != null) {
             return EmailVerificationPage(userEmail: userEmail);
-          } else {
-            // If no email is provided, navigate back to the login or forgot password page.
-            return const ForgotPasswordPage(isLoggedIn: false);
           }
+          return const ForgotPasswordPage(isLoggedIn: false);
         },
       ),
-
-      // Route for the OTP verification page.
       GoRoute(
         path: RoutePaths.OtpVerificationPage,
+<<<<<<< HEAD
         builder: (BuildContext context, GoRouterState state) {
+=======
+        builder: (context, state) {
+>>>>>>> eb0b0963131fea06fd0fcb1233936db3498e3a6f
           final String? userEmail = state.extra as String?;
           if (userEmail != null) {
             return OtpVerificationPage(userEmail: userEmail);
-          } else {
-            return const ForgotPasswordPage(isLoggedIn: false);
           }
+          return const ForgotPasswordPage(isLoggedIn: false);
         },
       ),
-
-      // Route for the password reset page.
       GoRoute(
         path: RoutePaths.resetPasswordPage,
-        builder: (BuildContext context, GoRouterState state) {
-          return const ResetPasswordPage();
-        },
+        builder: (context, state) => const ResetPasswordPage(),
       ),
-
-      // Route for the password changed success page.
       GoRoute(
         path: RoutePaths.passwordResetSuccessPage,
-        builder: (BuildContext context, GoRouterState state) {
-          return const PasswordResetSuccessPage();
-        },
+        builder: (context, state) => const PasswordResetSuccessPage(),
       ),
       GoRoute(
         path: RoutePaths.home,
@@ -232,10 +253,8 @@ class AppRouter {
         builder: (context, state) =>
             const SmoothNavigationWrapper(initialIndex: 4),
       ),
-
-      // Other Feature-specific Routes (not part of the main bottom navigation)
       GoRoute(
-        path: RoutePaths.createeventspage, // Your original route name
+        path: RoutePaths.createeventspage,
         builder: (context, state) => const CreateEventPage(),
       ),
       GoRoute(
@@ -253,6 +272,7 @@ class AppRouter {
       GoRoute(
         path: RoutePaths.onetooneconversationpage,
         builder: (context, state) {
+<<<<<<< HEAD
           // Extract parameters from the extra Map
           final Map<String, dynamic>? extraData =
               state.extra as Map<String, dynamic>?;
@@ -267,17 +287,25 @@ class AppRouter {
           final bool isGroupChat = extraData?['isGroupChat'] as bool? ?? false;
           final bool isCurrentUserAdminInGroup =
               extraData?['isCurrentUserAdminInGroup'] as bool? ?? false;
+=======
+          final Map<String, dynamic>? extraData = state.extra as Map<String, dynamic>?;
+
+          final String chatPartnerName = extraData?['chatPartnerName'] ?? 'Unknown Chat Partner';
+          final String currentUserId = extraData?['currentUserId'] ?? '';
+          final String chatPartnerId = extraData?['chatPartnerId'] ?? '';
+          final bool isGroupChat = extraData?['isGroupChat'] ?? false;
+          final bool isCurrentUserAdminInGroup = extraData?['isCurrentUserAdminInGroup'] ?? false;
+>>>>>>> eb0b0963131fea06fd0fcb1233936db3498e3a6f
 
           return OneToOneConversationPage(
             chatPartnerName: chatPartnerName,
             currentUserId: currentUserId,
             chatPartnerId: chatPartnerId,
             conversationId: '',
-            // isGroupChat: isGroupChat,
-            // isCurrentUserAdminInGroup: isCurrentUserAdminInGroup,
           );
         },
       ),
+<<<<<<< HEAD
 
       // GoRoute(
       //   path: RoutePaths.onetooneconversationpage,
@@ -288,24 +316,25 @@ class AppRouter {
       //     );
       //   },
       // ),
+=======
+>>>>>>> eb0b0963131fea06fd0fcb1233936db3498e3a6f
       GoRoute(
-        path: RoutePaths.groupManagement, // Your original route name
+        path: RoutePaths.groupManagement,
         builder: (context, state) => const GroupManagementPage(),
       ),
-
       GoRoute(
         path: '/group_chat',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
-          final currentUserId = extra['currentUserId'] as String? ?? '';
+          final currentUserId = extra['currentUserId'] ?? '';
           return CreateGroupPage(currentUserId: currentUserId);
         },
       ),
-
       GoRoute(
-        path: RoutePaths.groupConversationPage, // Your original route name
+        path: RoutePaths.groupConversationPage,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
+<<<<<<< HEAD
           final currentUserId = extra['currentUserId'] as String? ?? '';
           final conversationId = extra['conversationId'] as String? ?? '';
           final isGroupChat = extra['isGroupChat'] as bool? ?? true;
@@ -314,16 +343,26 @@ class AppRouter {
 
           return GroupConversationPage(
             // <- use your group chat page here
+=======
+          final currentUserId = extra['currentUserId'] ?? '';
+          final conversationId = extra['conversationId'] ?? '';
+          final isGroupChat = extra['isGroupChat'] ?? true;
+          final isCurrentUserAdminInGroup = extra['isCurrentUserAdminInGroup'] ?? true;
+
+          return GroupConversationPage(
+>>>>>>> eb0b0963131fea06fd0fcb1233936db3498e3a6f
             groupId: conversationId,
             currentUserId: currentUserId,
-            groupName: extra['groupName'] as String? ?? '',
-            // Pass any other needed parameters here
+            groupName: extra['groupName'] ?? '',
           );
         },
       ),
+<<<<<<< HEAD
 
+=======
+>>>>>>> eb0b0963131fea06fd0fcb1233936db3498e3a6f
       GoRoute(
-        path: RoutePaths.addmemberpage, // Your original route name
+        path: RoutePaths.addmemberpage,
         builder: (context, state) => const AddMemberPage(),
       ),
       GoRoute(
@@ -355,10 +394,6 @@ class AppRouter {
         builder: (context, state) => const ProfilePage(),
       ),
       GoRoute(
-        path: RoutePaths.availability,
-        builder: (context, state) => const AvailabilityPage(),
-      ),
-      GoRoute(
         path: RoutePaths.availabilitypreview,
         builder: (context, state) => const AvailabilityPreviewPage(),
       ),
@@ -366,13 +401,17 @@ class AppRouter {
         path: RoutePaths.notification,
         builder: (context, state) => const NotificationPage(),
       ),
+<<<<<<< HEAD
 
+=======
+>>>>>>> eb0b0963131fea06fd0fcb1233936db3498e3a6f
       GoRoute(
         path: RoutePaths.editProfile,
         builder: (context, state) {
           final Map<String, dynamic> extraData =
               state.extra as Map<String, dynamic>;
           return EditProfilePage(
+<<<<<<< HEAD
             initialFullName: extraData['fullName'] as String,
             initialEmail: extraData['email'] as String,
             initialMobile: extraData['mobile'] as String,
@@ -380,6 +419,13 @@ class AppRouter {
               extraData['children'],
             ),
             initialProfileImageUrl: extraData['profileImageUrl'] as String,
+=======
+            initialFullName: extraData['fullName'],
+            initialEmail: extraData['email'],
+            initialMobile: extraData['mobile'],
+            initialChildren: List<Map<String, String>>.from(extraData['children']),
+            initialProfileImageUrl: extraData['profileImageUrl'],
+>>>>>>> eb0b0963131fea06fd0fcb1233936db3498e3a6f
           );
         },
       ),

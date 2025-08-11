@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/services/user_search_service.dart';
 import '../../../../data/models/user_search_result_model.dart';
+import '../../../routes/route_observer.dart';
 import '../conversation_service.dart';
 
 enum ChatMessageStatus { sent, delivered, seen }
@@ -66,7 +67,7 @@ class ChatListPage extends StatefulWidget {
   State<ChatListPage> createState() => _ChatListPageState();
 }
 
-class _ChatListPageState extends State<ChatListPage> {
+class _ChatListPageState extends State<ChatListPage> with RouteAware {
   final TextEditingController _searchController = TextEditingController();
   List<UserSearchResult> _userSearchResults = [];
   List<Chat> _userList = [];
@@ -103,33 +104,59 @@ class _ChatListPageState extends State<ChatListPage> {
     return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
-  void _sortChatsByRecent() {
+  void _sortChatsByUnreadAndRecent() {
     _userList.sort((a, b) {
+      if (b.unreadCount != a.unreadCount) {
+        return b.unreadCount.compareTo(a.unreadCount);
+      }
       final dateA = _parseChatTime(a.time);
       final dateB = _parseChatTime(b.time);
-      return dateB.compareTo(dateA); // descending: newest first
+      return dateB.compareTo(dateA);
     });
+  }
+
+  void _refreshChats() {
+    ChatService.fetchChats().then((chatList) {
+      setState(() {
+        _userList = chatList;
+        _sortChatsByUnreadAndRecent();
+      });
+    }).catchError((e) {
+      debugPrint('Error refreshing chat list: $e');
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    _userSearchService.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Called when returning to this page from another page
+    _refreshChats();
+  }
+
+  @override
+  void didPush() {
+    // Called when this page is pushed onto the stack
+    _refreshChats();
   }
 
   @override
   void initState() {
     super.initState();
-    print('ChatListPage currentUserId: ${widget.currentUserId}');
-    ChatService.fetchChats().then((chatList) {
-      print('Fetched chats before sorting:');
-      chatList.forEach((chat) => print('Chat ${chat.name}, time: ${chat.time}'));
-
-      setState(() {
-        _userList = chatList;
-        _sortChatsByRecent();
-      });
-
-      print('Chats after sorting:');
-      _userList.forEach((chat) => print('Chat ${chat.name}, time: ${chat.time}'));
-    }).catchError((e) {
-      debugPrint('Error loading chat list: $e');
-    });
-
+    _refreshChats();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -171,14 +198,6 @@ class _ChatListPageState extends State<ChatListPage> {
         });
       }
     }
-  }
-
-  @override
-  void dispose() {
-    _searchController.removeListener(_onSearchChanged);
-    _searchController.dispose();
-    _userSearchService.dispose();
-    super.dispose();
   }
 
   @override
@@ -437,7 +456,6 @@ class _ChatListPageState extends State<ChatListPage> {
     return GestureDetector(
       onTap: () {
         if (!chat.isGroupChat && chat.participants.isNotEmpty) {
-          // For one-to-one chat, find the partner (participant other than current user)
           final partner = chat.participants.firstWhere(
                 (p) => p['id'].toString() != widget.currentUserId,
             orElse: () => null,
@@ -458,11 +476,10 @@ class _ChatListPageState extends State<ChatListPage> {
               'currentUserId': widget.currentUserId,
               'isGroupChat': false,
               'isCurrentUserAdminInGroup': false,
-              'conversationId': chat.name, // You may want to use chat.id here if available
+              'conversationId': chat.name,
             },
           );
         } else {
-          // Group chat
           context.push(
             RoutePaths.groupConversationPage,
             extra: {
@@ -470,7 +487,7 @@ class _ChatListPageState extends State<ChatListPage> {
               'isGroupChat': true,
               'isCurrentUserAdminInGroup': chat.isCurrentUserAdminInGroup ?? false,
               'currentUserId': widget.currentUserId,
-              'conversationId': chat.name, // Use chat.id if available
+              'conversationId': chat.name,
             },
           );
         }
@@ -598,18 +615,18 @@ class _ChatListPageState extends State<ChatListPage> {
                       Padding(
                         padding: const EdgeInsets.only(top: 4.0),
                         child: Container(
-                          padding: const EdgeInsets.all(6.0),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0, vertical: 4.0),
                           decoration: BoxDecoration(
-                            color: AppColors.unreadCountBg,
-                            shape: BoxShape.circle,
+                            color: AppColors.primaryBlue,
+                            borderRadius: BorderRadius.circular(12.0),
                           ),
                           child: Text(
-                            chat.unreadCount.toString(),
+                            '${chat.unreadCount}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10.0,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
