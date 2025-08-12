@@ -27,7 +27,6 @@ import 'package:circleslate/presentation/features/authentication/view/reset_pass
 import 'package:circleslate/presentation/features/authentication/view/signup_screen.dart';
 import 'package:circleslate/presentation/features/onboarding/view/splash_screen.dart';
 import 'package:circleslate/presentation/features/onboarding/view/onboarding_screen.dart';
-import '../../core/services/group/group_conversation_manager.dart';
 import '../features/chat/group/view/create_group_page.dart';
 import '../features/chat/group/view/group_conversation_page.dart';
 import '../features/notification/notification_page.dart';
@@ -225,7 +224,14 @@ class AppRouter {
       ),
       GoRoute(
         path: RoutePaths.groupManagement,
-        builder: (context, state) => const GroupManagementPage(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return GroupManagementPage(
+            groupId: extra['groupId'] ?? '',
+            currentUserId: extra['currentUserId'] ?? '',
+            isCurrentUserAdmin: extra['isCurrentUserAdmin'] ?? false, conversationId: extra['conversationId'] ?? '',
+          );
+        },
       ),
       GoRoute(
         path: '/group_chat',
@@ -253,7 +259,7 @@ class AppRouter {
       ),
       GoRoute(
         path: RoutePaths.addmemberpage,
-        builder: (context, state) => const AddMemberPage(),
+        builder: (context, state) => const AddMemberPage(conversationId: '', currentUserId: '',),
       ),
       GoRoute(
         path: RoutePaths.directInvite,

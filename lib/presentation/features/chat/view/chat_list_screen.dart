@@ -6,57 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/services/user_search_service.dart';
+import '../../../../data/models/group_model.dart';
 import '../../../../data/models/user_search_result_model.dart';
 import '../../../routes/route_observer.dart';
 import '../conversation_service.dart';
+import '../../../data/models/chat_model.dart' hide ChatMessageStatus;
 
-enum ChatMessageStatus { sent, delivered, seen }
-
-class Chat {
-  final String name;
-  final String lastMessage;
-  final String time;
-  final String imageUrl;
-  final int unreadCount;
-  final bool isOnline;
-  final ChatMessageStatus status;
-  final bool isGroupChat;
-  final bool? isCurrentUserAdminInGroup;
-  final List<dynamic> participants;
-  final String currentUserId;
-
-  const Chat({
-    required this.name,
-    required this.lastMessage,
-    required this.time,
-    required this.imageUrl,
-    this.unreadCount = 0,
-    this.isOnline = false,
-    this.status = ChatMessageStatus.seen,
-    this.isGroupChat = false,
-    this.isCurrentUserAdminInGroup,
-    this.participants = const [],
-    this.currentUserId = '',
-  });
-
-  factory Chat.fromJson(Map<String, dynamic> json) {
-    final lastMsg = json['last_message'];
-    final participants = json['participants'] as List<dynamic>? ?? [];
-    final firstParticipant = participants.isNotEmpty ? participants[0] : null;
-    return Chat(
-      name: json['display_name'] ?? json['name'] ?? 'Unknown',
-      lastMessage: lastMsg != null ? lastMsg['content'] ?? '' : '',
-      time: lastMsg != null ? lastMsg['timestamp'] ?? '' : '',
-      imageUrl: 'assets/images/default_user.png',
-      unreadCount: json['unread_count'] ?? 0,
-      isOnline: firstParticipant != null ? firstParticipant['is_online'] ?? false : false,
-      status: ChatMessageStatus.seen,
-      isGroupChat: json['is_group'] ?? false,
-      isCurrentUserAdminInGroup: json['user_role'] == 'admin',
-      participants: participants,
-    );
-  }
-}
 
 class ChatListPage extends StatefulWidget {
   final String currentUserId;
@@ -75,7 +30,7 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
   bool _isSearching = false;
   String? _searchError;
 
-  /// Parses time string into DateTime, supporting ISO8601 or unix timestamps (seconds or ms).
+
   DateTime _parseChatTime(String timeStr) {
     if (timeStr.isEmpty) {
       return DateTime.fromMillisecondsSinceEpoch(0);
@@ -447,16 +402,20 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
       itemCount: _userList.length,
       itemBuilder: (context, index) {
         final chat = _userList[index];
-        return _buildChatItem(context, chat);
+        final groupChat = _userList[index];
+
+
+        return _buildChatItem(context, chat, groupChat);
       },
     );
   }
 
-  Widget _buildChatItem(BuildContext context, Chat chat) {
+  Widget _buildChatItem(BuildContext context, Chat chat, Chat groupChat) {
     return GestureDetector(
       onTap: () {
         if (!chat.isGroupChat && chat.participants.isNotEmpty) {
           final partner = chat.participants.firstWhere(
+
                 (p) => p['id'].toString() != widget.currentUserId,
             orElse: () => null,
           );
@@ -483,11 +442,11 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
           context.push(
             RoutePaths.groupConversationPage,
             extra: {
-              'groupName': chat.name,
+              'groupName': groupChat.name,
               'isGroupChat': true,
-              'isCurrentUserAdminInGroup': chat.isCurrentUserAdminInGroup ?? false,
+              'isCurrentUserAdminInGroup': groupChat.isCurrentUserAdminInGroup ?? false,
               'currentUserId': widget.currentUserId,
-              'conversationId': chat.name,
+              'conversationId': groupChat.conversationId,
             },
           );
         }

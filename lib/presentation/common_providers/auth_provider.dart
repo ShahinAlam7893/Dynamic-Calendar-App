@@ -15,7 +15,7 @@ class ApiEndpoints {
   static const String resetPassword = '/auth/reset-password/';
   static const String userProfile = '/auth/profile/';
   static const String updateProfile = '/auth/profile/update/';
-  static const String conversations = '/auth/conversations/'; // New API endpoint for conversations
+  static const String conversations = '/auth/conversations'; // New API endpoint for conversations
 }
 
 class AuthProvider extends ChangeNotifier {

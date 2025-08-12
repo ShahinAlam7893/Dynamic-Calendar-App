@@ -1,6 +1,6 @@
 import 'package:circleslate/core/constants/app_assets.dart';
 
-enum ChatMessageStatus { sent, delivered, seen }
+enum ChatMessageStatus { sending, sent, delivered, seen, failed }
 
 class Participant {
   final String id;
@@ -9,7 +9,9 @@ class Participant {
   final String? profilePhotoUrl;
   final bool isOnline;
   final String role;
+  final String roleCode;
   final bool canRemove;
+  final bool isCurrentUser;
 
   Participant({
     required this.id,
@@ -18,18 +20,22 @@ class Participant {
     this.profilePhotoUrl,
     required this.isOnline,
     required this.role,
+    required this.roleCode,
     required this.canRemove,
+    required this.isCurrentUser,
   });
 
   factory Participant.fromJson(Map<String, dynamic> json) {
     return Participant(
       id: json['id'].toString(),
-      email: json['email'],
-      fullName: json['full_name'],
+      email: json['email'] ?? '',
+      fullName: json['full_name'] ?? '',
       profilePhotoUrl: json['profile_photo_url'],
       isOnline: json['is_online'] ?? false,
       role: json['role'] ?? 'Member',
-      canRemove: json['can_remove'] ?? false,
+      roleCode: json['role_code'] ?? 'member',
+      canRemove: json['can_be_removed'] ?? false,
+      isCurrentUser: json['is_current_user'] ?? false,
     );
   }
 }
@@ -60,7 +66,7 @@ class Message {
   }
 }
 
-class Chat {
+class GroupChat {
   final String id;
   final String? name;
   final bool isGroup;
@@ -75,7 +81,9 @@ class Chat {
   final ChatMessageStatus status;
   final String currentUserId;
 
-  Chat({
+  final bool isCurrentUserAdminInGroup;
+
+  GroupChat({
     required this.currentUserId,
     required this.id,
     this.name,
@@ -89,22 +97,22 @@ class Chat {
     required this.participantCount,
     this.userRole,
     this.status = ChatMessageStatus.seen,
+    required this.isCurrentUserAdminInGroup,
   });
 
-  factory Chat.fromJson(Map<String, dynamic> json, {required String currentUserId}) {
+  factory GroupChat.fromJson(Map<String, dynamic> json, {required String currentUserId}) {
     final lastMessage = json['last_message'] != null
         ? Message.fromJson(json['last_message'])
         : null;
 
-    return Chat(
+    return GroupChat(
       currentUserId: currentUserId,
       id: json['id'].toString(),
       name: json['name'],
       isGroup: json['is_group'] ?? false,
       participants: (json['participants'] as List<dynamic>?)
           ?.map((p) => Participant.fromJson(p))
-          .toList() ??
-          [],
+          .toList() ?? [],
       lastMessage: lastMessage?.content,
       lastMessageTime: lastMessage?.timestamp,
       unreadCount: json['unread_count'] ?? 0,
@@ -112,7 +120,138 @@ class Chat {
       displayPhoto: json['display_photo'] ?? AppAssets.groupChatIcon,
       participantCount: json['participant_count'] ?? 0,
       userRole: json['user_role'],
-      status: ChatMessageStatus.seen,
+      status: ChatMessageStatus.seen, isCurrentUserAdminInGroup: true,
+    );
+  }
+}
+
+class GroupInfo {
+  final String id;
+  final String name;
+  final int memberCount;
+  final DateTime createdAt;
+  final Participant createdBy;
+
+  GroupInfo({
+    required this.id,
+    required this.name,
+    required this.memberCount,
+    required this.createdAt,
+    required this.createdBy,
+  });
+
+  factory GroupInfo.fromJson(Map<String, dynamic> json) {
+    return GroupInfo(
+      id: json['id'].toString(),
+      name: json['name'] ?? '',
+      memberCount: json['member_count'] ?? 0,
+      createdAt: DateTime.parse(json['created_at']),
+      createdBy: Participant.fromJson(json['created_by']),
+    );
+  }
+}
+
+class UserPermissions {
+  final bool canAddMembers;
+  final bool canRemoveMembers;
+  final bool canChangeName;
+  final bool canPromoteMembers;
+  final bool isAdmin;
+  final bool canLeave;
+
+  UserPermissions({
+    required this.canAddMembers,
+    required this.canRemoveMembers,
+    required this.canChangeName,
+    required this.canPromoteMembers,
+    required this.isAdmin,
+    required this.canLeave,
+  });
+
+  factory UserPermissions.fromJson(Map<String, dynamic> json) {
+    return UserPermissions(
+      canAddMembers: json['can_add_members'] ?? false,
+      canRemoveMembers: json['can_remove_members'] ?? false,
+      canChangeName: json['can_change_name'] ?? false,
+      canPromoteMembers: json['can_promote_members'] ?? false,
+      isAdmin: json['is_admin'] ?? false,
+      canLeave: json['can_leave'] ?? false,
+    );
+  }
+}
+
+class GroupMembersResponse {
+  final GroupInfo groupInfo;
+  final List<Participant> members;
+  final UserPermissions userPermissions;
+
+  GroupMembersResponse({
+    required this.groupInfo,
+    required this.members,
+    required this.userPermissions,
+  });
+
+  factory GroupMembersResponse.fromJson(Map<String, dynamic> json) {
+    return GroupMembersResponse(
+      groupInfo: GroupInfo.fromJson(json['group_info']),
+      members: (json['members'] as List<dynamic>)
+          .map((memberJson) => Participant.fromJson(memberJson))
+          .toList(),
+      userPermissions: UserPermissions.fromJson(json['user_permissions']),
+    );
+  }
+}
+
+
+enum MemberRole { admin, member }
+
+class GroupMember {
+  final String id;
+  final String name;
+  final String email;
+  final String children;
+  final String? imageUrl;
+  final MemberRole role;
+
+  GroupMember({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.children,
+    this.imageUrl,
+    required this.role,
+  });
+
+  factory GroupMember.fromJson(Map<String, dynamic> json) {
+    // Helper to parse role from multiple possible keys
+    bool isAdmin = false;
+    if (json.containsKey('is_admin')) {
+      isAdmin = json['is_admin'] == true;
+    } else if (json.containsKey('is_staff')) {
+      isAdmin = json['is_staff'] == true;
+    } else if (json.containsKey('role')) {
+      isAdmin = (json['role']?.toString().toLowerCase() == 'admin');
+    }
+
+    // Parse image url from multiple possible keys
+    String? imageUrl;
+    if (json['avatar'] != null && json['avatar'].toString().isNotEmpty) {
+      imageUrl = json['avatar'];
+    } else if (json['image_url'] != null && json['image_url'].toString().isNotEmpty) {
+      imageUrl = json['image_url'];
+    } else if (json['profile_image'] != null && json['profile_image'].toString().isNotEmpty) {
+      imageUrl = json['profile_image'];
+    } else if (json['profile_photo_url'] != null && json['profile_photo_url'].toString().isNotEmpty) {
+      imageUrl = json['profile_photo_url'];
+    }
+
+    return GroupMember(
+      id: (json['id'] ?? json['user_id'] ?? '').toString(),
+      name: (json['name'] ?? json['full_name'] ?? json['username'] ?? 'Unknown').toString(),
+      email: (json['email'] ?? '').toString(),
+      children: (json['children'] ?? '').toString(),
+      imageUrl: imageUrl,
+      role: isAdmin ? MemberRole.admin : MemberRole.member,
     );
   }
 }

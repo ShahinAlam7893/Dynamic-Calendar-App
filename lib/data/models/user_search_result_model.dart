@@ -1,6 +1,6 @@
 // lib/data/models/user_search_result_model.dart
 class UserSearchResult {
-  final int id;
+  final String id;
   final String fullName;
   final String email;
   final String? profilePhotoUrl;
@@ -16,7 +16,7 @@ class UserSearchResult {
 
   factory UserSearchResult.fromJson(Map<String, dynamic> json) {
     return UserSearchResult(
-      id: json['id'],
+      id: json['id'].toString(),
       fullName: json['full_name'],
       email: json['email'],
       profilePhotoUrl: json['profile_photo_url'],

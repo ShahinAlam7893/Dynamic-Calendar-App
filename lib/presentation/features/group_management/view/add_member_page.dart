@@ -1,141 +1,139 @@
 import 'package:circleslate/core/constants/app_assets.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
-import 'package:circleslate/presentation/features/group_management/view/add_member_page.dart' hide AppColors, AppAssets;
-import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-// --- GroupMember Model (Copied from group_management_page.dart) ---
-enum MemberRole { admin, member }
-
-class GroupMember {
-  final String id; // Unique ID for each member
-  final String name;
-  final String email;
-  final String children;
-  MemberRole role; // Role can be changed
-  final String imageUrl; // Added imageUrl for consistency
-
-  GroupMember({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.children,
-    required this.imageUrl,
-    this.role = MemberRole.member, // Default to member
-  });
-}
-
+import '../../../../core/services/user_search_service.dart';
+import '../../../../data/models/user_search_result_model.dart';
 
 class AddMemberPage extends StatefulWidget {
-  const AddMemberPage({super.key});
+  final String conversationId;
+  final String currentUserId;
+  final List<String> existingMemberIds; // To prevent re-adding existing members
+
+  const AddMemberPage({
+    super.key,
+    required this.conversationId,
+    required this.currentUserId,
+    this.existingMemberIds = const [],
+  });
 
   @override
   State<AddMemberPage> createState() => _AddMemberPageState();
 }
-// ... (imports and other code remain unchanged)
 
 class _AddMemberPageState extends State<AddMemberPage> {
-  final TextEditingController _parentsNameController = TextEditingController();
-  final TextEditingController _parentsEmailController = TextEditingController();
-  final TextEditingController _myChildrenController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  bool _isNameAutoPopulated = false;
+  final TextEditingController _searchController = TextEditingController();
+  final UserSearchService _userSearchService = UserSearchService();
 
-  String? _selectedRole = 'Member'; // Default role
-
-  final Map<String, Map<String, String>> _parentData = {
-    'nicolas.david@email.com': {
-      'name': 'Nicolas David',
-      'children': 'Nick Rio',
-      'imageUrl': AppAssets.davidkimProfile,
-    },
-    'peterjohnson@gmail.com': {
-      'name': 'Peter Johnson',
-      'children': 'Ella',
-      'imageUrl': AppAssets.peterJohnson,
-    },
-    'sarahwilson@gmail.com': {
-      'name': 'Sarah Wilson',
-      'children': 'Jen',
-      'imageUrl': AppAssets.sarahMartinez,
-    },
-    'lisachen@gmail.com': {
-      'name': 'Lisa Chen',
-      'children': 'Alex, Maria',
-      'imageUrl': AppAssets.lisaProfile,
-    },
-    'johnsmith@gmail.com': {
-      'name': 'John Smith',
-      'children': 'Jake',
-      'imageUrl': AppAssets.johnProfile,
-    },
-  };
+  List<UserSearchResult> _searchResults = [];
+  List<UserSearchResult> _selectedUsers = [];
+  bool _isSearching = false;
+  String? _searchError;
+  bool _isAddingMembers = false;
 
   @override
   void initState() {
     super.initState();
-    _parentsEmailController.addListener(_autoPopulateParentInfo);
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
-    _parentsNameController.dispose();
-    _parentsEmailController.removeListener(_autoPopulateParentInfo);
-    _parentsEmailController.dispose();
-    _myChildrenController.dispose();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    _userSearchService.dispose();
     super.dispose();
   }
 
-  void _autoPopulateParentInfo() {
-    final email = _parentsEmailController.text.trim().toLowerCase();
-    if (_parentData.containsKey(email)) {
-      final data = _parentData[email]!;
-      if (_parentsNameController.text != (data['name'] ?? '') || !_isNameAutoPopulated) {
-        _parentsNameController.text = data['name'] ?? '';
-        _isNameAutoPopulated = true;
+  void _onSearchChanged() {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults.clear();
+        _isSearching = false;
+        _searchError = null;
+      });
+      return;
+    }
+
+    if (query.length < 2) {
+      return; // Wait for at least 2 characters
+    }
+
+    setState(() {
+      _isSearching = true;
+      _searchError = null;
+    });
+
+    _performSearch(query);
+  }
+
+  void _performSearch(String query) async {
+    try {
+      final results = await _userSearchService.searchUsers(query);
+      if (mounted) {
+        // Filter out current user and existing members
+        final filteredResults = results.where((user) {
+          return user.id != widget.currentUserId &&
+              !widget.existingMemberIds.contains(user.id);
+        }).toList();
+
+        setState(() {
+          _searchResults = filteredResults;
+          _isSearching = false;
+          _searchError = null;
+        });
       }
-      _myChildrenController.text = data['children'] ?? '';
-    } else {
-      _myChildrenController.clear();
-      if (_isNameAutoPopulated) {
-        _parentsNameController.clear();
-        _isNameAutoPopulated = false;
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _searchResults.clear();
+          _isSearching = false;
+          _searchError = 'Search failed: ${e.toString()}';
+        });
       }
     }
   }
 
-  void _addMember() {
-    if (_formKey.currentState!.validate()) {
-      final String parentsName = _parentsNameController.text.trim();
-      final String parentsEmail = _parentsEmailController.text.trim();
-      final String childrenNames = _myChildrenController.text.trim();
-      final MemberRole role = _selectedRole == 'Admin' ? MemberRole.admin : MemberRole.member;
-
-      String imageUrl = AppAssets.profilePicture;
-      final parentInfo = _parentData[parentsEmail.toLowerCase()];
-      if (parentInfo != null && parentInfo.containsKey('imageUrl')) {
-        imageUrl = parentInfo['imageUrl']!;
+  void _toggleUserSelection(UserSearchResult user) {
+    setState(() {
+      if (_selectedUsers.any((u) => u.id == user.id)) {
+        _selectedUsers.removeWhere((u) => u.id == user.id);
+      } else {
+        _selectedUsers.add(user);
       }
+    });
+  }
 
-      final newMember = GroupMember(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: parentsName,
-        email: parentsEmail,
-        children: childrenNames,
-        role: role,
-        imageUrl: imageUrl,
+  bool _isUserSelected(UserSearchResult user) {
+    return _selectedUsers.any((u) => u.id == user.id);
+  }
+
+  void _addSelectedMembers() async {
+    if (_selectedUsers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one user to add')),
       );
+      return;
+    }
 
-      Navigator.pop(context, newMember);
+    setState(() => _isAddingMembers = true);
+
+    try {
+      // Return the list of selected user IDs to the parent page
+      final userIds = _selectedUsers.map((user) => user.id).toList();
+      Navigator.pop(context, userIds);
+    } catch (e) {
+      setState(() => _isAddingMembers = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
     }
   }
 
-  void _onItemTapped(int index) {
-    if (index == 0) {
-      context.go(RoutePaths.home);
-    } else if (index == 1) {
-      context.go(RoutePaths.upcomingeventspage);
-    }
+  void _clearSelection() {
+    setState(() {
+      _selectedUsers.clear();
+    });
   }
 
   @override
@@ -150,7 +148,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'Add Member',
+          'Add Members',
           style: TextStyle(
             color: Colors.white,
             fontSize: 20.0,
@@ -159,159 +157,127 @@ class _AddMemberPageState extends State<AddMemberPage> {
           ),
         ),
         centerTitle: true,
-        // actions: [
-        //   IconButton(
-        //     icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-        //     onPressed: () {
-        //       context.go(RoutePaths.chatlistpage);
-        //     },
-        //   ),
-        // ],
+        actions: [
+          if (_selectedUsers.isNotEmpty)
+            TextButton(
+              onPressed: _clearSelection,
+              child: const Text(
+                'Clear',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14.0,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+            ),
+        ],
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Parents Name
-              const Text(
-                'Parents Name',
-                style: TextStyle(
-                  fontSize: 14.0,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textColorPrimary,
-                  fontFamily: 'Poppins',
+      body: Column(
+        children: [
+          // Search Bar
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search users by name or email...',
+                hintStyle: const TextStyle(
+                    color: AppColors.textColorSecondary,
+                    fontFamily: 'Poppins'
+                ),
+                prefixIcon: const Icon(
+                    Icons.search,
+                    color: AppColors.textColorPrimary
+                ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                  },
+                )
+                    : null,
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                    vertical: 12.0,
+                    horizontal: 16.0
                 ),
               ),
-              const SizedBox(height: 8.0),
-              TextFormField(
-                controller: _parentsNameController,
-                decoration: InputDecoration(
-                  hintText: 'Full Name',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter parent\'s name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20.0),
+            ),
+          ),
 
-              // Parents Email
-              const Text(
-                'Parents Email',
-                style: TextStyle(
-                  fontSize: 14.0,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textColorPrimary,
-                  fontFamily: 'Poppins',
-                ),
+          // Selected Users Count
+          if (_selectedUsers.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(
+                  vertical: 8.0,
+                  horizontal: 12.0
               ),
-              const SizedBox(height: 8.0),
-              TextFormField(
-                controller: _parentsEmailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  hintText: 'nicolas.david@email.com',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter parent\'s email';
-                  }
-                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                    return 'Enter a valid email address';
-                  }
-                  return null;
-                },
+              decoration: BoxDecoration(
+                color: AppColors.primaryBlue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8.0),
               ),
-              const SizedBox(height: 20.0),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.people,
+                    color: AppColors.primaryBlue,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8.0),
+                  Text(
+                    '${_selectedUsers.length} user(s) selected',
+                    style: TextStyle(
+                      color: AppColors.primaryBlue,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-              // Role Dropdown
-              const Text(
-                'Role',
-                style: TextStyle(
-                  fontSize: 14.0,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textColorPrimary,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-              const SizedBox(height: 8.0),
-              DropdownButtonFormField<String>(
-                value: _selectedRole,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-                ),
-                items: ['Admin', 'Member'].map((role) {
-                  return DropdownMenuItem<String>(
-                    value: role,
-                    child: Text(role),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedRole = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please select a role';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20.0),
+          const SizedBox(height: 8.0),
 
-              // My Children
-              const Text(
-                'My Children',
-                style: TextStyle(
-                  fontSize: 14.0,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textColorPrimary,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-              const SizedBox(height: 8.0),
-              TextFormField(
-                controller: _myChildrenController,
-                readOnly: true,
-                decoration: InputDecoration(
-                  hintText: 'Nick Rio',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-                ),
-              ),
-              const SizedBox(height: 40.0),
+          // Search Results
+          Expanded(
+            child: _buildSearchContent(),
+          ),
 
-              // Add Member Button
-              SizedBox(
+          // Add Members Button
+          if (_selectedUsers.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _addMember,
+                  onPressed: _isAddingMembers ? null : _addSelectedMembers,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0)
+                    ),
                     elevation: 3,
                   ),
-                  child: const Text(
-                    'Add Member',
-                    style: TextStyle(
+                  child: _isAddingMembers
+                      ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                      : Text(
+                    'Add ${_selectedUsers.length} Member${_selectedUsers.length > 1 ? 's' : ''}',
+                    style: const TextStyle(
                       fontSize: 18.0,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -320,11 +286,239 @@ class _AddMemberPageState extends State<AddMemberPage> {
                   ),
                 ),
               ),
-            ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchContent() {
+    if (_searchController.text.trim().isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search,
+              size: 64,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Start typing to search for users',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_searchController.text.trim().length < 2) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.edit,
+              size: 64,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Type at least 2 characters to search',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_isSearching) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text(
+              'Searching for users...',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_searchError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _searchError!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 16,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => _performSearch(_searchController.text.trim()),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_searchResults.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 64,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'No users found',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Try searching with different keywords',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      itemCount: _searchResults.length,
+      itemBuilder: (context, index) {
+        final user = _searchResults[index];
+        return _buildUserSearchItem(user);
+      },
+    );
+  }
+
+  Widget _buildUserSearchItem(UserSearchResult user) {
+    final isSelected = _isUserSelected(user);
+    final isExistingMember = widget.existingMemberIds.contains(user.id);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      elevation: 0,
+      color: isSelected ? AppColors.primaryBlue.withOpacity(0.1) : Colors.white,
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16.0),
+        leading: Stack(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundImage: user.profilePhotoUrl != null
+                  ? NetworkImage(user.profilePhotoUrl!)
+                  : const AssetImage(AppAssets.johnProfile) as ImageProvider,
+            ),
+            if (user.isOnline)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        title: Text(
+          user.fullName,
+          style: TextStyle(
+            fontSize: 16.0,
+            fontWeight: FontWeight.w500,
+            color: isSelected ? AppColors.primaryBlue : const Color(0xFF1A1A1A),
+            fontFamily: 'Poppins',
           ),
         ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              user.email,
+              style: const TextStyle(
+                fontSize: 14.0,
+                color: AppColors.textColorSecondary,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            if (isExistingMember)
+              Text(
+                'Already a member',
+                style: TextStyle(
+                  fontSize: 12.0,
+                  color: Colors.orange[600],
+                  fontWeight: FontWeight.w500,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+          ],
+        ),
+        trailing: isExistingMember
+            ? Icon(
+          Icons.check_circle,
+          color: Colors.orange[600],
+          size: 24,
+        )
+            : Checkbox(
+          value: isSelected,
+          onChanged: (bool? value) {
+            _toggleUserSelection(user);
+          },
+          activeColor: AppColors.primaryBlue,
+        ),
+        onTap: isExistingMember ? null : () => _toggleUserSelection(user),
+        enabled: !isExistingMember,
       ),
-
     );
   }
 }

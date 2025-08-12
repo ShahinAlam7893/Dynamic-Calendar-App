@@ -1,29 +1,22 @@
-// lib/ui/group_conversation_page.dart
 import 'dart:convert';
+import 'package:circleslate/data/models/conversation_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:circleslate/core/constants/app_assets.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
-import 'package:circleslate/core/services/group/group_conversation_manager.dart';
-import 'package:circleslate/core/services/websocket_service.dart';
 import 'package:circleslate/core/services/message_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
-import 'package:http/http.dart' as http;
-import 'package:circleslate/core/constants/app_assets.dart';
-import 'package:circleslate/core/constants/app_colors.dart';
-import 'package:circleslate/core/services/message_storage_service.dart';
 
 import '../../../../../core/services/group/group_chat_socket_service.dart';
 import '../../../../../data/models/group_model.dart';
 import '../../../../routes/app_router.dart';
 
-
 class GroupConversationPage extends StatefulWidget {
-  final String groupId;
-  final String currentUserId;
-  final String groupName;
+  final String groupId;       // This is the unique group ID
+  final String currentUserId; // Current logged-in user ID
+  final String groupName;     // This is the display name of the group
 
   const GroupConversationPage({
     super.key,
@@ -67,7 +60,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
 
     await _loadMessagesFromLocal();
     await _connectWebSocket();
-    // optionally load from server & send pending messages as you had before
+
     setState(() {
       _isConversationReady = true;
       _isLoading = false;
@@ -105,7 +98,6 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
   }
 
   void _handleIncomingMessage(Message message) async {
-    // Convert Message to StoredMessage
     final storedMessage = StoredMessage(
       id: message.id,
       text: message.content,
@@ -127,8 +119,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
   }
 
   void _handleTyping() {
-    // If you want, implement typing indicator sending here
-    // Your GroupChatSocketService currently has no such method, so you can extend it if needed
+    // You can implement typing indicator here if you want
   }
 
   void _sendMessage() async {
@@ -201,7 +192,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.groupName,
+              widget.groupName,  // Display group name here
               style: const TextStyle(color: Colors.white, fontSize: 20.0, fontWeight: FontWeight.w500),
             ),
             if (_isSomeoneTyping)
@@ -213,13 +204,20 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
         ),
         centerTitle: false,
         actions: [
-          // Add Group Manager icon button here:
+
+// Update the onPressed method in GroupConversationPage AppBar actions
           IconButton(
             icon: const Icon(Icons.manage_accounts, color: Colors.white),
             tooltip: 'Group Manager',
             onPressed: () {
-              // Navigate to group management page and pass groupId as extra data if needed
-              context.push(RoutePaths.groupManagement, extra: {'groupId': widget.groupId});
+              debugPrint("PRINT groupId: ${widget.groupId}");
+              debugPrint("PRINT conversationId: ${widget.groupId}"); // Use groupId as conversationId
+              context.push(RoutePaths.groupManagement, extra: {
+                'groupId': widget.groupId,
+                'conversationId': widget.groupId, // Use groupId as conversationId since they should be the same
+                'currentUserId': widget.currentUserId,
+                'isCurrentUserAdmin': true, // You can replace with actual admin check
+              });
             },
           ),
           const SizedBox(width: 8),
@@ -349,3 +347,5 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     );
   }
 }
+
+

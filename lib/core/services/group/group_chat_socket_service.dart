@@ -24,6 +24,7 @@ class GroupChatSocketService {
     try {
       final wsUrl = '$baseWsUrl$conversationId/?token=$token';
       debugPrint('[GroupChatSocketService] Connecting to WebSocket: $wsUrl');
+      debugPrint('conversatiogfdfn ID: $conversationId');
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
       _isConnected = true;
       _connectionStatusController.add(true);
@@ -32,6 +33,7 @@ class GroupChatSocketService {
             (data) {
           final message = jsonDecode(data);
           debugPrint('[GroupChatSocketService] Received message: $message');
+
           onMessageReceived(Message.fromJson(message));
         },
         onError: (error) {
@@ -58,6 +60,8 @@ class GroupChatSocketService {
       debugPrint('[GroupChatSocketService] WebSocket not connected');
       return;
     }
+
+
     final message = {
       'conversation_id': conversationId,
       'sender_id': senderId,
@@ -65,6 +69,8 @@ class GroupChatSocketService {
       'message_type': 'text',
     };
     debugPrint('[GroupChatSocketService] Sending message: $message');
+    debugPrint('conversatiogfdfn ID: $conversationId');
+
     _channel!.sink.add(jsonEncode(message));
   }
 
@@ -73,6 +79,9 @@ class GroupChatSocketService {
     _channel = null;
     _isConnected = false;
     _connectionStatusController.add(false);
+
+
+
     debugPrint('[GroupChatSocketService] WebSocket disconnected');
   }
 

@@ -8,7 +8,7 @@ import '../../../data/models/group_model.dart';
 class GroupConversationManager {
   static const String baseUrl = 'http://10.10.13.27:8000/api/chat';
 
-  static Future<Chat> createGroupConversation(
+  static Future<GroupChat> createGroupConversation(
       String currentUserId,
       List<String> participantIds,
       String groupName,
@@ -48,7 +48,7 @@ class GroupConversationManager {
 
       if (response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        return Chat.fromJson(data, currentUserId: '');
+        return GroupChat.fromJson(data, currentUserId: '');
       } else {
         throw Exception('Failed to create group: ${response.statusCode} - ${response.body}');
       }
