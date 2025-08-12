@@ -111,7 +111,7 @@ class _UpcomingEventsPageState extends State<UpcomingEventsPage> {
     // Added BuildContext context
     Color statusBackgroundColor;
     Color statusTextColor;
-
+ 
     if (event.status == 'Open') {
       statusBackgroundColor = AppColors.openStatusColor;
       statusTextColor = AppColors.openStatusText;

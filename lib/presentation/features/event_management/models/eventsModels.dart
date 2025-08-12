@@ -116,7 +116,7 @@ class Response {
     required this.profilePhotoUrl,
     required this.childrenNames,
   });
-
+ 
   factory Response.fromJson(Map<String, dynamic> json) {
     return Response(
       username: json['user'] != null
