@@ -14,15 +14,18 @@ import '../../../../../data/models/group_model.dart';
 import '../../../../routes/app_router.dart';
 
 class GroupConversationPage extends StatefulWidget {
-  final String groupId;       // This is the unique group ID
-  final String currentUserId; // Current logged-in user ID
-  final String groupName;     // This is the display name of the group
+  final String groupId;
+  final String currentUserId;
+  final String groupName;
+
 
   const GroupConversationPage({
     super.key,
     required this.groupId,
     required this.currentUserId,
     required this.groupName,
+     // Default to false if not provided
+
   });
 
   @override
@@ -33,7 +36,9 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
   final TextEditingController _messageController = TextEditingController();
   final List<StoredMessage> _messages = [];
   final ScrollController _scrollController = ScrollController();
+  bool _isCurrentUserAdmin = false; // Track if the current user is an admin
   final Uuid _uuid = const Uuid();
+
 
   late GroupChatSocketService _groupChatSocketService;
 
@@ -52,6 +57,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     );
 
     _initializeConversation();
+    _checkIfAdmin();
     _messageController.addListener(_handleTyping);
   }
 
@@ -66,6 +72,16 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
       _isLoading = false;
     });
   }
+
+  Future<void> _checkIfAdmin() async {
+    // Example API call or local logic
+    final prefs = await SharedPreferences.getInstance();
+    final role = prefs.getString('userRole'); // or API result
+    setState(() {
+      _isCurrentUserAdmin = role == 'admin';
+    });
+  }
+
 
   Future<void> _loadMessagesFromLocal() async {
     try {
@@ -181,6 +197,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.primaryBlue,
@@ -204,22 +221,21 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
         ),
         centerTitle: false,
         actions: [
+          if (_isCurrentUserAdmin)
+            IconButton(
+              icon: const Icon(Icons.manage_accounts, color: Colors.white),
+              tooltip: 'Group Manager',
+              onPressed: () {
+                debugPrint("PRINT groupId: ${widget.groupId}");
+                debugPrint("PRINT conversationId: ${widget.groupId}");
+                context.push(RoutePaths.groupManagement, extra: {
+                  'groupId': widget.groupId,
+                  'conversationId': widget.groupId,
+                  'currentUserId': widget.currentUserId,
 
-// Update the onPressed method in GroupConversationPage AppBar actions
-          IconButton(
-            icon: const Icon(Icons.manage_accounts, color: Colors.white),
-            tooltip: 'Group Manager',
-            onPressed: () {
-              debugPrint("PRINT groupId: ${widget.groupId}");
-              debugPrint("PRINT conversationId: ${widget.groupId}"); // Use groupId as conversationId
-              context.push(RoutePaths.groupManagement, extra: {
-                'groupId': widget.groupId,
-                'conversationId': widget.groupId, // Use groupId as conversationId since they should be the same
-                'currentUserId': widget.currentUserId,
-                'isCurrentUserAdmin': true, // You can replace with actual admin check
-              });
-            },
-          ),
+                });
+              },
+            ),
           const SizedBox(width: 8),
         ],
       ),
