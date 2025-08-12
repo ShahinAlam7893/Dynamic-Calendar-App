@@ -36,26 +36,21 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
       return DateTime.fromMillisecondsSinceEpoch(0);
     }
 
-    // Try ISO8601 parse first
     DateTime? dateTime = DateTime.tryParse(timeStr);
     if (dateTime != null) {
       return dateTime;
     }
 
-    // Try parsing as int (unix timestamp)
     int? timestamp = int.tryParse(timeStr);
     if (timestamp != null) {
-      // Heuristic: if timestamp looks like seconds (10 digits), convert to ms
+
       if (timestamp < 1000000000000) {
-        // Timestamp is in seconds, convert to milliseconds
         return DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
       } else {
-        // Timestamp already in milliseconds
         return DateTime.fromMillisecondsSinceEpoch(timestamp);
       }
     }
 
-    // Fallback to epoch start if parsing fails
     return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
@@ -98,13 +93,11 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
 
   @override
   void didPopNext() {
-    // Called when returning to this page from another page
     _refreshChats();
   }
 
   @override
   void didPush() {
-    // Called when this page is pushed onto the stack
     _refreshChats();
   }
 
@@ -308,7 +301,6 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
       },
     );
   }
-
   Widget _buildUserSearchItem(BuildContext context, UserSearchResult user) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4.0),
@@ -365,13 +357,37 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
           color: user.isOnline ? Colors.green : Colors.grey,
           size: 12,
         ),
-        onTap: () {
-          // Handle user search item tap, e.g. start a one-to-one chat or show user profile
-          // For example, you could navigate to the one-to-one chat page here.
+        onTap: () async {
+          // Try to get or create conversation before navigating
+          try {
+            final conversationId = await ChatService.getOrCreateConversation(
+              widget.currentUserId,
+              user.id, partnerName: '',
+            );
+
+            if (!mounted) return;
+
+            context.push(
+              RoutePaths.onetooneconversationpage,
+              extra: {
+                'chatPartnerName': user.fullName,
+                'chatPartnerId': user.id,
+                'currentUserId': widget.currentUserId,
+                'isGroupChat': false,
+                'isCurrentUserAdminInGroup': false,
+                'conversationId': conversationId,
+              },
+            );
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to start chat: $e')),
+            );
+          }
         },
       ),
     );
   }
+
 
   Widget _buildChatList() {
     if (_userList.isEmpty) {

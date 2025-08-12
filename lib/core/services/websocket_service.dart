@@ -25,7 +25,10 @@ class ChatSocketService {
   int _reconnectAttempts = 0;
   static const int maxReconnectAttempts = 5;
 
-  /// Connect to WebSocket with a valid conversation ID
+  // Track if controllers are closed to avoid adding events after close
+  bool _messagesControllerClosed = false;
+  bool _connectionStatusControllerClosed = false;
+
   Future<void> connect(String conversationId) async {
     if (conversationId.isEmpty) {
       throw Exception('conversationId is empty — cannot connect to WebSocket.');
@@ -49,7 +52,6 @@ class ChatSocketService {
 
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
-      // Listen
       _channel!.stream.listen(
             (data) {
           debugPrint('[ChatSocketService] Received data: $data');
@@ -68,7 +70,9 @@ class ChatSocketService {
 
       _isConnected = true;
       _reconnectAttempts = 0;
-      _connectionStatusController.add(true);
+      if (!_connectionStatusControllerClosed) {
+        _connectionStatusController.add(true);
+      }
       _startHeartbeat();
 
       debugPrint('[ChatSocketService] WebSocket connected successfully');
@@ -78,6 +82,7 @@ class ChatSocketService {
       rethrow;
     }
   }
+
 
   void _handleMessage(dynamic data) {
     try {
@@ -96,6 +101,7 @@ class ChatSocketService {
       _messagesController.add(data is String ? data : data.toString());
     }
   }
+
 
   void _handleHeartbeat(Map<String, dynamic> data) {
     if (data['require_response'] == true) {
@@ -143,7 +149,9 @@ class ChatSocketService {
 
   void _handleDisconnection() {
     _isConnected = false;
-    _connectionStatusController.add(false);
+    if (!_connectionStatusControllerClosed) {
+      _connectionStatusController.add(false);
+    }
     _heartbeatTimer?.cancel();
 
     if (_reconnectAttempts < maxReconnectAttempts) {
@@ -155,7 +163,9 @@ class ChatSocketService {
 
   void _handleConnectionError(dynamic error) {
     _isConnected = false;
-    _connectionStatusController.add(false);
+    if (!_connectionStatusControllerClosed) {
+      _connectionStatusController.add(false);
+    }
     _heartbeatTimer?.cancel();
 
     if (_reconnectAttempts < maxReconnectAttempts) {
@@ -163,7 +173,9 @@ class ChatSocketService {
     }
 
     try {
-      _messagesController.addError(error);
+      if (!_messagesControllerClosed) {
+        _messagesController.addError(error);
+      }
     } catch (_) {}
   }
 
@@ -186,8 +198,6 @@ class ChatSocketService {
     });
   }
 
-  /// Send a new message via WebSocket
-  /// Includes conversation_id for server safety.
   void sendMessage(String content, String receiverId, [String? clientMessageId]) {
     if (!isConnected) {
       throw Exception('WebSocket connection is not open.');
@@ -214,7 +224,6 @@ class ChatSocketService {
     }
   }
 
-  /// Send typing indicator
   void sendTypingIndicator(String receiverId, bool isTyping, {required bool isGroup}) {
     if (!isConnected) return;
 
@@ -233,7 +242,6 @@ class ChatSocketService {
     }
   }
 
-  /// Mark messages as read
   void markAsRead(List<String> messageIds) {
     if (!isConnected) return;
 
@@ -251,10 +259,8 @@ class ChatSocketService {
     }
   }
 
-  /// Check WebSocket connection status
   bool get isConnected => _isConnected && _channel != null && (_channel!.closeCode == null);
 
-  /// Force reconnect
   Future<void> reconnect() async {
     if (_conversationId != null) {
       dispose();
@@ -265,10 +271,13 @@ class ChatSocketService {
     }
   }
 
-  /// Gracefully close the WebSocket
   void dispose() {
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
+
+    // Mark controllers as closed to prevent adding events after this
+    _messagesControllerClosed = true;
+    _connectionStatusControllerClosed = true;
 
     if (!_messagesController.isClosed) {
       _messagesController.close();

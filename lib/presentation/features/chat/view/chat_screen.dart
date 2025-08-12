@@ -128,7 +128,6 @@ class _OneToOneConversationPageState extends State<OneToOneConversationPage> wit
       _scrollToBottom();
     } catch (e) {
       debugPrint('[OneToOneConversationPage] Error loading messages from local storage: $e');
-      // Clear potentially corrupt local storage data
       await MessageStorageService.clearMessages(_conversationId!);
     }
   }

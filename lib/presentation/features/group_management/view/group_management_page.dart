@@ -31,6 +31,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
 
   bool _isLoading = false;
   bool _isActionLoading = false;
+  bool get _isCurrentUserAdmin => widget.isCurrentUserAdmin;
   String? _error;
   List<GroupMember> _members = [];
   List<GroupMember> _filteredMembers = [];
@@ -531,10 +532,12 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         subtitle: Text('Children: ${member.children}\n${member.email}'),
         isThreeLine: true,
         tileColor: isAdmin ? Colors.blue.withOpacity(0.04) : null,
-        trailing: PopupMenuButton<String>(
+        trailing: _isCurrentUserAdmin
+            ? PopupMenuButton<String>(
           onSelected: (v) async {
             if (v == 'chat') {
-              context.push(RoutePaths.onetooneconversationpage, extra: {'name': member.name, 'id': member.id});
+              context.push(RoutePaths.onetooneconversationpage,
+                  extra: {'name': member.name, 'id': member.id});
             } else if (v == 'promote') {
               await _promoteToAdmin(member);
             } else if (v == 'remove') {
@@ -545,15 +548,17 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
             final items = <PopupMenuEntry<String>>[
               const PopupMenuItem(value: 'chat', child: Text('Message')),
             ];
-            if (widget.isCurrentUserAdmin) {
-              if (!isAdmin) {
-                items.add(const PopupMenuItem(value: 'promote', child: Text('Promote to Admin')));
-              }
-              items.add(const PopupMenuItem(value: 'remove', child: Text('Remove', style: TextStyle(color: Colors.red))));
+            if (!isAdmin) {
+              items.add(const PopupMenuItem(
+                  value: 'promote', child: Text('Promote to Admin')));
             }
+            items.add(const PopupMenuItem(
+                value: 'remove',
+                child: Text('Remove', style: TextStyle(color: Colors.red))));
             return items;
           },
-        ),
+        )
+            : null,
       ),
     );
   }
@@ -571,21 +576,9 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(_groupName.isNotEmpty ? 'Group: $_groupName' : 'Group Management'),
+        title: Text(_groupName.isNotEmpty ? '$_groupName' : 'Group Management',
+        style: const TextStyle(color: Colors.white)),
         centerTitle: true,
-        actions: [
-          if (widget.isCurrentUserAdmin)
-            IconButton(
-              onPressed: _changeGroupName,
-              icon: const Icon(Icons.edit, color: Colors.white),
-              tooltip: 'Change group name',
-            ),
-          IconButton(
-            onPressed: _isActionLoading ? null : _fetchGroupDetails,
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            tooltip: 'Refresh',
-          ),
-        ],
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
