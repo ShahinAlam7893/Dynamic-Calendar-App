@@ -32,7 +32,7 @@ class _SplashScreenState extends State<SplashScreen> {
       final savedAccessToken = prefs.getString('accessToken');
       String? token = savedAccessToken;
 
-      for(int i= 0; i <= 100; i++) {
+      for (int i = 0; i <= 100; i++) {
         // Simulate loading progress
         await Future.delayed(const Duration(milliseconds: 30));
         _loadingProgress.value = i / 100; // Update the progress
@@ -40,13 +40,11 @@ class _SplashScreenState extends State<SplashScreen> {
 
       if (token != null && token.isNotEmpty) {
         context.goNamed('home');
-
       } else {
-        context.goNamed('onboarding');
+        context.pushNamed('onboarding');
       }
     });
   }
-
 
   @override
   void dispose() {
@@ -54,25 +52,25 @@ class _SplashScreenState extends State<SplashScreen> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
-    return Container(decoration: BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment(-0.5, -1.0),
-        end: Alignment(0.8, 1.0),
-        colors: [
-          Color(0xFF5A8DEE),
-          Color(0xFFC2DBFF),
-        ],
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment(-0.5, -1.0),
+          end: Alignment(0.8, 1.0),
+          colors: [Color(0xFF5A8DEE), Color(0xFFC2DBFF)],
+        ),
       ),
-    ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Center( // This Center widget will center its child (the Column)
+        body: Center(
+          // This Center widget will center its child (the Column)
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center, // Centers children vertically within the Column's available space
-            crossAxisAlignment: CrossAxisAlignment.center, // Centers children horizontally
+            mainAxisAlignment: MainAxisAlignment
+                .center, // Centers children vertically within the Column's available space
+            crossAxisAlignment:
+                CrossAxisAlignment.center, // Centers children horizontally
             children: [
               // Spacer 1 (flexible space above content block)
               // Combined with Spacer 2, this will center the block
@@ -86,11 +84,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(30), // Circular shape
                 ),
-                child: Image.asset(
-                  AppAssets.appLogo,
-                  width: 120,
-                  height: 120,
-                ),
+                child: Image.asset(AppAssets.appLogo, width: 120, height: 120),
               ),
               const SizedBox(height: 24),
               // App Name
@@ -107,33 +101,37 @@ class _SplashScreenState extends State<SplashScreen> {
               // Tagline
               const Text(
                 AppStrings.tagline,
-                style: TextStyle(
-                  color: AppColors.textColorWhite,
-                  fontSize: 16,
-                ),
+                style: TextStyle(color: AppColors.textColorWhite, fontSize: 16),
               ),
               const SizedBox(height: 40), // Space between tagline and loader
-
               // Linear Progress Indicator
               SizedBox(
-                width: MediaQuery.of(context).size.width * 0.6, // 60% of screen width
+                width:
+                    MediaQuery.of(context).size.width *
+                    0.6, // 60% of screen width
                 child: ValueListenableBuilder<double>(
                   valueListenable: _loadingProgress,
                   builder: (context, progress, child) {
                     return LinearProgressIndicator(
                       value: progress,
-                      backgroundColor: AppColors.lightBlue.withOpacity(0.5), // Lighter background color
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.textColorWhite), // White progress bar
+                      backgroundColor: AppColors.lightBlue.withOpacity(
+                        0.5,
+                      ), // Lighter background color
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.textColorWhite,
+                      ), // White progress bar
                       minHeight: 4, // Thickness of the progress bar
-                      borderRadius: BorderRadius.circular(2), // Slightly rounded ends
+                      borderRadius: BorderRadius.circular(
+                        2,
+                      ), // Slightly rounded ends
                     );
                   },
                 ),
               ),
 
-
-              const Spacer(flex: 3), // More space below the loader to balance the view
-
+              const Spacer(
+                flex: 3,
+              ), // More space below the loader to balance the view
               // Version Number (still at the bottom)
               const Padding(
                 padding: EdgeInsets.only(bottom: 20.0),
