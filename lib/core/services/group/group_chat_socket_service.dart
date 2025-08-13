@@ -24,7 +24,7 @@ class GroupChatSocketService {
     try {
       final wsUrl = '$baseWsUrl$conversationId/?token=$token';
       debugPrint('[GroupChatSocketService] Connecting to WebSocket: $wsUrl');
-      debugPrint('conversatiogfdfn ID: $conversationId');
+      debugPrint('conversation ID: $conversationId');
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
       _isConnected = true;
       _connectionStatusController.add(true);

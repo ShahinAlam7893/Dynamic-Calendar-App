@@ -149,7 +149,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     await MessageStorageService.addMessage(widget.groupId, message);
 
     try {
-      _groupChatSocketService.sendMessage(widget.groupId, widget.currentUserId, text);
+      _groupChatSocketService.sendMessage(widget.groupId, widget.currentUserId as String, text);
       await MessageStorageService.updateMessageStatus(widget.groupId, message.id, MessageStatus.sent, clientMessageId: clientMessageId);
     } catch (e) {
       debugPrint('Failed to send message: $e');

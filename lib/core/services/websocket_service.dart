@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart';
 
-
 class ChatSocketService {
   WebSocketChannel? _channel;
   String? _conversationId;
@@ -25,15 +24,11 @@ class ChatSocketService {
   int _reconnectAttempts = 0;
   static const int maxReconnectAttempts = 5;
 
-  // Track if controllers are closed to avoid adding events after close
-  bool _messagesControllerClosed = false;
-  bool _connectionStatusControllerClosed = false;
 
   Future<void> connect(String conversationId) async {
     if (conversationId.isEmpty) {
       throw Exception('conversationId is empty — cannot connect to WebSocket.');
     }
-
     _conversationId = conversationId;
     await _establishConnection();
   }
@@ -43,53 +38,37 @@ class ChatSocketService {
       final prefs = await SharedPreferences.getInstance();
       _token = prefs.getString('accessToken');
 
-      if (_token == null) {
-        throw Exception('Authentication token not found');
-      }
+      if (_token == null) throw Exception('Authentication token not found');
 
-      final wsUrl = 'ws://10.10.13.27:8000/ws/chat/$_conversationId/?token=$_token';
+      final wsUrl =
+          'ws://10.10.13.27:8000/ws/chat/$_conversationId/?token=$_token';
       debugPrint('[ChatSocketService] Connecting to WebSocket: $wsUrl');
 
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
       _channel!.stream.listen(
-            (data) {
-          debugPrint('[ChatSocketService] Received data: $data');
-          _handleMessage(data);
-        },
-        onDone: () {
-          debugPrint('[ChatSocketService] WebSocket closed (onDone).');
-          _handleDisconnection();
-        },
-        onError: (error) {
-          debugPrint('[ChatSocketService] WebSocket error: $error');
-          _handleConnectionError(error);
-        },
+            (data) => _handleMessage(data),
+        onDone: _handleDisconnection,
+        onError: _handleConnectionError,
         cancelOnError: true,
       );
 
       _isConnected = true;
       _reconnectAttempts = 0;
-      if (!_connectionStatusControllerClosed) {
-        _connectionStatusController.add(true);
-      }
+      _connectionStatusController.add(true);
       _startHeartbeat();
-
       debugPrint('[ChatSocketService] WebSocket connected successfully');
     } catch (e) {
       debugPrint('[ChatSocketService] Failed to connect to WebSocket: $e');
       _handleConnectionError(e);
-      rethrow;
     }
   }
-
 
   void _handleMessage(dynamic data) {
     try {
       final String text = data is String ? data : jsonEncode(data);
       final decoded = jsonDecode(text);
 
-      // Handle different message types
       if (decoded['type'] == 'heartbeat') {
         _handleHeartbeat(decoded);
       } else {
@@ -97,39 +76,28 @@ class ChatSocketService {
       }
     } catch (e) {
       debugPrint('[ChatSocketService] Error parsing message, forwarding raw: $e');
-      // forward raw data so UI can at least try to parse
       _messagesController.add(data is String ? data : data.toString());
     }
   }
 
-
   void _handleHeartbeat(Map<String, dynamic> data) {
-    if (data['require_response'] == true) {
-      _sendHeartbeatResponse();
-    }
+    if (data['require_response'] == true) _sendHeartbeatResponse();
   }
 
   void _sendHeartbeatResponse() {
     if (isConnected) {
-      try {
-        final response = {
-          'type': 'heartbeat_response',
-          'timestamp': DateTime.now().toIso8601String(),
-        };
-        _channel!.sink.add(jsonEncode(response));
-        debugPrint('[ChatSocketService] Sent heartbeat_response');
-      } catch (e) {
-        debugPrint('[ChatSocketService] Error sending heartbeat response: $e');
-      }
+      final response = {
+        'type': 'heartbeat_response',
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      _channel?.sink.add(jsonEncode(response));
     }
   }
 
   void _startHeartbeat() {
     _heartbeatTimer?.cancel();
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (isConnected) {
-        _sendHeartbeat();
-      }
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (isConnected) _sendHeartbeat();
     });
   }
 
@@ -139,111 +107,84 @@ class ChatSocketService {
         'type': 'heartbeat',
         'timestamp': DateTime.now().toIso8601String(),
       };
-      _channel!.sink.add(jsonEncode(heartbeat));
-      debugPrint('[ChatSocketService] Sent heartbeat');
+      _channel?.sink.add(jsonEncode(heartbeat));
     } catch (e) {
-      debugPrint('[ChatSocketService] Error sending heartbeat: $e');
       _handleConnectionError(e);
     }
   }
 
   void _handleDisconnection() {
     _isConnected = false;
-    if (!_connectionStatusControllerClosed) {
-      _connectionStatusController.add(false);
-    }
+    _connectionStatusController.add(false);
     _heartbeatTimer?.cancel();
-
-    if (_reconnectAttempts < maxReconnectAttempts) {
-      _scheduleReconnect();
-    } else {
-      debugPrint('[ChatSocketService] Max reconnection attempts reached');
-    }
+    if (_reconnectAttempts < maxReconnectAttempts) _scheduleReconnect();
   }
 
   void _handleConnectionError(dynamic error) {
     _isConnected = false;
-    if (!_connectionStatusControllerClosed) {
-      _connectionStatusController.add(false);
-    }
+    _connectionStatusController.add(false);
     _heartbeatTimer?.cancel();
-
-    if (_reconnectAttempts < maxReconnectAttempts) {
-      _scheduleReconnect();
-    }
-
-    try {
-      if (!_messagesControllerClosed) {
-        _messagesController.addError(error);
-      }
-    } catch (_) {}
+    if (_reconnectAttempts < maxReconnectAttempts) _scheduleReconnect();
+    _messagesController.addError(error);
   }
 
   void _scheduleReconnect() {
     _reconnectAttempts++;
     final delay = Duration(seconds: _reconnectAttempts * 2);
-
-    debugPrint('[ChatSocketService] Scheduling reconnection attempt $_reconnectAttempts in ${delay.inSeconds}s');
-
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(delay, () async {
-      if (_conversationId != null) {
-        debugPrint('[ChatSocketService] Attempting reconnect attempt #$_reconnectAttempts');
-        try {
-          await _establishConnection();
-        } catch (e) {
-          debugPrint('[ChatSocketService] Reconnect attempt failed: $e');
-        }
-      }
+      if (_conversationId != null) await _establishConnection();
     });
   }
 
+  /// Send a chat message
   void sendMessage(String content, String receiverId, [String? clientMessageId]) {
     if (!isConnected) {
-      throw Exception('WebSocket connection is not open.');
+      debugPrint('[ChatSocketService] Cannot send message, socket not connected yet.');
+      return;
+    }
+    if (content.isEmpty || receiverId.isEmpty) {
+      debugPrint('[ChatSocketService] Cannot send empty message or to empty receiver.');
+      return;
     }
 
     final messagePayload = {
       'type': 'new_message',
       'content': content,
-      'receiver_id': int.tryParse(receiverId),
+      'receiver_id': receiverId, // keep as string (UUID)
       'conversation_id': _conversationId,
       'timestamp': DateTime.now().toIso8601String(),
       'client_message_id': clientMessageId ?? _uuid.v4(),
     };
 
-    final jsonMessage = jsonEncode(messagePayload);
-    debugPrint('[ChatSocketService] Sending message: $jsonMessage');
-
     try {
-      _channel!.sink.add(jsonMessage);
+      _channel?.sink.add(jsonEncode(messagePayload));
+      debugPrint('[ChatSocketService] Sent message: $messagePayload');
     } catch (e) {
-      debugPrint('[ChatSocketService] Error sending message: $e');
       _handleConnectionError(e);
-      rethrow;
     }
   }
 
+  /// Send typing indicator
   void sendTypingIndicator(String receiverId, bool isTyping, {required bool isGroup}) {
-    if (!isConnected) return;
+    if (!isConnected || receiverId.isEmpty) return;
 
     final payload = {
       'type': 'typing_indicator',
-      'receiver_id': int.tryParse(receiverId),
+      'receiver_id': receiverId, // UUID string
       'is_typing': isTyping,
       'timestamp': DateTime.now().toIso8601String(),
+      'is_group': isGroup,
     };
 
     try {
-      _channel!.sink.add(jsonEncode(payload));
+      _channel?.sink.add(jsonEncode(payload));
       debugPrint('[ChatSocketService] Sent typing indicator: $payload');
-    } catch (e) {
-      debugPrint('[ChatSocketService] Error sending typing indicator: $e');
-    }
+    } catch (_) {}
   }
 
   void markAsRead(List<String> messageIds) {
-    if (!isConnected) return;
+    if (!isConnected || messageIds.isEmpty) return;
 
     final payload = {
       'type': 'mark_as_read',
@@ -252,48 +193,29 @@ class ChatSocketService {
     };
 
     try {
-      _channel!.sink.add(jsonEncode(payload));
-      debugPrint('[ChatSocketService] Sent mark_as_read for ${messageIds.length} messages');
-    } catch (e) {
-      debugPrint('[ChatSocketService] Error marking messages as read: $e');
-    }
+      _channel?.sink.add(jsonEncode(payload));
+    } catch (_) {}
   }
 
   bool get isConnected => _isConnected && _channel != null && (_channel!.closeCode == null);
 
   Future<void> reconnect() async {
     if (_conversationId != null) {
-      dispose();
+      await dispose();
       _reconnectAttempts = 0;
       await _establishConnection();
-    } else {
-      debugPrint('[ChatSocketService] Cannot reconnect — conversationId is null');
     }
   }
 
-  void dispose() {
+  Future<void> dispose() async {
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
-
-    // Mark controllers as closed to prevent adding events after this
-    _messagesControllerClosed = true;
-    _connectionStatusControllerClosed = true;
-
-    if (!_messagesController.isClosed) {
-      _messagesController.close();
-    }
-    if (!_connectionStatusController.isClosed) {
-      _connectionStatusController.close();
-    }
-
+    if (!_messagesController.isClosed) await _messagesController.close();
+    if (!_connectionStatusController.isClosed) await _connectionStatusController.close();
     try {
       _channel?.sink.close();
-    } catch (e) {
-      debugPrint('[ChatSocketService] Error closing channel: $e');
-    }
-
+    } catch (_) {}
     _channel = null;
     _isConnected = false;
-    debugPrint('[ChatSocketService] Disposed');
   }
 }

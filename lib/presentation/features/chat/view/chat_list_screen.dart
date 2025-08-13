@@ -361,7 +361,7 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
           // Try to get or create conversation before navigating
           try {
             final conversationId = await ChatService.getOrCreateConversation(
-              widget.currentUserId,
+              widget.currentUserId as int,
               user.id, partnerName: '',
             );
 
@@ -451,7 +451,7 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
               'currentUserId': widget.currentUserId,
               'isGroupChat': false,
               'isCurrentUserAdminInGroup': false,
-              'conversationId': chat.name,
+              'conversationId': chat.conversationId,
             },
           );
         } else {

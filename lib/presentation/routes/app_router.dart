@@ -229,10 +229,10 @@ class AppRouter {
               extraData?['isCurrentUserAdminInGroup'] ?? false;
 
           return OneToOneConversationPage(
-            chatPartnerName: chatPartnerName, 
+            chatPartnerName: chatPartnerName,
             currentUserId: currentUserId,
             chatPartnerId: chatPartnerId,
-            conversationId: '',
+            conversationId: extraData?['conversationId'] ?? '',
           );
         },
       ),

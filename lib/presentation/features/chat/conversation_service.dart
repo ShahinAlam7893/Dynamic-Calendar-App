@@ -10,7 +10,7 @@ class ChatService {
 
   /// Get or create a conversation, return its ID
   static Future<String?> getOrCreateConversation(
-      String currentUserId,
+      int currentUserId,
       String partnerId, {
         required String partnerName,
       }) async {
