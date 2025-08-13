@@ -9,10 +9,136 @@ import 'package:intl/intl.dart'; // For date formatting
 import 'package:circleslate/presentation/common_providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../../../presentation/common_providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../widgets/calendar_part.dart';
+
+class NotificationIconWithBadge extends StatefulWidget {
+  final double iconSize;
+  final VoidCallback onPressed;
+
+  const NotificationIconWithBadge({
+    Key? key,
+    required this.iconSize,
+    required this.onPressed,
+  }) : super(key: key);
+
+  @override
+  State<NotificationIconWithBadge> createState() => _NotificationIconWithBadgeState();
+}
+
+class _NotificationIconWithBadgeState extends State<NotificationIconWithBadge> {
+  final NotificationService _notificationService = NotificationService();
+  int _unreadCount = 0;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUnreadCount();
+    // Refresh count every 30 seconds for real-time updates
+    _startPeriodicRefresh();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final count = await _notificationService.getUnreadCount();
+      if (mounted) {
+        setState(() {
+          _unreadCount = count;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading unread count: $e");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _startPeriodicRefresh() {
+    // Refresh unread count every 30 seconds
+    Future.delayed(const Duration(seconds: 30), () {
+      if (mounted) {
+        _loadUnreadCount();
+        _startPeriodicRefresh();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        IconButton(
+          icon: Icon(
+            Icons.notifications,
+            color: Colors.white,
+            size: widget.iconSize,
+          ),
+          onPressed: () {
+            widget.onPressed();
+            // Refresh count after navigating to notifications
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (mounted) {
+                _loadUnreadCount();
+              }
+            });
+          },
+        ),
+        if (_unreadCount > 0)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              padding: EdgeInsets.all(_unreadCount > 99 ? 4 : 6),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              constraints: const BoxConstraints(
+                minWidth: 20,
+                minHeight: 20,
+              ),
+              child: Text(
+                _unreadCount > 99 ? '99+' : _unreadCount.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+}
+
 
 
 class HeaderSection extends StatefulWidget {
@@ -378,19 +504,10 @@ class _HomePageState extends State<HomePage> {
                         ],
                       ),
                       // Notification Bell Icon (New addition)
-                      IconButton(
-                        icon: Icon(
-                          Icons.notifications,
-                          color: Colors.white,
-                          size: screenWidth * 0.07, // Responsive icon size
-                        ),
+                      NotificationIconWithBadge(
+                        iconSize: screenWidth * 0.06,
                         onPressed: () {
-                          // Action when notification button is pressed
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Notification button pressed!')),
-                          );
-                          // You can add navigation here:
-                          context.push('/notifications'); // Example navigation to a notifications page
+                          context.push('/notifications');
                         },
                       ),
                     ],
