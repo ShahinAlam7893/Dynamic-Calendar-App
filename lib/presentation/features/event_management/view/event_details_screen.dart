@@ -133,7 +133,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   String? _responseStatus;
 
   late Future<Event> _eventDetails;
- 
+
   @override
   void initState() {
     super.initState();
@@ -387,9 +387,97 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                         SizedBox(
                           height: screenWidth * 0.04,
                         ), // Responsive spacing
-
-                        
-                      
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isJoining = true;
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _isJoining
+                                      ? AppColors.primaryBlue
+                                      : Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    side: BorderSide(
+                                      color: _isJoining
+                                          ? AppColors.primaryBlue
+                                          : AppColors.inputOutline,
+                                    ),
+                                  ),
+                                  elevation: 0,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: screenWidth * 0.03,
+                                  ), // Responsive vertical padding
+                                ),
+                                child: FittedBox(
+                                  // Use FittedBox to ensure text fits on very small buttons
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'I\'m Joining',
+                                    style: TextStyle(
+                                      fontSize:
+                                          bodyFontSize, // Responsive font size
+                                      fontWeight: FontWeight.w500,
+                                      color: _isJoining
+                                          ? Colors.white
+                                          : AppColors.textDark,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: screenWidth * 0.03,
+                            ), // Responsive spacing
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isJoining = false;
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: !_isJoining
+                                      ? AppColors.notGoingButtonColor
+                                      : Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    side: BorderSide(
+                                      color: !_isJoining
+                                          ? AppColors.notGoingButtonColor
+                                          : AppColors.inputOutline,
+                                    ),
+                                  ),
+                                  elevation: 0,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: screenWidth * 0.03,
+                                  ), // Responsive vertical padding
+                                ),
+                                child: FittedBox(
+                                  // Use FittedBox to ensure text fits
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'Decline',
+                                    style: TextStyle(
+                                      fontSize:
+                                          bodyFontSize, // Responsive font size
+                                      fontWeight: FontWeight.w500,
+                                      color: !_isJoining
+                                          ? Colors.white
+                                          : const Color(0xFFF87171),
+                                      fontFamily: 'Poppins',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
