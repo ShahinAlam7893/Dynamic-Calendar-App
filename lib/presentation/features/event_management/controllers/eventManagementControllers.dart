@@ -59,8 +59,9 @@ class EventService {
       print("❌ No token found.");
       return [];
     }
+    final urls = Urls.fatch_upcoming_events;
 
-    print("🌐 Making GET request to $baseUrl");
+    print("🌐 Making GET request to ${urls}");
     final response = await http.get(
       Uri.parse(Urls.fatch_upcoming_events),
       headers: {

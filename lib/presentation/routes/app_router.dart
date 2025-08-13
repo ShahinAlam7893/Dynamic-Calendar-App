@@ -48,7 +48,7 @@ class RoutePaths {
   static const String upcomingeventspage = '/up_coming_events';
   static const String createeventspage = '/create_event';
   static const String eventDetails = '/event-details';
-  static var ridesharingpage = '/ride_share';
+  static const String ridesharingpage = '/ride_share';
   static const String onetooneconversationpage = '/one-to-one-conversation';
   static const String chatlistpage = '/chat';
   static const String creategrouppage = '/group_chat';
@@ -210,10 +210,25 @@ class AppRouter {
         },
       ),
 
-      GoRoute(
-        path: RoutePaths.ridesharingpage,
-        builder: (context, state) => const RideSharingPage(),
-      ),
+      // GoRoute(
+      //   path:
+      //       '${RoutePaths.ridesharingpage}/:eventId/:eventdate/:eventstartTime/eventendTime/:eventlocation',
+      //   builder: (context, state) {
+      //     // final eventId = state.pathParameters['eventId']!;
+      //     // final eventdate = state.pathParameters['eventdate']!;
+      //     // final eventstartTime = state.pathParameters['eventstartTime']!;
+      //     // final eventendTime = state.pathParameters['eventendTime']!;
+      //     // final eventlocation = state.pathParameters['eventlocation']!;
+
+      //     return RideSharingPage(
+      //       eventId: event.id,
+      //       eventdate: event.date,
+      //       eventstartTime: event.startTime,
+      //       eventendTime: event.endTime,
+      //       eventlocation: event.location,
+      //     );
+      //   },
+      // ),
       GoRoute(
         path: RoutePaths.onetooneconversationpage,
         builder: (context, state) {
@@ -229,7 +244,7 @@ class AppRouter {
               extraData?['isCurrentUserAdminInGroup'] ?? false;
 
           return OneToOneConversationPage(
-            chatPartnerName: chatPartnerName, 
+            chatPartnerName: chatPartnerName,
             currentUserId: currentUserId,
             chatPartnerId: chatPartnerId,
             conversationId: '',
@@ -243,7 +258,8 @@ class AppRouter {
           return GroupManagementPage(
             groupId: extra['groupId'] ?? '',
             currentUserId: extra['currentUserId'] ?? '',
-            isCurrentUserAdmin: extra['isCurrentUserAdmin'] ?? false, conversationId: extra['conversationId'] ?? '',
+            isCurrentUserAdmin: extra['isCurrentUserAdmin'] ?? false,
+            conversationId: extra['conversationId'] ?? '',
           );
         },
       ),
@@ -274,7 +290,8 @@ class AppRouter {
       ),
       GoRoute(
         path: RoutePaths.addmemberpage,
-        builder: (context, state) => const AddMemberPage(conversationId: '', currentUserId: '',),
+        builder: (context, state) =>
+            const AddMemberPage(conversationId: '', currentUserId: ''),
       ),
       GoRoute(
         path: RoutePaths.directInvite,

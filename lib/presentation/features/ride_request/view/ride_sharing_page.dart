@@ -1,14 +1,14 @@
 import 'package:circleslate/core/constants/app_assets.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
+import 'package:circleslate/presentation/features/ride_request/services/RideService.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-// --- RideRequest Model ---
 class RideRequest {
   final String requesterName;
   final String requestedBy;
   final String requesterImageUrl;
-  final String eventTitle;
+
   final String eventDate;
   final String eventTime;
   final String eventLocation;
@@ -18,47 +18,79 @@ class RideRequest {
     required this.requesterName,
     required this.requestedBy,
     required this.requesterImageUrl,
-    required this.eventTitle,
+
     required this.eventDate,
     required this.eventTime,
     required this.eventLocation,
     required this.status,
   });
+
+  // Factory constructor to create RideRequest from JSON (API response)
+  factory RideRequest.fromJson(
+    Map<String, dynamic> json,
+    String eventDate,
+    String eventTime,
+    String eventLocation,
+  ) {
+    return RideRequest(
+      requesterName: json['requester']['full_name'] ?? 'Unknown',
+      requestedBy: json['requester']['email'] ?? 'Unknown',
+      requesterImageUrl:
+          json['requester']['profile_photo_url'] ?? '', // Can be null
+      eventDate: eventDate,
+      eventTime: eventTime,
+      eventLocation: eventLocation,
+      status: json['status_display'] ?? 'Pending',
+    );
+  }
 }
 
-
 class RideSharingPage extends StatefulWidget {
-  const RideSharingPage({super.key});
+  final String eventId;
+  final String eventdate;
+  final String eventstartTime;
+  final String eventendTime;
+  final String eventlocation;
+
+  const RideSharingPage({
+    super.key,
+    required this.eventId,
+    required this.eventdate,
+    required this.eventstartTime,
+    required this.eventlocation,
+    required this.eventendTime,
+  });
 
   @override
   State<RideSharingPage> createState() => _RideSharingPageState();
 }
 
 class _RideSharingPageState extends State<RideSharingPage> {
-  int _selectedIndex = 0; // Default selected index for bottom nav bar
+  late String eventId;
+  late String eventDate;
+  late String eventTime;
+  late String eventLocation;
 
-  final List<RideRequest> rideRequests = [
-    RideRequest(
-      requesterName: 'Ella needs a ride',
-      requestedBy: 'Peter',
-      requesterImageUrl: AppAssets.ellaProfile, // Placeholder for Ella's image
-      eventTitle: 'Sarah\'s Birthday Party',
-      eventDate: 'Saturday, July 20th',
-      eventTime: '2:00 PM - 5:00 PM',
-      eventLocation: '123 Oak Street, Springfield',
-      status: 'Pending Response',
-    ),
-    RideRequest(
-      requesterName: 'Jenny needs a ride home',
-      requestedBy: 'Lisa',
-      requesterImageUrl: AppAssets.jennyProfile, // Placeholder for Jenny's image
-      eventTitle: 'Soccer Practice',
-      eventDate: 'Today',
-      eventTime: '4:00 PM',
-      eventLocation: 'City Sports Complex',
-      status: 'Accepted',
-    ),
-  ];
+  late Future<List<RideRequest>> rideRequests;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // You should assign the variables with values passed from the previous screen or from the URL parameters.
+    eventId = widget.eventId; // Ensure the eventId is passed to this widget.
+    eventDate = widget.eventdate; // Make sure the correct data is passed
+    eventTime = widget.eventstartTime;
+    eventLocation = widget.eventlocation;
+
+    // Fetch ride requests after the initial state is set.
+    rideRequests = RideService.fetchRideRequests(
+      eventId,
+      eventDate,
+      eventTime,
+      eventLocation,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,11 +124,26 @@ class _RideSharingPageState extends State<RideSharingPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: rideRequests.map((request) => _buildRideRequestCard(request)).toList(),
-        ),
+      body: FutureBuilder<List<RideRequest>>(
+        future: rideRequests,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          final rideRequests = snapshot.data!;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: rideRequests
+                  .map((request) => _buildRideRequestCard(request))
+                  .toList(),
+            ),
+          );
+        },
       ),
     );
   }
@@ -118,7 +165,11 @@ class _RideSharingPageState extends State<RideSharingPage> {
           context.push('/one-to-one-conversation');
           // Handle chat action for accepted ride
         },
-        icon: Icon(Icons.chat_bubble_outline, size: 18, color: Color(0xFF5A8DEE)),
+        icon: Icon(
+          Icons.chat_bubble_outline,
+          size: 18,
+          color: Color(0xFF5A8DEE),
+        ),
         label: Text(
           'Chat',
           style: TextStyle(
@@ -145,9 +196,7 @@ class _RideSharingPageState extends State<RideSharingPage> {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       elevation: 0,
       color: Colors.white,
       child: Padding(
@@ -161,7 +210,8 @@ class _RideSharingPageState extends State<RideSharingPage> {
                   radius: 20,
                   backgroundImage: Image.asset(
                     request.requesterImageUrl,
-                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.person),
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.person),
                   ).image,
                 ),
                 const SizedBox(width: 12.0),
@@ -192,27 +242,33 @@ class _RideSharingPageState extends State<RideSharingPage> {
             const SizedBox(height: 16.0),
             const Divider(color: Colors.blue, thickness: 1), // Divider
             const SizedBox(height: 16.0),
-            Text(
-              request.eventTitle,
-              style: const TextStyle(
-                fontSize: 16.0,
-                fontWeight: FontWeight.w500,
-                color: Color(0xE51B1D2A),
-                fontFamily: 'Poppins',
-              ),
+            _buildInfoRow(
+              Icons.calendar_month,
+              widget.eventdate,
+              iconColor: Color(0xFF5A8DEE),
             ),
             const SizedBox(height: 8.0),
-            _buildInfoRow(Icons.calendar_month,  request.eventDate, iconColor: Color(0xFF5A8DEE)),
+            _buildInfoRow(
+              Icons.access_time,
+              widget.eventstartTime,
+              iconColor: Color(0xFFFFE082),
+            ),
             const SizedBox(height: 8.0),
-            _buildInfoRow(Icons.access_time, request.eventTime, iconColor: Color(0xFFFFE082)),
-            const SizedBox(height: 8.0),
-            _buildInfoRow(Icons.location_on, request.eventLocation, iconColor: Color(0xFFF87171)),
+            _buildInfoRow(
+              Icons.location_on,
+              widget.eventlocation,
+
+              iconColor: Color(0xFFF87171),
+            ),
             const SizedBox(height: 16.0),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12.0,
+                    vertical: 6.0,
+                  ),
                   decoration: BoxDecoration(
                     color: statusBackgroundColor,
                     borderRadius: BorderRadius.circular(8.0),
