@@ -1,5 +1,7 @@
 import 'package:circleslate/main.dart' hide AppAssets;
 import 'package:circleslate/presentation/features/event_management/models/eventsModels.dart';
+import 'package:circleslate/presentation/features/ride_request/view/ride_sharing_page.dart';
+import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:circleslate/core/constants/app_assets.dart';
@@ -133,7 +135,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   String? _responseStatus;
 
   late Future<Event> _eventDetails;
- 
+
   @override
   void initState() {
     super.initState();
@@ -146,12 +148,20 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
           setState(() {
             _isJoining = responseType == 'going';
           });
-          // You can show a success message here if needed
+
+          // Fetch the updated event details after the response is sent
+          _refreshEventDetails();
         })
         .catchError((error) {
           print('Error submitting response: $error');
           // Handle error (show message or alert to the user)
         });
+  }
+
+  void _refreshEventDetails() {
+    setState(() {
+      _eventDetails = EventService.fetchEventDetails(widget.eventId);
+    });
   }
 
   @override
@@ -208,6 +218,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
           final event = snapshot.data!;
           final host = event.host;
           final Response = event.responses;
+          final bool isRideNeeded = event.rideNeededForEvent;
           return SingleChildScrollView(
             padding: EdgeInsets.all(screenWidth * 0.04),
             child: Column(
@@ -284,26 +295,23 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                         ),
                         SizedBox(height: screenWidth * 0.02),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
                               Icons.location_on,
                               size: screenWidth * 0.04,
                               color: const Color(0xFFF87171),
                             ),
-                            // SizedBox(width: screenWidth * 0.015),
-                            Expanded(
-                              child: Text(
-                                event.location,
-                                style: TextStyle(
-                                  fontSize: screenWidth * 0.035,
-                                  color: AppColors.textMedium,
-                                  fontFamily: 'Poppins',
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
+                            SizedBox(width: screenWidth * 0.015),
+                            Text(
+                              event.location,
+                              style: TextStyle(
+                                fontSize: screenWidth * 0.035,
+                                color: AppColors.textMedium,
+                                fontFamily: 'Poppins',
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
@@ -387,9 +395,97 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                         SizedBox(
                           height: screenWidth * 0.04,
                         ), // Responsive spacing
-
-                        
-                      
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isJoining =
+                                        true; // User selected "I'm Joining"
+                                  });
+                                  // Call the API to send the response
+                                  _handleResponse('going');
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _isJoining
+                                      ? AppColors.primaryBlue
+                                      : Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    side: BorderSide(
+                                      color: _isJoining
+                                          ? AppColors.primaryBlue
+                                          : AppColors.inputOutline,
+                                    ),
+                                  ),
+                                  elevation: 0,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: screenWidth * 0.03,
+                                  ),
+                                ),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'I\'m Joining',
+                                    style: TextStyle(
+                                      fontSize: bodyFontSize,
+                                      fontWeight: FontWeight.w500,
+                                      color: _isJoining
+                                          ? Colors.white
+                                          : AppColors.textDark,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: screenWidth * 0.03),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isJoining =
+                                        false; // User selected "Decline"
+                                  });
+                                  // Call the API to send the response
+                                  _handleResponse('not_going');
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: !_isJoining
+                                      ? AppColors.notGoingButtonColor
+                                      : Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    side: BorderSide(
+                                      color: !_isJoining
+                                          ? AppColors.notGoingButtonColor
+                                          : AppColors.inputOutline,
+                                    ),
+                                  ),
+                                  elevation: 0,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: screenWidth * 0.03,
+                                  ),
+                                ),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'Decline',
+                                    style: TextStyle(
+                                      fontSize: bodyFontSize,
+                                      fontWeight: FontWeight.w500,
+                                      color: !_isJoining
+                                          ? Colors.white
+                                          : const Color(0xFFF87171),
+                                      fontFamily: 'Poppins',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -517,136 +613,205 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                 ),
                 SizedBox(height: screenWidth * 0.04), // Responsive spacing
                 // Ride Requests Section
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    vertical: screenWidth * 0.02,
-                  ), // Responsive padding
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.directions_car_outlined,
-                        size: sectionIconSize,
-                        color: AppColors.primaryBlue,
-                      ), // Responsive icon size
-                      SizedBox(width: screenWidth * 0.02), // Responsive spacing
-                      Expanded(
-                        // Make text responsive
-                        child: Text(
-                          'Ride Requests',
-                          style: TextStyle(
-                            fontSize: subtitleFontSize, // Responsive font size
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textDark,
-                            fontFamily: 'Poppins',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Card(
-                  margin: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    side: BorderSide(
-                      color: AppColors.rideRequestCardBorder,
-                      width: 1,
-                    ),
-                  ),
-                  elevation: 0,
-                  color: AppColors.rideRequestCardBackground,
-                  child: Padding(
-                    padding: EdgeInsets.all(
-                      screenWidth * 0.04,
-                    ), // Responsive card padding
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                if (isRideNeeded) ...[
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: screenWidth * 0.02,
+                    ), // Responsive padding
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            Image(
-                              image: const AssetImage(
-                                'assets/images/3d-house.png',
-                              ),
-                              height: screenWidth * 0.05,
-                              width: screenWidth * 0.05,
-                            ), // Responsive image size
-                            SizedBox(
-                              width: screenWidth * 0.02,
-                            ), // Responsive spacing
-                            Expanded(
-                              // Make text responsive
-                              child: Text(
-                                'Available for ride home',
-                                style: TextStyle(
-                                  fontSize:
-                                      bodyFontSize, // Responsive font size
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.textDark,
-                                  fontFamily: 'Poppins',
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
+                        Icon(
+                          Icons.directions_car_outlined,
+                          size: sectionIconSize,
+                          color: AppColors.primaryBlue,
+                        ), // Responsive icon size
                         SizedBox(
-                          height: screenWidth * 0.02,
+                          width: screenWidth * 0.02,
                         ), // Responsive spacing
-                        Text(
-                          'Mike Wilson + Can drop off anyone near downtown area',
-                          style: TextStyle(
-                            fontSize: smallFontSize, // Responsive font size
-                            color: AppColors.textMedium,
-                            fontFamily: 'Poppins',
-                          ),
-                          maxLines: 2, // Allow to wrap for description
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(
-                          height: screenWidth * 0.04,
-                        ), // Responsive spacing
-                        SizedBox(
-                          width: double.infinity,
-                          height:
-                              screenWidth * 0.1, // Responsive height for button
-                          child: ElevatedButton(
-                            onPressed: () {
-                              context.push('/ride_share');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.requestRideButtonColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                              elevation: 0,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: screenWidth * 0.04,
-                              ), // Responsive horizontal padding
+                        Expanded(
+                          // Make text responsive
+                          child: Text(
+                            'Ride Requests',
+                            style: TextStyle(
+                              fontSize:
+                                  subtitleFontSize, // Responsive font size
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textDark,
+                              fontFamily: 'Poppins',
                             ),
-                            child: FittedBox(
-                              // Use FittedBox for button text
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                'Request Ride',
-                                style: TextStyle(
-                                  fontSize:
-                                      bodyFontSize, // Consistent font size
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.requestRideButtonTextColor,
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
+                  Card(
+                    margin: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      side: BorderSide(
+                        color: AppColors.rideRequestCardBorder,
+                        width: 1,
+                      ),
+                    ),
+                    elevation: 0,
+                    color: AppColors.rideRequestCardBackground,
+                    child: Padding(
+                      padding: EdgeInsets.all(
+                        screenWidth * 0.04,
+                      ), // Responsive card padding
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Image(
+                                image: const AssetImage(
+                                  'assets/images/3d-house.png',
+                                ),
+                                height: screenWidth * 0.05,
+                                width: screenWidth * 0.05,
+                              ), // Responsive image size
+                              SizedBox(
+                                width: screenWidth * 0.02,
+                              ), // Responsive spacing
+                              Expanded(
+                                // Make text responsive
+                                child: Text(
+                                  'Available for ride home',
+                                  style: TextStyle(
+                                    fontSize:
+                                        bodyFontSize, // Responsive font size
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.textDark,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: screenWidth * 0.02,
+                          ), // Responsive spacing
+                          // Text(
+                          //   'Mike Wilson + Can drop off anyone near downtown area',
+                          //   style: TextStyle(
+                          //     fontSize: smallFontSize, // Responsive font size
+                          //     color: AppColors.textMedium,
+                          //     fontFamily: 'Poppins',
+                          //   ),
+                          //   maxLines: 2, // Allow to wrap for description
+                          //   overflow: TextOverflow.ellipsis,
+                          // ),
+                          SizedBox(
+                            height: screenWidth * 0.04,
+                          ), // Responsive spacing
+                          // SizedBox(
+                          //   width: double.infinity,
+                          //   height:
+                          //       screenWidth *
+                          //       0.1, // Responsive height for button
+                          //   child: ElevatedButton(
+                          //     onPressed: () {
+                          //       context.push('/ride_share');
+                          //     },
+                          //     style: ElevatedButton.styleFrom(
+                          //       backgroundColor:
+                          //           AppColors.requestRideButtonColor,
+                          //       shape: RoundedRectangleBorder(
+                          //         borderRadius: BorderRadius.circular(8.0),
+                          //       ),
+                          //       elevation: 0,
+                          //       padding: EdgeInsets.symmetric(
+                          //         horizontal: screenWidth * 0.04,
+                          //       ), // Responsive horizontal padding
+                          //     ),
+                          //     child: FittedBox(
+                          //       // Use FittedBox for button text
+                          //       fit: BoxFit.scaleDown,
+                          //       child: Text(
+                          //         'Send Request Ride',
+                          //         style: TextStyle(
+                          //           fontSize:
+                          //               bodyFontSize, // Consistent font size
+                          //           fontWeight: FontWeight.w600,
+                          //           color: AppColors.requestRideButtonTextColor,
+                          //           fontFamily: 'Poppins',
+                          //         ),
+                          //       ),
+                          //     ),
+                          //   ),
+                          // ),
+                          SizedBox(height: screenWidth * 0.02),
+                          SizedBox(
+                            width: double.infinity,
+                            height:
+                                screenWidth *
+                                0.1, // Responsive height for button
+                            child: ElevatedButton(
+                              onPressed: () {
+                                print(event.id);
+                                // Example of navigation from EventDetailsPage to RideSharingPage
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => RideSharingPage(
+                                      eventId: event.id,
+                                      eventdate: event.date,
+                                      eventstartTime: event.startTime,
+                                      eventendTime: event.endTime,
+                                      eventlocation: event.location,
+                                    ),
+                                  ),
+                                );
+                              },
+
+                              // onPressed: () {
+                              //   print(event.id);
+                              //   // Example of navigation from EventDetailsPage to RideSharingPage
+                              //   context.push(
+                              //     '/ride_share',
+                              //     //'${RoutePaths.ridesharingpage}/${event.id}/${event.date}/${event.startTime}/${event.endTime}/${event.location}',
+                              //   );
+
+                              //   // context.push("${RoutePaths.eventDetails}/${event.id}");
+                              // },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    AppColors.requestRideButtonColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                elevation: 0,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: screenWidth * 0.04,
+                                ), // Responsive horizontal padding
+                              ),
+                              child: FittedBox(
+                                // Use FittedBox for button text
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Request Ride List',
+                                  style: TextStyle(
+                                    fontSize:
+                                        bodyFontSize, // Consistent font size
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.requestRideButtonTextColor,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+
                 SizedBox(
                   height: screenWidth * 0.05,
                 ), // Spacing for bottom nav bar
