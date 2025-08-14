@@ -2,6 +2,8 @@ import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart'; // For navigation
+import 'package:provider/provider.dart';
+import '../../../common_providers/auth_provider.dart';
 
 
 class SettingsPage extends StatelessWidget {
@@ -83,14 +85,22 @@ class SettingsPage extends StatelessWidget {
                     const SizedBox(width: 16.0),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.of(context).pop(); // Dismiss dialog
+                          
                           // Perform logout action
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Logging Out...')),
                           );
-                          // Navigate to login/onboarding page after logout
-                          context.go(RoutePaths.login); // Example: navigate to login page
+                          
+                          // Get AuthProvider and logout
+                          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                          await authProvider.logout();
+                          
+                          // Navigate to login page after logout
+                          if (context.mounted) {
+                            context.go(RoutePaths.login);
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.unavailableRed, // Red for Log Out button

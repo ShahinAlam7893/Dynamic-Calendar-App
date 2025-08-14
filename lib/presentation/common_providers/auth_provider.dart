@@ -37,6 +37,9 @@ class AuthProvider extends ChangeNotifier {
   Map<String, dynamic>? get userProfile => _userProfile;
   List<dynamic> get conversations => _conversations; // New: Getter for conversations
   bool get isLoggedIn => _accessToken != null;
+  
+  // Getter for current user ID
+  String? get currentUserId => _userProfile?['id']?.toString();
 
   AuthProvider() : _userService = AuthService(ApiBaseHelper()) {
     Future.microtask(() => loadTokensFromStorage());
@@ -300,6 +303,9 @@ class AuthProvider extends ChangeNotifier {
         };
 
         print("✅ Parsed User Profile: $_userProfile");
+        
+        // Save user ID to SharedPreferences for persistence
+        await _saveUserProfileToStorage();
 
         _setLoading(false);
         notifyListeners();
@@ -430,6 +436,28 @@ class AuthProvider extends ChangeNotifier {
     await prefs.setString('refreshToken', _refreshToken ?? '');
   }
 
+  Future<void> _saveUserProfileToStorage() async {
+    if (_userProfile != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userProfile', jsonEncode(_userProfile));
+      debugPrint('[AuthProvider] User profile saved to storage: ${_userProfile!['id']}');
+    }
+  }
+
+  Future<void> _loadUserProfileFromStorage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedProfile = prefs.getString('userProfile');
+    
+    if (savedProfile != null) {
+      try {
+        _userProfile = jsonDecode(savedProfile);
+        debugPrint('[AuthProvider] User profile loaded from storage: ${_userProfile!['id']}');
+      } catch (e) {
+        debugPrint('[AuthProvider] Error loading user profile from storage: $e');
+      }
+    }
+  }
+
   Future<String?> loadTokensFromStorage() async {
     final prefs = await SharedPreferences.getInstance();
     final savedAccessToken = prefs.getString('accessToken');
@@ -437,6 +465,9 @@ class AuthProvider extends ChangeNotifier {
 
     _accessToken = savedAccessToken;
     _refreshToken = savedRefreshToken;
+
+    // Load user profile from storage
+    await _loadUserProfileFromStorage();
 
     // return the token so caller can print/use it
     return savedAccessToken;
@@ -460,5 +491,28 @@ class AuthProvider extends ChangeNotifier {
     _accessToken = accessToken;
     _refreshToken = refreshToken;
     Future.microtask(() => notifyListeners());
+  }
+
+  // Logout method to clear all user data
+  Future<void> logout() async {
+    debugPrint('[AuthProvider] Logging out user...');
+    
+    // Clear in-memory data
+    _accessToken = null;
+    _refreshToken = null;
+    _userProfile = null;
+    _userEmail = null;
+    _userOtp = null;
+    _errorMessage = null;
+    _conversations.clear();
+    
+    // Clear stored data
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('accessToken');
+    await prefs.remove('refreshToken');
+    await prefs.remove('userProfile');
+    
+    debugPrint('[AuthProvider] User logged out successfully');
+    notifyListeners();
   }
 }

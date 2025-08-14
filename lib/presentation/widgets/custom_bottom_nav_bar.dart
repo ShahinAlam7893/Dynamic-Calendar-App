@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart'; // Still useful for internal page navigation (not bottom bar)
 import 'package:circleslate/presentation/features/settings/view/settings_screen.dart';
 import 'package:circleslate/presentation/features/home/view/home_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:circleslate/presentation/common_providers/auth_provider.dart';
 
 
 // --- AppColors (Copied for self-containment) ---
@@ -115,15 +117,21 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
 
   // Define your actual pages here.
   // IMPORTANT: Ensure these pages do NOT have their own Scaffold's bottomNavigationBar.
-  final List<Widget> _pages = [
-    const HomePage(), // Your actual Home Page
-    const UpcomingEventsPage(), // Your actual Events Page
-    const ChatListPage(currentUserId: '3',),
-    const AvailabilityPage(),
-    const SettingsPage(),// Your actual Groups Page
-    // const GroupManagementPage(),
-
-  ];
+  List<Widget> get _pages {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUserId = authProvider.currentUserId ?? '';
+    
+    debugPrint('[SmoothNavigationWrapper] Current User ID: $currentUserId');
+    
+    return [
+      const HomePage(), // Your actual Home Page
+      const UpcomingEventsPage(), // Your actual Events Page
+      const ChatListPage(), // No longer needs currentUserId parameter
+      const AvailabilityPage(),
+      const SettingsPage(),// Your actual Groups Page
+      // const GroupManagementPage(),
+    ];
+  }
 
   @override
   void initState() {
@@ -182,23 +190,30 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: PageView(
-          controller: _pageController,
-          onPageChanged: _onPageChanged,
-          physics: const BouncingScrollPhysics(), // Provides a nice scroll effect
-          children: _pages.map((page) =>
-          // AnimatedSwitcher for smooth page transitions within PageView
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: page,
-          )
-          ).toList(),
-        ),
-      ),
-      bottomNavigationBar: _buildCustomBottomNav(),
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // Rebuild pages when user profile changes
+        final pages = _pages;
+        
+        return Scaffold(
+          body: FadeTransition(
+            opacity: _fadeAnimation,
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: _onPageChanged,
+              physics: const BouncingScrollPhysics(), // Provides a nice scroll effect
+              children: pages.map((page) =>
+              // AnimatedSwitcher for smooth page transitions within PageView
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: page,
+              )
+              ).toList(),
+            ),
+          ),
+          bottomNavigationBar: _buildCustomBottomNav(),
+        );
+      },
     );
   }
 

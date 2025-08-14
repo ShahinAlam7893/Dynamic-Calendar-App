@@ -126,6 +126,7 @@ class AppRouter {
       ),
       GoRoute(
         path: RoutePaths.onboarding,
+        name: AppRoutes.onboarding,
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(

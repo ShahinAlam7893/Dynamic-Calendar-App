@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_assets.dart';
-import '../../../common_providers/auth_provider.dart';
+
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -28,20 +28,35 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _startLoadingAndNavigate() async {
     Timer(const Duration(seconds: 3), () async {
-      final prefs = await SharedPreferences.getInstance();
-      final savedAccessToken = prefs.getString('accessToken');
-      String? token = savedAccessToken;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final savedAccessToken = prefs.getString('accessToken');
+        String? token = savedAccessToken;
+        
+        print('SplashScreen: Token found: ${token != null ? "Yes" : "No"}');
+        print('SplashScreen: Token value: $token');
 
-      for (int i = 0; i <= 100; i++) {
-        // Simulate loading progress
-        await Future.delayed(const Duration(milliseconds: 30));
-        _loadingProgress.value = i / 100; // Update the progress
-      }
+        for (int i = 0; i <= 100; i++) {
+          // Simulate loading progress
+          await Future.delayed(const Duration(milliseconds: 30));
+          _loadingProgress.value = i / 100; // Update the progress
+        }
 
-      if (token != null && token.isNotEmpty) {
-        context.goNamed('home');
-      } else {
-        context.pushNamed('onboarding');
+        if (token != null && token.isNotEmpty) {
+          print('SplashScreen: Navigating to home');
+          context.goNamed(AppRoutes.home);
+        } else {
+          print('SplashScreen: Navigating to onboarding');
+          context.pushNamed(AppRoutes.onboarding);
+        }
+      } catch (e) {
+        print('SplashScreen: Error during navigation: $e');
+        // Fallback navigation
+        try {
+          context.pushNamed(AppRoutes.onboarding);
+        } catch (fallbackError) {
+          print('SplashScreen: Fallback navigation failed: $fallbackError');
+        }
       }
     });
   }
@@ -114,8 +129,8 @@ class _SplashScreenState extends State<SplashScreen> {
                   builder: (context, progress, child) {
                     return LinearProgressIndicator(
                       value: progress,
-                      backgroundColor: AppColors.lightBlue.withOpacity(
-                        0.5,
+                      backgroundColor: AppColors.lightBlue.withValues(
+                        alpha: 0.5,
                       ), // Lighter background color
                       valueColor: const AlwaysStoppedAnimation<Color>(
                         AppColors.textColorWhite,
