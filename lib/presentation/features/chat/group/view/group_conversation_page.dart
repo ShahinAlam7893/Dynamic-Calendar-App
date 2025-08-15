@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:circleslate/data/models/conversation_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -12,29 +14,25 @@ import '../../../../../data/models/group_model.dart';
 import '../../../../routes/app_router.dart';
 
 class GroupConversationPage extends StatefulWidget {
-  final String groupId;
-  final String currentUserId;
-  final String groupName;
+  final String groupId;       // This is the unique group ID
+  final String currentUserId; // Current logged-in user ID
+  final String groupName;     // This is the display name of the group
 
   const GroupConversationPage({
     super.key,
     required this.groupId,
     required this.currentUserId,
     required this.groupName,
-
-    // Default to false if not provided
   });
 
   @override
   State<GroupConversationPage> createState() => _GroupConversationPageState();
 }
 
-class _GroupConversationPageState extends State<GroupConversationPage>
-    with WidgetsBindingObserver {
+class _GroupConversationPageState extends State<GroupConversationPage> with WidgetsBindingObserver {
   final TextEditingController _messageController = TextEditingController();
   final List<StoredMessage> _messages = [];
   final ScrollController _scrollController = ScrollController();
-  bool _isCurrentUserAdmin = false; // Track if the current user is an admin
   final Uuid _uuid = const Uuid();
 
   late GroupChatSocketService _groupChatSocketService;
@@ -54,7 +52,6 @@ class _GroupConversationPageState extends State<GroupConversationPage>
     );
 
     _initializeConversation();
-    _checkIfAdmin();
     _messageController.addListener(_handleTyping);
   }
 
@@ -67,15 +64,6 @@ class _GroupConversationPageState extends State<GroupConversationPage>
     setState(() {
       _isConversationReady = true;
       _isLoading = false;
-    });
-  }
-
-  Future<void> _checkIfAdmin() async {
-    // Example API call or local logic
-    final prefs = await SharedPreferences.getInstance();
-    final role = prefs.getString('userRole'); // or API result
-    setState(() {
-      _isCurrentUserAdmin = role == 'admin';
     });
   }
 
@@ -115,12 +103,8 @@ class _GroupConversationPageState extends State<GroupConversationPage>
       text: message.content,
       timestamp: DateTime.parse(message.timestamp),
       senderId: message.senderId,
-      sender: message.senderId == widget.currentUserId
-          ? MessageSender.user
-          : MessageSender.other,
-      senderImageUrl: message.senderId == widget.currentUserId
-          ? AppAssets.jennyProfile
-          : AppAssets.sarahMartinez,
+      sender: message.senderId == widget.currentUserId ? MessageSender.user : MessageSender.other,
+      senderImageUrl: message.senderId == widget.currentUserId ? AppAssets.jennyProfile : AppAssets.sarahMartinez,
       status: MessageStatus.seen,
       clientMessageId: null,
     );
@@ -165,25 +149,11 @@ class _GroupConversationPageState extends State<GroupConversationPage>
     await MessageStorageService.addMessage(widget.groupId, message);
 
     try {
-      _groupChatSocketService.sendMessage(
-        widget.groupId,
-        widget.currentUserId,
-        text,
-      );
-      await MessageStorageService.updateMessageStatus(
-        widget.groupId,
-        message.id,
-        MessageStatus.sent,
-        clientMessageId: clientMessageId,
-      );
+      _groupChatSocketService.sendMessage(widget.groupId, widget.currentUserId as String, text );
+      await MessageStorageService.updateMessageStatus(widget.groupId, message.id, MessageStatus.sent, clientMessageId: clientMessageId);
     } catch (e) {
       debugPrint('Failed to send message: $e');
-      await MessageStorageService.updateMessageStatus(
-        widget.groupId,
-        message.id,
-        MessageStatus.failed,
-        clientMessageId: clientMessageId,
-      );
+      await MessageStorageService.updateMessageStatus(widget.groupId, message.id, MessageStatus.failed, clientMessageId: clientMessageId);
     }
   }
 
@@ -222,12 +192,8 @@ class _GroupConversationPageState extends State<GroupConversationPage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.groupName, // Display group name here
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20.0,
-                fontWeight: FontWeight.w500,
-              ),
+              widget.groupName,  // Display group name here
+              style: const TextStyle(color: Colors.white, fontSize: 20.0, fontWeight: FontWeight.w500),
             ),
             if (_isSomeoneTyping)
               const Text(
@@ -238,23 +204,21 @@ class _GroupConversationPageState extends State<GroupConversationPage>
         ),
         centerTitle: false,
         actions: [
-          if (_isCurrentUserAdmin)
-            IconButton(
-              icon: const Icon(Icons.manage_accounts, color: Colors.white),
-              tooltip: 'Group Manager',
-              onPressed: () {
-                debugPrint("PRINT groupId: ${widget.groupId}");
-                debugPrint("PRINT conversationId: ${widget.groupId}");
-                context.push(
-                  RoutePaths.groupManagement,
-                  extra: {
-                    'groupId': widget.groupId,
-                    'conversationId': widget.groupId,
-                    'currentUserId': widget.currentUserId,
-                  },
-                );
-              },
-            ),
+
+          IconButton(
+            icon: const Icon(Icons.manage_accounts, color: Colors.white),
+            tooltip: 'Group Manager',
+            onPressed: () {
+              debugPrint("PRINT groupId: ${widget.groupId}");
+              debugPrint("PRINT conversationId: ${widget.groupId}"); // Use groupId as conversationId
+              context.push(RoutePaths.groupManagement, extra: {
+                'groupId': widget.groupId,
+                'conversationId': widget.groupId, // Use groupId as conversationId since they should be the same
+                'currentUserId': widget.currentUserId,
+                'isCurrentUserAdmin': true, // You can replace with actual admin check
+              });
+            },
+          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -264,19 +228,13 @@ class _GroupConversationPageState extends State<GroupConversationPage>
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _messages.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No messages yet. Start the conversation!',
-                      style: TextStyle(color: Colors.grey, fontSize: 16),
-                    ),
-                  )
+                ? const Center(child: Text('No messages yet. Start the conversation!', style: TextStyle(color: Colors.grey, fontSize: 16)))
                 : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16.0),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) =>
-                        _buildMessageBubble(_messages[index]),
-                  ),
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16.0),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) => _buildMessageBubble(_messages[index]),
+            ),
           ),
           _buildMessageInput(),
         ],
@@ -292,40 +250,25 @@ class _GroupConversationPageState extends State<GroupConversationPage>
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Column(
-          crossAxisAlignment: isUser
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
+          crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (!isUser)
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundImage: AssetImage(
-                      message.senderImageUrl ?? AppAssets.sarahMartinez,
-                    ),
-                  ),
+                  CircleAvatar(radius: 16, backgroundImage: AssetImage(message.senderImageUrl ?? AppAssets.sarahMartinez)),
                 const SizedBox(width: 8.0),
                 Flexible(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 10.0,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
                     decoration: BoxDecoration(
-                      color: isUser
-                          ? AppColors.receiverBubbleColor
-                          : AppColors.senderBubbleColor,
+                      color: isUser ? AppColors.receiverBubbleColor : AppColors.senderBubbleColor,
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                     child: Text(
                       message.text,
-                      style: const TextStyle(
-                        fontSize: 14.0,
-                        fontFamily: 'Poppins',
-                      ),
+                      style: const TextStyle(fontSize: 14.0, fontFamily: 'Poppins'),
                     ),
                   ),
                 ),
@@ -335,12 +278,7 @@ class _GroupConversationPageState extends State<GroupConversationPage>
                     children: [
                       _buildMessageStatusIcon(message.status),
                       const SizedBox(width: 4.0),
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundImage: AssetImage(
-                          message.senderImageUrl ?? AppAssets.jennyProfile,
-                        ),
-                      ),
+                      CircleAvatar(radius: 16, backgroundImage: AssetImage(message.senderImageUrl ?? AppAssets.jennyProfile)),
                     ],
                   ),
               ],
@@ -400,9 +338,7 @@ class _GroupConversationPageState extends State<GroupConversationPage>
             onTap: _isConversationReady ? _sendMessage : null,
             child: Icon(
               Icons.send,
-              color: _isConversationReady
-                  ? AppColors.primaryBlue
-                  : AppColors.buttonPrimary,
+              color: _isConversationReady ? AppColors.primaryBlue : AppColors.buttonPrimary,
             ),
           ),
         ],
@@ -410,3 +346,5 @@ class _GroupConversationPageState extends State<GroupConversationPage>
     );
   }
 }
+
+

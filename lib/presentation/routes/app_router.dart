@@ -25,6 +25,7 @@ import 'package:circleslate/presentation/features/authentication/view/reset_pass
 import 'package:circleslate/presentation/features/authentication/view/signup_screen.dart';
 import 'package:circleslate/presentation/features/onboarding/view/splash_screen.dart';
 import 'package:circleslate/presentation/features/onboarding/view/onboarding_screen.dart';
+import '../../data/datasources/shared_pref/local/entity/token_entity.dart';
 import '../features/chat/group/view/create_group_page.dart';
 import '../features/chat/group/view/group_conversation_page.dart';
 import '../features/notification/notification_page.dart';
@@ -48,7 +49,7 @@ class RoutePaths {
   static const String ridesharingpage = '/ride_share';
   static const String onetooneconversationpage = '/one-to-one-conversation';
   static const String chatlistpage = '/chat';
-  static const String creategrouppage = '/group_chat';
+  static const String creategrouppage = '/group_create';
   static const String groupConversationPage = '/group_conversation';
   static const String groupManagement = '/group-management';
   static const String addmemberpage = '/add_member';
@@ -122,6 +123,7 @@ class AppRouter {
       ),
       GoRoute(
         path: RoutePaths.onboarding,
+        name: AppRoutes.onboarding,
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
@@ -244,7 +246,7 @@ class AppRouter {
             chatPartnerName: chatPartnerName,
             currentUserId: currentUserId,
             chatPartnerId: chatPartnerId,
-            conversationId: '',
+            conversationId: extraData?['conversationId'] ?? '',
           );
         },
       ),
@@ -261,7 +263,8 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/group_chat',
+        path: '/group_create',
+        name: AppRoutes.creategrouppage,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
           final currentUserId = extra['currentUserId'] ?? '';
@@ -326,6 +329,8 @@ class AppRouter {
         path: RoutePaths.notification,
         builder: (context, state) => const NotificationPage(),
       ),
+
+
       GoRoute(
         path: RoutePaths.editProfile,
         builder: (context, state) {

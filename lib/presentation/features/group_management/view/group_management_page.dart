@@ -27,11 +27,11 @@ class GroupManagementPage extends StatefulWidget {
 
 class _GroupManagementPageState extends State<GroupManagementPage> {
   final TextEditingController _searchController = TextEditingController();
-  static const String _baseUrl =
-      'http://10.10.13.27:8000/api/chat/conversations/';
+  static const String _baseUrl = 'http://10.10.13.27:8000/api/chat/conversations/';
 
   bool _isLoading = false;
   bool _isActionLoading = false;
+  bool get _isCurrentUserAdmin => widget.isCurrentUserAdmin;
   String? _error;
   List<GroupMember> _members = [];
   List<GroupMember> _filteredMembers = [];
@@ -92,22 +92,15 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     }
 
     final url = Uri.parse('$_baseUrl${widget.groupId}');
-    debugPrint(
-      '[GroupManagementPage] Fetching group details from groupId ${widget.groupId}',
-    );
-    debugPrint(
-      '[GroupManagementPage] Fetching group details from conversationId ${widget.conversationId}',
-    );
+    debugPrint('[GroupManagementPage] Fetching group details from groupId ${widget.groupId}');
+    debugPrint('[GroupManagementPage] Fetching group details from conversationId ${widget.conversationId}');
     debugPrint('[GroupManagementPage] Fetching group details from $url');
 
     try {
-      final resp = await http.get(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final resp = await http.get(url, headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      });
 
       debugPrint('[GroupManagementPage] Response status: ${resp.statusCode}');
       debugPrint('[GroupManagementPage] Response body: ${resp.body}');
@@ -121,8 +114,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
           final results = body['results'] as Map<String, dynamic>;
 
           if (results.containsKey('conversation')) {
-            final conversation =
-                results['conversation'] as Map<String, dynamic>;
+            final conversation = results['conversation'] as Map<String, dynamic>;
 
             _groupName = (conversation['name'] ?? '').toString();
 
@@ -135,17 +127,10 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         // Map to GroupMember
         final fetchedMembers = membersJson.map<GroupMember>((m) {
           final id = (m['id'] ?? m['user_id'] ?? '').toString();
-          final name = (m['name'] ?? m['full_name'] ?? m['username'] ?? '')
-              .toString();
+          final name = (m['name'] ?? m['full_name'] ?? m['username'] ?? '').toString();
           final email = (m['email'] ?? '').toString();
           final children = (m['children'] ?? '').toString();
-          final imageUrl =
-              (m['avatar'] ??
-                      m['image_url'] ??
-                      m['profile_image'] ??
-                      m['profile_photo_url'] ??
-                      '')
-                  .toString();
+          final imageUrl = (m['avatar'] ?? m['image_url'] ?? m['profile_image'] ?? m['profile_photo_url'] ?? '').toString();
           final roleStr = (m['role'] ?? '').toString().toLowerCase();
           final isAdmin = roleStr == 'admin';
 
@@ -164,6 +149,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
           _filteredMembers = List.from(_members);
           _isLoading = false;
         });
+
       } else {
         setState(() {
           _error = 'Failed to load group: ${resp.statusCode}';
@@ -185,7 +171,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     if (!widget.isCurrentUserAdmin) {
       debugPrint('[GroupManagementPage] User is not admin, cannot add members');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Only admins can add members.')),
+          const SnackBar(content: Text('Only admins can add members.'))
       );
       return;
     }
@@ -194,40 +180,29 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     final existingMemberIds = _members.map((member) => member.id).toList();
 
     // Use groupId as conversationId if conversationId is empty
-    final conversationIdToUse = widget.conversationId.isNotEmpty
-        ? widget.conversationId
-        : widget.groupId;
+    final conversationIdToUse = widget.conversationId.isNotEmpty ? widget.conversationId : widget.groupId;
 
     debugPrint('[GroupManagementPage] Navigating to AddMemberPage');
     debugPrint('[GroupManagementPage] GroupId: ${widget.groupId}');
-    debugPrint(
-      '[GroupManagementPage] ConversationId: ${widget.conversationId}',
-    );
-    debugPrint(
-      '[GroupManagementPage] ConversationIdToUse: $conversationIdToUse',
-    );
+    debugPrint('[GroupManagementPage] ConversationId: ${widget.conversationId}');
+    debugPrint('[GroupManagementPage] ConversationIdToUse: $conversationIdToUse');
     debugPrint('[GroupManagementPage] CurrentUserId: ${widget.currentUserId}');
     debugPrint('[GroupManagementPage] ExistingMemberIds: $existingMemberIds');
 
-    final result = await context.push(
-      RoutePaths.addmemberpage,
-      extra: {
-        'conversationId': conversationIdToUse,
-        'currentUserId': widget.currentUserId,
-        'existingMemberIds': existingMemberIds,
-      },
-    );
+    final result = await context.push(RoutePaths.addmemberpage, extra: {
+      'conversationId': conversationIdToUse,
+      'currentUserId': widget.currentUserId,
+      'existingMemberIds': existingMemberIds,
+    });
 
-    debugPrint(
-      '[GroupManagementPage] Returned from AddMemberPage with result: $result',
-    );
+    debugPrint('[GroupManagementPage] Returned from AddMemberPage with result: $result');
 
     if (result == null || result is! List<String>) {
       debugPrint('[GroupManagementPage] No valid user IDs returned, aborting');
       return;
     }
 
-    final userIds = result;
+    final userIds = result as List<String>;
     if (userIds.isEmpty) {
       debugPrint('[GroupManagementPage] No user IDs to add, aborting');
       return;
@@ -236,15 +211,12 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     await _performAddMembers(userIds, conversationIdToUse);
   }
 
-  Future<void> _performAddMembers(
-    List<String> userIds,
-    String conversationId,
-  ) async {
+  Future<void> _performAddMembers(List<String> userIds, String conversationId) async {
     final token = await _getToken();
     if (token == null) {
       debugPrint('[GroupManagementPage] Token missing, cannot add members');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Authentication token missing.')),
+          const SnackBar(content: Text('Authentication token missing.'))
       );
       return;
     }
@@ -262,7 +234,9 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       return parsed ?? id;
     }).toList();
 
-    final payload = {'user_ids': userIdsAsInts};
+    final payload = {
+      'user_ids': userIdsAsInts,
+    };
 
     debugPrint('[GroupManagementPage] Request payload: ${jsonEncode(payload)}');
 
@@ -276,30 +250,23 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         body: jsonEncode(payload),
       );
 
-      debugPrint(
-        '[GroupManagementPage] Add members response status: ${resp.statusCode}',
-      );
-      debugPrint(
-        '[GroupManagementPage] Add members response body: ${resp.body}',
-      );
+      debugPrint('[GroupManagementPage] Add members response status: ${resp.statusCode}');
+      debugPrint('[GroupManagementPage] Add members response body: ${resp.body}');
 
       if (resp.statusCode == 200 || resp.statusCode == 201) {
         final responseData = jsonDecode(resp.body);
 
         // Parse the response to show detailed feedback
         final addedUsers = responseData['added_users'] as List<dynamic>? ?? [];
-        final alreadyMembers =
-            responseData['already_members'] as List<dynamic>? ?? [];
+        final alreadyMembers = responseData['already_members'] as List<dynamic>? ?? [];
 
         String message = '';
         if (addedUsers.isNotEmpty) {
-          message =
-              'Added ${addedUsers.length} member(s): ${addedUsers.join(', ')}';
+          message = 'Added ${addedUsers.length} member(s): ${addedUsers.join(', ')}';
         }
         if (alreadyMembers.isNotEmpty) {
           if (message.isNotEmpty) message += '\n';
-          message +=
-              '${alreadyMembers.length} user(s) were already members: ${alreadyMembers.join(', ')}';
+          message += '${alreadyMembers.length} user(s) were already members: ${alreadyMembers.join(', ')}';
         }
 
         if (message.isEmpty) {
@@ -307,31 +274,29 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            duration: const Duration(seconds: 4),
-          ),
+            SnackBar(
+              content: Text(message),
+              duration: const Duration(seconds: 4),
+            )
         );
 
         // Refresh the group details to show new members
         await _fetchGroupDetails();
       } else {
-        final errorMessage = resp.body.isNotEmpty
-            ? 'Failed to add members (${resp.statusCode}): ${resp.body}'
-            : 'Failed to add members (${resp.statusCode})';
+        final errorMessage = resp.body.isNotEmpty ?
+        'Failed to add members (${resp.statusCode}): ${resp.body}' :
+        'Failed to add members (${resp.statusCode})';
 
-        debugPrint(
-          '[GroupManagementPage] Failed to add members: $errorMessage',
+        debugPrint('[GroupManagementPage] Failed to add members: $errorMessage');
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMessage))
         );
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(errorMessage)));
       }
     } catch (e) {
       debugPrint('[GroupManagementPage] Error adding members: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error adding members: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error adding members: $e'))
+      );
     } finally {
       setState(() => _isActionLoading = false);
       debugPrint('[GroupManagementPage] _performAddMembers() finished');
@@ -341,7 +306,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   Future<void> _removeMember(GroupMember member) async {
     if (!widget.isCurrentUserAdmin) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Only admins can remove members.')),
+          const SnackBar(content: Text('Only admins can remove members.'))
       );
       return;
     }
@@ -349,9 +314,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     // Prevent removing yourself
     if (member.id == widget.currentUserId) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You cannot remove yourself from the group.'),
-        ),
+          const SnackBar(content: Text('You cannot remove yourself from the group.'))
       );
       return;
     }
@@ -360,17 +323,15 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       context: context,
       builder: (c) => AlertDialog(
         title: const Text('Remove Member'),
-        content: Text(
-          'Are you sure you want to remove ${member.name} from this group?',
-        ),
+        content: Text('Are you sure you want to remove ${member.name} from this group?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: const Text('Cancel'),
+              onPressed: () => Navigator.pop(c, false),
+              child: const Text('Cancel')
           ),
           TextButton(
-            onPressed: () => Navigator.pop(c, true),
-            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+              onPressed: () => Navigator.pop(c, true),
+              child: const Text('Remove', style: TextStyle(color: Colors.red))
           ),
         ],
       ),
@@ -381,7 +342,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     final token = await _getToken();
     if (token == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Authentication token missing.')),
+          const SnackBar(content: Text('Authentication token missing.'))
       );
       return;
     }
@@ -400,32 +361,24 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         body: jsonEncode({'user_id': int.tryParse(member.id) ?? member.id}),
       );
 
-      debugPrint(
-        '[GroupManagementPage] Remove member response status: ${resp.statusCode}',
-      );
-      debugPrint(
-        '[GroupManagementPage] Remove member response body: ${resp.body}',
-      );
+      debugPrint('[GroupManagementPage] Remove member response status: ${resp.statusCode}');
+      debugPrint('[GroupManagementPage] Remove member response body: ${resp.body}');
 
       if (resp.statusCode == 200 || resp.statusCode == 204) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${member.name} has been removed from the group.'),
-          ),
+            SnackBar(content: Text('${member.name} has been removed from the group.'))
         );
         await _fetchGroupDetails();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to remove member: ${resp.statusCode}'),
-          ),
+            SnackBar(content: Text('Failed to remove member: ${resp.statusCode}'))
         );
       }
     } catch (e) {
       debugPrint('[GroupManagementPage] Error removing member: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error removing member: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error removing member: $e'))
+      );
     } finally {
       setState(() => _isActionLoading = false);
     }
@@ -433,25 +386,19 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
 
   Future<void> _promoteToAdmin(GroupMember member) async {
     if (!widget.isCurrentUserAdmin) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Only admins can promote members.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Only admins can promote members.')));
       return;
     }
 
     final token = await _getToken();
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Authentication token missing.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication token missing.')));
       return;
     }
 
     setState(() => _isActionLoading = true);
     final url = Uri.parse('$_baseUrl${widget.conversationId}/promote-admin/');
-    debugPrint(
-      '[GroupManagementPage] Promoting member ${member.id} to admin at $url',
-    );
+    debugPrint('[GroupManagementPage] Promoting member ${member.id} to admin at $url');
 
     try {
       final resp = await http.post(
@@ -463,28 +410,18 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         body: jsonEncode({'user_id': int.tryParse(member.id) ?? member.id}),
       );
 
-      debugPrint(
-        '[GroupManagementPage] Promote response status: ${resp.statusCode}',
-      );
+      debugPrint('[GroupManagementPage] Promote response status: ${resp.statusCode}');
       debugPrint('[GroupManagementPage] Promote response body: ${resp.body}');
 
       if (resp.statusCode == 200 || resp.statusCode == 204) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${member.name} is now an admin.')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${member.name} is now an admin.')));
         await _fetchGroupDetails();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to promote member: ${resp.statusCode}'),
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to promote member: ${resp.statusCode}')));
       }
     } catch (e) {
       debugPrint('[GroupManagementPage] Error promoting member: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error promoting member: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error promoting member: $e')));
     } finally {
       setState(() => _isActionLoading = false);
     }
@@ -492,9 +429,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
 
   Future<void> _changeGroupName() async {
     if (!widget.isCurrentUserAdmin) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Only admins can change group name.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Only admins can change group name.')));
       return;
     }
 
@@ -509,10 +444,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
           autofocus: true,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               final val = controller.text.trim();
@@ -525,24 +457,17 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       ),
     );
 
-    if (newName == null ||
-        newName.trim().isEmpty ||
-        newName.trim() == _groupName)
-      return;
+    if (newName == null || newName.trim().isEmpty || newName.trim() == _groupName) return;
 
     final token = await _getToken();
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Authentication token missing.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication token missing.')));
       return;
     }
 
     setState(() => _isActionLoading = true);
     final url = Uri.parse('$_baseUrl${widget.conversationId}/');
-    debugPrint(
-      '[GroupManagementPage] Changing group name to "$newName" at $url',
-    );
+    debugPrint('[GroupManagementPage] Changing group name to "$newName" at $url');
 
     try {
       final resp = await http.patch(
@@ -554,32 +479,20 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         body: jsonEncode({'name': newName}),
       );
 
-      debugPrint(
-        '[GroupManagementPage] Change name response status: ${resp.statusCode}',
-      );
-      debugPrint(
-        '[GroupManagementPage] Change name response body: ${resp.body}',
-      );
+      debugPrint('[GroupManagementPage] Change name response status: ${resp.statusCode}');
+      debugPrint('[GroupManagementPage] Change name response body: ${resp.body}');
 
       if (resp.statusCode == 200) {
         setState(() {
           _groupName = newName;
         });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Group name changed.')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Group name changed.')));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to change group name: ${resp.statusCode}'),
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to change group name: ${resp.statusCode}')));
       }
     } catch (e) {
       debugPrint('[GroupManagementPage] Error changing group name: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error changing group name: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error changing group name: $e')));
     } finally {
       setState(() => _isActionLoading = false);
     }
@@ -591,20 +504,14 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundImage:
-              member.imageUrl != null && member.imageUrl!.isNotEmpty
+          backgroundImage: member.imageUrl != null && member.imageUrl!.isNotEmpty
               ? Image.network(member.imageUrl!).image
               : const AssetImage('assets/images/default_avatar.png'),
         ),
 
         title: Row(
           children: [
-            Expanded(
-              child: Text(
-                member.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
+            Expanded(child: Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold))),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -625,13 +532,12 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         subtitle: Text('Children: ${member.children}\n${member.email}'),
         isThreeLine: true,
         tileColor: isAdmin ? Colors.blue.withOpacity(0.04) : null,
-        trailing: PopupMenuButton<String>(
+        trailing: _isCurrentUserAdmin
+            ? PopupMenuButton<String>(
           onSelected: (v) async {
             if (v == 'chat') {
-              context.push(
-                RoutePaths.onetooneconversationpage,
-                extra: {'name': member.name, 'id': member.id},
-              );
+              context.push(RoutePaths.onetooneconversationpage,
+                  extra: {'name': member.name, 'id': member.id});
             } else if (v == 'promote') {
               await _promoteToAdmin(member);
             } else if (v == 'remove') {
@@ -642,25 +548,17 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
             final items = <PopupMenuEntry<String>>[
               const PopupMenuItem(value: 'chat', child: Text('Message')),
             ];
-            if (widget.isCurrentUserAdmin) {
-              if (!isAdmin) {
-                items.add(
-                  const PopupMenuItem(
-                    value: 'promote',
-                    child: Text('Promote to Admin'),
-                  ),
-                );
-              }
-              items.add(
-                const PopupMenuItem(
-                  value: 'remove',
-                  child: Text('Remove', style: TextStyle(color: Colors.red)),
-                ),
-              );
+            if (!isAdmin) {
+              items.add(const PopupMenuItem(
+                  value: 'promote', child: Text('Promote to Admin')));
             }
+            items.add(const PopupMenuItem(
+                value: 'remove',
+                child: Text('Remove', style: TextStyle(color: Colors.red))));
             return items;
           },
-        ),
+        )
+            : null,
       ),
     );
   }
@@ -678,23 +576,9 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          _groupName.isNotEmpty ? 'Group: $_groupName' : 'Group Management',
-        ),
+        title: Text(_groupName.isNotEmpty ? '$_groupName' : 'Group Management',
+        style: const TextStyle(color: Colors.white)),
         centerTitle: true,
-        actions: [
-          if (widget.isCurrentUserAdmin)
-            IconButton(
-              onPressed: _changeGroupName,
-              icon: const Icon(Icons.edit, color: Colors.white),
-              tooltip: 'Change group name',
-            ),
-          IconButton(
-            onPressed: _isActionLoading ? null : _fetchGroupDetails,
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            tooltip: 'Refresh',
-          ),
-        ],
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
@@ -709,16 +593,14 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            _applySearch();
-                          },
-                        )
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _searchController.clear();
+                      _applySearch();
+                    },
+                  )
                       : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ),
@@ -727,10 +609,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'All Members (${_filteredMembers.length})',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  Text('All Members (${_filteredMembers.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
                   Row(
                     children: [
                       if (widget.isCurrentUserAdmin)
@@ -762,13 +641,13 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
                   : _filteredMembers.isEmpty
                   ? const Center(child: Text('No members found.'))
                   : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _filteredMembers.length,
-                      itemBuilder: (context, idx) {
-                        final member = _filteredMembers[idx];
-                        return _buildMemberTile(member);
-                      },
-                    ),
+                padding: const EdgeInsets.all(16),
+                itemCount: _filteredMembers.length,
+                itemBuilder: (context, idx) {
+                  final member = _filteredMembers[idx];
+                  return _buildMemberTile(member);
+                },
+              ),
             ),
           ],
         ),
@@ -776,3 +655,4 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     );
   }
 }
+
