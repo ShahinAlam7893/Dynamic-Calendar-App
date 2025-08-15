@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:circleslate/core/constants/shared_utilities.dart';
 import 'package:circleslate/presentation/common_providers/availability_provider.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,8 +26,10 @@ class _AvailabilityPreviewPageState extends State<AvailabilityPreviewPage> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('accessToken') ?? '';
     if (token.isNotEmpty) {
-      await Provider.of<AvailabilityProvider>(context, listen: false)
-          .fetchAvailabilityFromAPI(token);
+      await Provider.of<AvailabilityProvider>(
+        context,
+        listen: false,
+      ).fetchAvailabilityFromAPI(token);
     }
     setState(() => _isLoading = false);
   }
@@ -101,8 +102,11 @@ class _AvailabilityPreviewPageState extends State<AvailabilityPreviewPage> {
         backgroundColor: AppColors.buttonPrimary,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: Colors.white, size: screenWidth * 0.06),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: screenWidth * 0.06,
+          ),
           onPressed: () {
             context.pop();
           },
@@ -120,122 +124,129 @@ class _AvailabilityPreviewPageState extends State<AvailabilityPreviewPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        padding: EdgeInsets.all(mainPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'This Week\'s Availability',
-              style: TextStyle(
-                fontSize: sectionTitleFontSize,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textColorPrimary,
-                fontFamily: 'Poppins',
-              ),
-            ),
-            SizedBox(height: sectionSpacing),
-            Container(
-              padding: EdgeInsets.all(screenWidth * 0.04),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(borderRadiusSmall),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 6,
+              padding: EdgeInsets.all(mainPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'This Week\'s Availability',
+                    style: TextStyle(
+                      fontSize: sectionTitleFontSize,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textColorPrimary,
+                      fontFamily: 'Poppins',
+                    ),
                   ),
-                ],
-              ),
-              child: ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: weekDaysData.length,
-                itemBuilder: (context, index) {
-                  final dayName = weekDaysData[index]['name'];
-                  final dayWeekday = weekDaysData[index]['weekday'];
-                  final isToday = dayWeekday == todayWeekday;
-
-                  // Get API data
-                  final apiData =
-                      availabilityProvider.apiAvailability;
-                  final int status =
-                      apiData[dayWeekday]?['status'] ?? 2;
-                  final String timeRange =
-                      apiData[dayWeekday]?['timeRange'] ?? 'Not Set';
-
-                  final String statusText = _getStatusText(status);
-                  final Color statusColor = _getStatusColor(status);
-
-                  return Padding(
-                    padding: EdgeInsets.symmetric(
-                        vertical: itemVerticalPadding),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          isToday ? '$dayName (Today)' : dayName,
-                          style: TextStyle(
-                            fontSize: dayNameFontSize,
-                            fontWeight: isToday
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: AppColors.textColorPrimary,
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: statusPaddingHorizontal,
-                              vertical: statusPaddingVertical),
-                          decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(
-                                borderRadiusMedium),
-                            border: Border.all(
-                                color: statusColor, width: 1.0),
-                          ),
-                          child: Text(
-                            '$statusText $timeRange',
-                            style: TextStyle(
-                              fontSize: statusTextFontSize,
-                              color: statusColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                  SizedBox(height: sectionSpacing),
+                  Container(
+                    padding: EdgeInsets.all(screenWidth * 0.04),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(borderRadiusSmall),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 6,
                         ),
                       ],
                     ),
-                  );
-                },
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: weekDaysData.length,
+                      itemBuilder: (context, index) {
+                        final dayName = weekDaysData[index]['name'];
+                        final dayWeekday = weekDaysData[index]['weekday'];
+                        final isToday = dayWeekday == todayWeekday;
+
+                        // Get API data
+                        final apiData = availabilityProvider.apiAvailability;
+                        final int status = apiData[dayWeekday]?['status'] ?? 2;
+                        final String timeRange =
+                            apiData[dayWeekday]?['timeRange'] ?? 'Not Set';
+
+                        final String statusText = _getStatusText(status);
+                        final Color statusColor = _getStatusColor(status);
+
+                        return Padding(
+                          padding: EdgeInsets.symmetric(
+                            vertical: itemVerticalPadding,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                isToday ? '$dayName (Today)' : dayName,
+                                style: TextStyle(
+                                  fontSize: dayNameFontSize,
+                                  fontWeight: isToday
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: AppColors.textColorPrimary,
+                                ),
+                              ),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: statusPaddingHorizontal,
+                                  vertical: statusPaddingVertical,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(
+                                    borderRadiusMedium,
+                                  ),
+                                  border: Border.all(
+                                    color: statusColor,
+                                    width: 1.0,
+                                  ),
+                                ),
+                                child: Text(
+                                  '$statusText $timeRange',
+                                  style: TextStyle(
+                                    fontSize: statusTextFontSize,
+                                    color: statusColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  SizedBox(height: screenWidth * 0.07),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: SizedBox(
+                      width: fabSize,
+                      height: fabSize,
+                      child: FloatingActionButton(
+                        onPressed: () async {
+                          // Go to edit page and refresh when back
+                          await context.push('/availability');
+                          _loadAvailability();
+                        },
+                        backgroundColor: AppColors.primaryBlue,
+                        shape: const CircleBorder(),
+                        child: Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: fabIconSize,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            SizedBox(height: screenWidth * 0.07),
-            Align(
-              alignment: Alignment.centerRight,
-              child: SizedBox(
-                width: fabSize,
-                height: fabSize,
-                child: FloatingActionButton(
-                  onPressed: () async {
-                    // Go to edit page and refresh when back
-                    await context.push('/availability');
-                    _loadAvailability();
-                  },
-                  backgroundColor: AppColors.primaryBlue,
-                  shape: const CircleBorder(),
-                  child: Icon(Icons.add,
-                      color: Colors.white, size: fabIconSize),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
   int _getCurrentIndex(BuildContext context) {
-    final String location =
-    GoRouter.of(context).routerDelegate.currentConfiguration.uri.toString();
+    final String location = GoRouter.of(
+      context,
+    ).routerDelegate.currentConfiguration.uri.toString();
     if (location == '/home') return 0;
     if (location == '/up_coming_events') return 1;
     if (location == '/group_chat') return 2;

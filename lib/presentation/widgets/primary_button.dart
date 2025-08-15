@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_strings.dart'; // Just for general button text ideas
+// Just for general button text ideas
 
 class PrimaryButton extends StatelessWidget {
   final String text;
@@ -39,33 +39,31 @@ class PrimaryButton extends StatelessWidget {
           backgroundColor: backgroundColor,
           foregroundColor: textColor,
           shape: RoundedRectangleBorder(
-            borderRadius: borderRadius ?? BorderRadius.circular(12.0), // Rounded corners
+            borderRadius:
+                borderRadius ?? BorderRadius.circular(12.0), // Rounded corners
           ),
           padding: padding,
           elevation: 0, // No shadow for modern flat look
         ),
         child: isLoading
             ? const CircularProgressIndicator(
-          color: AppColors.textColorWhite,
-          strokeWidth: 2,
-        )
+                color: AppColors.textColorWhite,
+                strokeWidth: 2,
+              )
             : Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (icon != null) ...[
-              icon!,
-              const SizedBox(width: 8),
-            ],
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: textColor,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[icon!, const SizedBox(width: 8)],
+                  Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }

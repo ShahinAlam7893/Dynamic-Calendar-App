@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart'; // Import Provider
-import 'package:circleslate/core/constants/app_colors.dart';
-import 'package:circleslate/core/constants/app_assets.dart';
 import 'package:circleslate/presentation/common_providers/auth_provider.dart';
 import 'dart:io'; // Import for File class
 import 'package:image_picker/image_picker.dart'; // Import the image_picker package
@@ -21,11 +19,16 @@ class AppColors {
   static const Color textLight = Color(0xB21B1D2A);
   static const Color accentBlue = Color(0xFF5A8DEE);
   static const Color inputOutline = Color(0x1A101010);
-  static const Color textColorPrimary = Color(0xE51B1D2A); // Added this for consistency
+  static const Color textColorPrimary = Color(
+    0xE51B1D2A,
+  ); // Added this for consistency
 }
+
 class AppAssets {
-  static const String calendarIcon = 'assets/icons/calendar_icon.png'; // Placeholder for the asset path
+  static const String calendarIcon =
+      'assets/icons/calendar_icon.png'; // Placeholder for the asset path
 }
+
 class AuthInputField extends StatefulWidget {
   final TextEditingController controller;
   final String labelText;
@@ -59,6 +62,7 @@ class _AuthInputFieldState extends State<AuthInputField> {
     super.initState();
     _obscureText = widget.isPassword;
   }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -90,43 +94,59 @@ class _AuthInputFieldState extends State<AuthInputField> {
             hintText: widget.hintText,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(screenWidth * 0.01),
-              borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
+              borderSide: const BorderSide(
+                color: AppColors.inputOutline,
+                width: 1,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(screenWidth * 0.01),
-              borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
+              borderSide: const BorderSide(
+                color: AppColors.inputOutline,
+                width: 1,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(screenWidth * 0.01),
-              borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColors.primaryBlue,
+                width: 1.5,
+              ),
             ),
-            hintStyle: TextStyle(color: AppColors.inputHintColor, fontSize: hintFontSize, fontWeight: FontWeight.w400),
+            hintStyle: TextStyle(
+              color: AppColors.inputHintColor,
+              fontSize: hintFontSize,
+              fontWeight: FontWeight.w400,
+            ),
             filled: true,
             fillColor: Colors.white,
-            contentPadding: EdgeInsets.symmetric(vertical: inputContentPaddingVertical, horizontal: inputContentPaddingHorizontal),
+            contentPadding: EdgeInsets.symmetric(
+              vertical: inputContentPaddingVertical,
+              horizontal: inputContentPaddingHorizontal,
+            ),
             suffixIcon: widget.isPassword
                 ? IconButton(
-              icon: Icon(
-                _obscureText ? Icons.visibility : Icons.visibility_off,
-                color: AppColors.textColorSecondary,
-                size: screenWidth * 0.05,
-              ),
-              onPressed: () {
-                setState(() {
-                  _obscureText = !_obscureText;
-                });
-              },
-            )
+                    icon: Icon(
+                      _obscureText ? Icons.visibility : Icons.visibility_off,
+                      color: AppColors.textColorSecondary,
+                      size: screenWidth * 0.05,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureText = !_obscureText;
+                      });
+                    },
+                  )
                 : (widget.suffixIcon != null
-                ? SizedBox(
-              width: screenWidth * 0.08,
-              height: screenWidth * 0.08,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: widget.suffixIcon,
-              ),
-            )
-                : null),
+                      ? SizedBox(
+                          width: screenWidth * 0.08,
+                          height: screenWidth * 0.08,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: widget.suffixIcon,
+                          ),
+                        )
+                      : null),
           ),
         ),
       ],
@@ -146,7 +166,8 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   File? _profileImage; // Variable to hold the selected image file
 
@@ -162,7 +183,9 @@ class _SignUpPageState extends State<SignUpPage> {
   // Function to handle image picking
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery); // Opens gallery
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+    ); // Opens gallery
     if (pickedFile != null) {
       setState(() {
         _profileImage = File(pickedFile.path); // Assigns the picked file
@@ -176,9 +199,9 @@ class _SignUpPageState extends State<SignUpPage> {
 
     if (_formKey.currentState!.validate()) {
       // Show loading indicator
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Processing...')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Processing...')));
 
       // Pass the image to the AuthProvider
       final success = await authProvider.registerUser(
@@ -204,7 +227,8 @@ class _SignUpPageState extends State<SignUpPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(authProvider.errorMessage ?? 'Registration failed.'),
-            backgroundColor: Colors.redAccent, // Use a red color for error messages
+            backgroundColor:
+                Colors.redAccent, // Use a red color for error messages
           ),
         );
       }
@@ -220,14 +244,21 @@ class _SignUpPageState extends State<SignUpPage> {
           backgroundColor: Colors.white,
           body: SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 20.0,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Align(
                     alignment: Alignment.topLeft,
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.black,
+                        size: 24,
+                      ),
                       onPressed: () {
                         context.pop();
                       },
@@ -245,7 +276,11 @@ class _SignUpPageState extends State<SignUpPage> {
                       width: 80,
                       height: 80,
                       fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => Icon(Icons.calendar_month, color: AppColors.primaryBlue, size: 80),
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.calendar_month,
+                        color: AppColors.primaryBlue,
+                        size: 80,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20.0),
@@ -306,7 +341,9 @@ class _SignUpPageState extends State<SignUpPage> {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your email address';
                             }
-                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                            if (!RegExp(
+                              r'^[^@]+@[^@]+\.[^@]+',
+                            ).hasMatch(value)) {
                               return 'Please enter a valid email address';
                             }
                             return null;
@@ -367,49 +404,57 @@ class _SignUpPageState extends State<SignUpPage> {
                       child: Container(
                         width: double.infinity,
                         height: 50, // Increased height for better visibility
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 10.0,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.lightBlueBackground,
                           borderRadius: BorderRadius.circular(12.0),
                         ),
                         child: _profileImage == null
                             ? const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.camera_alt, size: 40.0, color: AppColors.textMedium),
-                            SizedBox(width: 10.0),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Upload your photo',
-                                  style: TextStyle(
-                                    fontSize: 12.0,
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColors.accentBlue,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.camera_alt,
+                                    size: 40.0,
+                                    color: AppColors.textMedium,
                                   ),
-                                ),
-                                Text(
-                                  'JPG, PNG up to 5MB',
-                                  style: TextStyle(
-                                    fontSize: 10.0,
-                                    color: AppColors.textLight,
+                                  SizedBox(width: 10.0),
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Upload your photo',
+                                        style: TextStyle(
+                                          fontSize: 12.0,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.accentBlue,
+                                        ),
+                                      ),
+                                      Text(
+                                        'JPG, PNG up to 5MB',
+                                        style: TextStyle(
+                                          fontSize: 10.0,
+                                          color: AppColors.textLight,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        )
+                                ],
+                              )
                             : ClipRRect(
-                          borderRadius: BorderRadius.circular(12.0),
-                          child: Image.file(
-                            _profileImage!,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                          ),
-                        ),
+                                borderRadius: BorderRadius.circular(12.0),
+                                child: Image.file(
+                                  _profileImage!,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -417,7 +462,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: authProvider.isLoading ? null : () => _handleSignUp(context),
+                      onPressed: authProvider.isLoading
+                          ? null
+                          : () => _handleSignUp(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryBlue,
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -428,21 +475,21 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                       child: authProvider.isLoading
                           ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
                           : const Text(
-                        'Create Account',
-                        style: TextStyle(
-                          fontSize: 14.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                              'Create Account',
+                              style: TextStyle(
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 10.0),

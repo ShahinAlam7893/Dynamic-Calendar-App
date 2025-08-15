@@ -1,19 +1,19 @@
 import 'dart:io';
 import 'package:circleslate/core/constants/app_colors.dart';
-import 'package:circleslate/data/services/api_base_helper.dart'; // Ensure this is correctly imported if needed
+// Ensure this is correctly imported if needed
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart'; // REQUIRED for image picking
 import 'package:provider/provider.dart';
-import 'dart:convert'; // REQUIRED for jsonEncode/decode if used directly here, but AuthProvider handles it
+// REQUIRED for jsonEncode/decode if used directly here, but AuthProvider handles it
 import '../../../common_providers/auth_provider.dart';
 
 // Add the API endpoint for profile update (if not already in a central file)
 // This should ideally come from lib/core/constants/api_endpoints.dart
 // For self-containment in this immersive, we'll keep it here.
 class ApiEndpoints {
-  static const String updateProfile = '/auth/profile/update/'; // Adjust this to match your actual endpoint
+  static const String updateProfile =
+      '/auth/profile/update/'; // Adjust this to match your actual endpoint
 }
 
 // --- AuthInputField (same as before) ---
@@ -73,25 +73,38 @@ class _AuthInputFieldState extends State<AuthInputField> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(4),
-          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+          borderSide: const BorderSide(
+            color: AppColors.primaryBlue,
+            width: 1.5,
+          ),
         ),
-        labelStyle: const TextStyle(color: AppColors.textColorSecondary, fontSize: 11.0, fontWeight: FontWeight.w500),
-        hintStyle: const TextStyle(color: AppColors.textColorSecondary, fontSize: 10),
+        labelStyle: const TextStyle(
+          color: AppColors.textColorSecondary,
+          fontSize: 11.0,
+          fontWeight: FontWeight.w500,
+        ),
+        hintStyle: const TextStyle(
+          color: AppColors.textColorSecondary,
+          fontSize: 10,
+        ),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 16.0),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 14.0,
+          horizontal: 16.0,
+        ),
         suffixIcon: widget.isPassword
             ? IconButton(
-          icon: Icon(
-            _obscureText ? Icons.visibility : Icons.visibility_off,
-            color: AppColors.textColorSecondary,
-          ),
-          onPressed: () {
-            setState(() {
-              _obscureText = !_obscureText;
-            });
-          },
-        )
+                icon: Icon(
+                  _obscureText ? Icons.visibility : Icons.visibility_off,
+                  color: AppColors.textColorSecondary,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscureText = !_obscureText;
+                  });
+                },
+              )
             : widget.suffixIcon,
       ),
     );
@@ -102,7 +115,8 @@ class EditProfilePage extends StatefulWidget {
   final String initialFullName;
   final String initialEmail;
   final String initialMobile;
-  final List<Map<String, String>> initialChildren; // Assuming children are Map<String, String>
+  final List<Map<String, String>>
+  initialChildren; // Assuming children are Map<String, String>
   final String initialProfileImageUrl;
 
   const EditProfilePage({
@@ -125,7 +139,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _mobileController;
   late List<TextEditingController> _childNameControllers;
   late List<TextEditingController> _childAgeControllers;
-  late String _currentProfileImageUrl; // Stores the URL of the current profile image (from network)
+  late String
+  _currentProfileImageUrl; // Stores the URL of the current profile image (from network)
   File? _pickedImageFile; // Stores the new image file picked from the device
 
   bool _isSaving = false;
@@ -154,7 +169,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
               .map((c) => TextEditingController(text: c["name"] ?? ""))
               .toList();
           _childAgeControllers = children
-              .map((c) => TextEditingController(text: c["age"]?.toString() ?? ""))
+              .map(
+                (c) => TextEditingController(text: c["age"]?.toString() ?? ""),
+              )
               .toList();
         });
       } else {
@@ -165,14 +182,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
 
       // ✅ FIX: Load profile image from API
-      if (profile["profile_photo"] != null && profile["profile_photo"].toString().isNotEmpty) {
+      if (profile["profile_photo"] != null &&
+          profile["profile_photo"].toString().isNotEmpty) {
         setState(() {
           _currentProfileImageUrl = profile["profile_photo"];
         });
       }
     });
   }
-
 
   @override
   void dispose() {
@@ -204,17 +221,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     // Allows picking an image from the gallery. imageQuality helps reduce file size.
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
 
     if (pickedFile != null) {
       setState(() {
         _pickedImageFile = File(pickedFile.path); // Store the picked image file
-        _currentProfileImageUrl = ''; // Clear the network image URL as a new image is selected
+        _currentProfileImageUrl =
+            ''; // Clear the network image URL as a new image is selected
       });
     }
   }
   // --- END IMAGE PICKING LOGIC ---
-
 
   // Save profile with proper API integration
   void _saveProfile() async {
@@ -241,7 +261,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
           if (name.isNotEmpty) {
             bool success = await authProvider.addChild(
-               // or get token however your provider stores it
+              // or get token however your provider stores it
               name,
               age,
             );
@@ -274,10 +294,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void _showErrorMessage(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
       );
     }
   }
@@ -319,19 +336,31 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       radius: 60,
                       backgroundColor: Colors.grey.shade200,
                       backgroundImage: _pickedImageFile != null
-                          ? FileImage(_pickedImageFile!) // Display newly picked image
+                          ? FileImage(
+                              _pickedImageFile!,
+                            ) // Display newly picked image
                           : (_currentProfileImageUrl.isNotEmpty
-                          ? NetworkImage(_currentProfileImageUrl) // Display existing network image
-                          : null) as ImageProvider?,
-                      child: _pickedImageFile == null && _currentProfileImageUrl.isEmpty
-                          ? Icon(Icons.person, size: 60, color: Colors.grey.shade400) // Default icon
+                                    ? NetworkImage(
+                                        _currentProfileImageUrl,
+                                      ) // Display existing network image
+                                    : null)
+                                as ImageProvider?,
+                      child:
+                          _pickedImageFile == null &&
+                              _currentProfileImageUrl.isEmpty
+                          ? Icon(
+                              Icons.person,
+                              size: 60,
+                              color: Colors.grey.shade400,
+                            ) // Default icon
                           : null,
                     ),
                     Positioned(
                       bottom: 0,
                       right: 0,
                       child: GestureDetector(
-                        onTap: _pickImage, // Tapping this icon calls _pickImage()
+                        onTap:
+                            _pickImage, // Tapping this icon calls _pickImage()
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
@@ -339,7 +368,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
                           ),
-                          child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),
@@ -400,7 +433,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 labelText: '',
                 hintText: 'Mobile',
                 keyboardType: TextInputType.phone,
-                validator: (v) => v == null || v.isEmpty ? 'Enter mobile' : null,
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Enter mobile' : null,
               ),
               const SizedBox(height: 20.0),
 
@@ -440,7 +474,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 child: Column(
                   children: List.generate(
                     _childNameControllers.length,
-                        (i) => _buildChildInputField(i),
+                    (i) => _buildChildInputField(i),
                   ),
                 ),
               ),
@@ -461,13 +495,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   child: _isSaving
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
-                    'Save',
-                    style: TextStyle(
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                          'Save',
+                          style: TextStyle(
+                            fontSize: 18.0,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ],

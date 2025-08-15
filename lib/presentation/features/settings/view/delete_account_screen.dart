@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:circleslate/core/constants/app_colors.dart'; // Ensure this import path is correct
 import 'package:circleslate/core/constants/app_strings.dart'; // Ensure this import path is correct
-import 'package:circleslate/core/constants/app_assets.dart'; // Ensure this import path is correct
+// Ensure this import path is correct
 import 'package:circleslate/presentation/widgets/primary_button.dart'; // Reusing your PrimaryButton
 
 class DeleteAccountScreen extends StatefulWidget {
@@ -49,7 +49,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         backgroundColor: AppColors.primaryBlue, // Blue app bar as per image
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white), // White back arrow
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+          ), // White back arrow
           onPressed: () {
             context.pop(); // Go back to the previous screen (e.g., settings)
           },
@@ -77,7 +80,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               Container(
                 padding: const EdgeInsets.all(20.0),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withOpacity(0.1), // Light blue background for icon
+                  color: AppColors.primaryBlue.withOpacity(
+                    0.1,
+                  ), // Light blue background for icon
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -115,9 +120,14 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFEBEE), // Light red background for warning
+                  color: const Color(
+                    0xFFFFEBEE,
+                  ), // Light red background for warning
                   borderRadius: BorderRadius.circular(8.0),
-                  border: Border.all(color: Colors.red.shade300, width: 1), // Red border
+                  border: Border.all(
+                    color: Colors.red.shade300,
+                    width: 1,
+                  ), // Red border
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,7 +175,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.0),
-                      side: BorderSide(color: Colors.grey.shade300, width: 1), // Light grey border
+                      side: BorderSide(
+                        color: Colors.grey.shade300,
+                        width: 1,
+                      ), // Light grey border
                     ),
                     elevation: 0, // No shadow
                   ),

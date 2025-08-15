@@ -1,10 +1,7 @@
-import 'package:circleslate/main.dart' hide AppAssets;
 import 'package:circleslate/presentation/features/event_management/models/eventsModels.dart';
 import 'package:circleslate/presentation/features/ride_request/view/ride_sharing_page.dart';
-import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:circleslate/core/constants/app_assets.dart';
 
 import '../controllers/eventManagementControllers.dart';
 

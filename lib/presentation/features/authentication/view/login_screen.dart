@@ -5,7 +5,6 @@ import 'package:circleslate/core/constants/app_assets.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:circleslate/presentation/common_providers/auth_provider.dart';
 import 'package:circleslate/presentation/widgets/auth_input_field.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 // Note: Assuming AppColors, AppAssets, and AuthInputField exist in your project
 // as separate files. We will not redefine them here.
@@ -36,9 +35,9 @@ class _LoginPageState extends State<LoginPage> {
 
     if (_formKey.currentState!.validate()) {
       // Show loading indicator
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Processing...')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Processing...')));
 
       final success = await authProvider.loginUser(
         email: _emailController.text,
@@ -46,7 +45,6 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (success) {
-
         // Handle successful login
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -78,14 +76,21 @@ class _LoginPageState extends State<LoginPage> {
           backgroundColor: Colors.white,
           body: SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 20.0,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Align(
                     alignment: Alignment.topLeft,
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.black,
+                        size: 24,
+                      ),
                       onPressed: () {
                         context.pop();
                       },
@@ -103,7 +108,11 @@ class _LoginPageState extends State<LoginPage> {
                       width: 80,
                       height: 80,
                       fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.calendar_month, color: AppColors.primaryBlue, size: 80),
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.calendar_month,
+                        color: AppColors.primaryBlue,
+                        size: 80,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20.0),
@@ -141,7 +150,9 @@ class _LoginPageState extends State<LoginPage> {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your email address';
                             }
-                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                            if (!RegExp(
+                              r'^[^@]+@[^@]+\.[^@]+',
+                            ).hasMatch(value)) {
                               return 'Please enter a valid email address';
                             }
                             return null;
@@ -195,7 +206,10 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(width: 8.0),
                           const Text(
                             'Remember me',
-                            style: TextStyle(fontSize: 14.0, color: AppColors.textColorSecondary),
+                            style: TextStyle(
+                              fontSize: 14.0,
+                              color: AppColors.textColorSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -218,7 +232,9 @@ class _LoginPageState extends State<LoginPage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: authProvider.isLoading ? null : () => _handleLogin(context),
+                      onPressed: authProvider.isLoading
+                          ? null
+                          : () => _handleLogin(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryBlue,
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -229,21 +245,21 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       child: authProvider.isLoading
                           ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
                           : const Text(
-                        'Log In',
-                        style: TextStyle(
-                          fontSize: 18.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                              'Log In',
+                              style: TextStyle(
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 20.0),
@@ -281,7 +297,11 @@ class _LoginPageState extends State<LoginPage> {
                       height: 30.0,
                       width: 30.0,
                       errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.g_mobiledata, size: 30.0, color: AppColors.primaryBlue);
+                        return const Icon(
+                          Icons.g_mobiledata,
+                          size: 30.0,
+                          color: AppColors.primaryBlue,
+                        );
                       },
                     ),
                   ),

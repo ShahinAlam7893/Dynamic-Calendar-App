@@ -1,7 +1,4 @@
-import 'package:circleslate/core/constants/app_assets.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
-import 'package:circleslate/presentation/features/settings/view/edit_profile_page.dart'
-    hide AppColors, AppAssets;
 import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -102,6 +99,7 @@ class _AuthInputFieldState extends State<AuthInputField> {
     );
   }
 }
+
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -141,7 +139,7 @@ class _ProfilePageState extends State<ProfilePage> {
       String imageUrl = profile['profile_photo'] ?? '';
       if (imageUrl.isNotEmpty && !imageUrl.startsWith("http")) {
         imageUrl =
-        "http://10.10.13.27:8000${imageUrl}"; // ← Change base URL if needed
+            "http://10.10.13.27:8000${imageUrl}"; // ← Change base URL if needed
       }
 
       setState(() {
@@ -158,8 +156,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _isLoading = false;
       });
 
-      debugPrint(
-          "✅ Loaded Profile: $_fullName, $_email, $_mobile, $_children");
+      debugPrint("✅ Loaded Profile: $_fullName, $_email, $_mobile, $_children");
     } else {
       debugPrint("❌ Failed to fetch profile data.");
       setState(() => _isLoading = false);
@@ -173,7 +170,6 @@ class _ProfilePageState extends State<ProfilePage> {
     //   await _fetchProfileData(); // refresh children after adding
     // }
   }
-
 
   void _showLogoutConfirmationDialog(BuildContext context) {
     showDialog(
@@ -329,15 +325,18 @@ class _ProfilePageState extends State<ProfilePage> {
                   _mobile = updatedData['mobile'] ?? _mobile;
 
                   // ✅ FIX — Place conversion HERE, not at class level
-                  _children = (updatedData['children'] as List?)?.map((child) {
-                    return {
-                      'name': child['name']?.toString() ?? '',
-                      'age': child['age']?.toString() ?? '',
-                    };
-                  }).toList() ?? _children;
+                  _children =
+                      (updatedData['children'] as List?)?.map((child) {
+                        return {
+                          'name': child['name']?.toString() ?? '',
+                          'age': child['age']?.toString() ?? '',
+                        };
+                      }).toList() ??
+                      _children;
 
                   _profileImageUrl =
-                      updatedData['profileImageUrl']?.toString() ?? _profileImageUrl;
+                      updatedData['profileImageUrl']?.toString() ??
+                      _profileImageUrl;
                 });
 
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -346,7 +345,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 );
               }
-
             },
           ),
         ],
@@ -497,35 +495,34 @@ class _ProfilePageState extends State<ProfilePage> {
                         ? const Center(child: CircularProgressIndicator())
                         : _children.isEmpty
                         ? const Text(
-                      "No children added.",
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        color: AppColors.textColorPrimary,
-                      ),
-                    )
+                            "No children added.",
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              color: AppColors.textColorPrimary,
+                            ),
+                          )
                         : Column(
-                      children: _children.map((child) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  '${child['name']}: ${child['age']}',
-                                  style: const TextStyle(
-                                    fontSize: 16.0,
-                                    color: AppColors.textColorPrimary,
-                                    fontFamily: 'Poppins',
-                                  ),
+                            children: _children.map((child) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '${child['name']}: ${child['age']}',
+                                        style: const TextStyle(
+                                          fontSize: 16.0,
+                                          color: AppColors.textColorPrimary,
+                                          fontFamily: 'Poppins',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
+                              );
+                            }).toList(),
                           ),
-                        );
-                      }).toList(),
-                    ),
                   ),
-
 
                   const SizedBox(height: 30.0),
 
