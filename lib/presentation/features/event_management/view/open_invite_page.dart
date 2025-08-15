@@ -1,6 +1,5 @@
 import 'package:circleslate/core/constants/app_assets.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
-import 'package:circleslate/presentation/features/event_management/view/open_invite_page.dart' hide AppColors;
 import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -14,7 +13,8 @@ class OpenInvitePage extends StatefulWidget {
 }
 
 class _OpenInvitePageState extends State<OpenInvitePage> {
-  final TextEditingController _activityTitleController = TextEditingController();
+  final TextEditingController _activityTitleController =
+      TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
@@ -96,9 +96,9 @@ class _OpenInvitePageState extends State<OpenInvitePage> {
   void _postOpenInvite() {
     if (_formKey.currentState!.validate()) {
       // Logic to post the open invite
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Open Invite Posted!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Open Invite Posted!')));
       // You would typically send this data to a backend
       print('Activity Title: ${_activityTitleController.text}');
       print('Date: ${_dateController.text}');
@@ -166,13 +166,17 @@ class _OpenInvitePageState extends State<OpenInvitePage> {
                   color: Color(0x0D5A8DEE),
                   // color: AppColors.buttonPrimary,
                   borderRadius: BorderRadius.circular(12.0),
-                  border: Border.all(color: AppColors.quickActionCardBorder, width: 1.0),
+                  border: Border.all(
+                    color: AppColors.quickActionCardBorder,
+                    width: 1.0,
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Image.asset(
-                      AppAssets.openInviteIcon, // Placeholder for the small icon
+                      AppAssets
+                          .openInviteIcon, // Placeholder for the small icon
                       width: 24,
                       height: 24,
                       errorBuilder: (context, error, stackTrace) => Icon(
@@ -193,11 +197,17 @@ class _OpenInvitePageState extends State<OpenInvitePage> {
                           children: <TextSpan>[
                             TextSpan(
                               text: 'Open Invite: ',
-                              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryBlue),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryBlue,
+                              ),
                             ),
                             TextSpan(
-                              text: 'Anyone in this group can join this activity. Perfect for group outings and community events!',
-                              style: TextStyle(color: AppColors.textColorSecondary),
+                              text:
+                                  'Anyone in this group can join this activity. Perfect for group outings and community events!',
+                              style: TextStyle(
+                                color: AppColors.textColorSecondary,
+                              ),
                             ),
                           ],
                         ),
@@ -223,14 +233,20 @@ class _OpenInvitePageState extends State<OpenInvitePage> {
                 controller: _activityTitleController,
                 decoration: InputDecoration(
                   hintText: 'e.g. Museum Visit, Park Playdate...',
-                  hintStyle: const TextStyle(color: AppColors.textColorSecondary, fontFamily: 'Poppins'),
+                  hintStyle: const TextStyle(
+                    color: AppColors.textColorSecondary,
+                    fontFamily: 'Poppins',
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                     borderSide: BorderSide.none,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 12.0,
+                    horizontal: 16.0,
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -264,15 +280,24 @@ class _OpenInvitePageState extends State<OpenInvitePage> {
                           onTap: () => _selectDate(context),
                           decoration: InputDecoration(
                             hintText: '07/15/2025',
-                            hintStyle: const TextStyle(color: AppColors.textColorSecondary, fontFamily: 'Poppins'),
+                            hintStyle: const TextStyle(
+                              color: AppColors.textColorSecondary,
+                              fontFamily: 'Poppins',
+                            ),
                             filled: true,
                             fillColor: Colors.white,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12.0),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-                            suffixIcon: Icon(Icons.calendar_today_outlined, color: AppColors.textColorSecondary),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12.0,
+                              horizontal: 16.0,
+                            ),
+                            suffixIcon: Icon(
+                              Icons.calendar_today_outlined,
+                              color: AppColors.textColorSecondary,
+                            ),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
@@ -305,15 +330,24 @@ class _OpenInvitePageState extends State<OpenInvitePage> {
                           onTap: () => _selectTime(context),
                           decoration: InputDecoration(
                             hintText: '11:02 AM',
-                            hintStyle: const TextStyle(color: AppColors.textColorSecondary, fontFamily: 'Poppins'),
+                            hintStyle: const TextStyle(
+                              color: AppColors.textColorSecondary,
+                              fontFamily: 'Poppins',
+                            ),
                             filled: true,
                             fillColor: Colors.white,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12.0),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-                            suffixIcon: Icon(Icons.access_time_outlined, color: AppColors.textColorSecondary),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12.0,
+                              horizontal: 16.0,
+                            ),
+                            suffixIcon: Icon(
+                              Icons.access_time_outlined,
+                              color: AppColors.textColorSecondary,
+                            ),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
@@ -344,14 +378,20 @@ class _OpenInvitePageState extends State<OpenInvitePage> {
                 controller: _locationController,
                 decoration: InputDecoration(
                   hintText: 'Enter location...',
-                  hintStyle: const TextStyle(color: AppColors.textColorSecondary, fontFamily: 'Poppins'),
+                  hintStyle: const TextStyle(
+                    color: AppColors.textColorSecondary,
+                    fontFamily: 'Poppins',
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                     borderSide: BorderSide.none,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 12.0,
+                    horizontal: 16.0,
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -378,14 +418,20 @@ class _OpenInvitePageState extends State<OpenInvitePage> {
                 maxLines: 5,
                 decoration: InputDecoration(
                   hintText: 'Tell other about this activity....',
-                  hintStyle: const TextStyle(color: AppColors.textColorSecondary, fontFamily: 'Poppins'),
+                  hintStyle: const TextStyle(
+                    color: AppColors.textColorSecondary,
+                    fontFamily: 'Poppins',
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                     borderSide: BorderSide.none,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 12.0,
+                    horizontal: 16.0,
+                  ),
                 ),
               ),
               const SizedBox(height: 40.0),

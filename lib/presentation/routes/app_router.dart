@@ -1,6 +1,4 @@
 import 'package:circleslate/presentation/features/availability/view/availability_preview_page.dart';
-import 'package:circleslate/presentation/features/availability/view/create_edit_availability_screen.dart';
-import 'package:circleslate/presentation/features/chat/view/chat_list_screen.dart';
 import 'package:circleslate/presentation/features/chat/view/chat_screen.dart';
 import 'package:circleslate/presentation/features/event_management/view/create_edit_event_screen.dart';
 import 'package:circleslate/presentation/features/event_management/view/direct_invite_page.dart';
@@ -8,7 +6,6 @@ import 'package:circleslate/presentation/features/event_management/view/event_de
 import 'package:circleslate/presentation/features/event_management/view/open_invite_page.dart';
 import 'package:circleslate/presentation/features/group_management/view/add_member_page.dart';
 import 'package:circleslate/presentation/features/group_management/view/group_management_page.dart';
-import 'package:circleslate/presentation/features/ride_request/view/ride_sharing_page.dart';
 import 'package:circleslate/presentation/features/settings/view/delete_account_screen.dart';
 import 'package:circleslate/presentation/features/settings/view/edit_profile_page.dart';
 import 'package:circleslate/presentation/features/settings/view/privacy_controls_page.dart';

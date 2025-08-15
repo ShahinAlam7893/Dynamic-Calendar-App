@@ -3,8 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart'; // For formatting timestamps
 
 import 'package:circleslate/core/constants/app_colors.dart';
-import 'package:circleslate/core/constants/app_strings.dart';
-import 'package:circleslate/core/constants/app_assets.dart';
 
 // --- Notification Model ---
 class AppNotification {
@@ -79,7 +77,9 @@ class _NotificationPageState extends State<NotificationPage> {
 
   void _markNotificationAsRead(String id) {
     setState(() {
-      final index = _notifications.indexWhere((notification) => notification.id == id);
+      final index = _notifications.indexWhere(
+        (notification) => notification.id == id,
+      );
       if (index != -1) {
         _notifications[index].isRead = true;
       }
@@ -112,7 +112,11 @@ class _NotificationPageState extends State<NotificationPage> {
         backgroundColor: AppColors.primaryBlue, // Consistent app bar color
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white, size: screenWidth * 0.06),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: screenWidth * 0.06,
+          ),
           onPressed: () {
             context.pop();
           },
@@ -130,109 +134,124 @@ class _NotificationPageState extends State<NotificationPage> {
       ),
       body: _notifications.isEmpty
           ? Center(
-        child: Text(
-          'No new notifications.',
-          style: TextStyle(
-            fontSize: notificationBodyFontSize * 1.2,
-            color: AppColors.textColorSecondary,
-            fontFamily: 'Poppins',
-          ),
-        ),
-      )
-          : ListView.builder(
-        padding: EdgeInsets.all(mainPadding),
-        itemCount: _notifications.length,
-        itemBuilder: (context, index) {
-          final notification = _notifications[index];
-          return GestureDetector(
-            onTap: () {
-              _markNotificationAsRead(notification.id);
-              // Optionally navigate to a specific page based on notification type
-              // if (notification.type == 'event_update') {
-              //   context.push('/event_details/${notification.id}');
-              // }
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Notification "${notification.title}" marked as read!')),
-              );
-            },
-            child: Card(
-              margin: EdgeInsets.symmetric(vertical: cardVerticalMargin),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(borderRadius),
+              child: Text(
+                'No new notifications.',
+                style: TextStyle(
+                  fontSize: notificationBodyFontSize * 1.2,
+                  color: AppColors.textColorSecondary,
+                  fontFamily: 'Poppins',
+                ),
               ),
-              elevation: 0, // Consistent with other cards
-              color: notification.isRead
-                  ? AppColors.notificationCardReadBg
-                  : AppColors.notificationCardUnreadBg, // Different background for unread
-              child: Padding(
-                padding: EdgeInsets.all(cardPadding),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Unread indicator or notification icon
-                    Container(
-                      width: iconSize,
-                      height: iconSize,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: notification.isRead
-                            ? Colors.transparent
-                            : AppColors.unreadIndicatorColor.withOpacity(0.2),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          notification.isRead ? Icons.check_circle_outline : Icons.circle,
-                          color: notification.isRead ? AppColors.primaryBlue : AppColors.unreadIndicatorColor,
-                          size: notification.isRead ? iconSize * 0.8 : iconSize * 0.5,
+            )
+          : ListView.builder(
+              padding: EdgeInsets.all(mainPadding),
+              itemCount: _notifications.length,
+              itemBuilder: (context, index) {
+                final notification = _notifications[index];
+                return GestureDetector(
+                  onTap: () {
+                    _markNotificationAsRead(notification.id);
+                    // Optionally navigate to a specific page based on notification type
+                    // if (notification.type == 'event_update') {
+                    //   context.push('/event_details/${notification.id}');
+                    // }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Notification "${notification.title}" marked as read!',
                         ),
                       ),
+                    );
+                  },
+                  child: Card(
+                    margin: EdgeInsets.symmetric(vertical: cardVerticalMargin),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(borderRadius),
                     ),
-                    SizedBox(width: leadingIconSpacing),
-                    Expanded(
-                      child: Column(
+                    elevation: 0, // Consistent with other cards
+                    color: notification.isRead
+                        ? AppColors.notificationCardReadBg
+                        : AppColors
+                              .notificationCardUnreadBg, // Different background for unread
+                    child: Padding(
+                      padding: EdgeInsets.all(cardPadding),
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            notification.title,
-                            style: TextStyle(
-                              fontSize: notificationTitleFontSize,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textColorPrimary,
-                              fontFamily: 'Poppins',
+                          // Unread indicator or notification icon
+                          Container(
+                            width: iconSize,
+                            height: iconSize,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: notification.isRead
+                                  ? Colors.transparent
+                                  : AppColors.unreadIndicatorColor.withOpacity(
+                                      0.2,
+                                    ),
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: titleBodySpacing),
-                          Text(
-                            notification.body,
-                            style: TextStyle(
-                              fontSize: notificationBodyFontSize,
-                              color: AppColors.textColorSecondary,
-                              fontFamily: 'Poppins',
+                            child: Center(
+                              child: Icon(
+                                notification.isRead
+                                    ? Icons.check_circle_outline
+                                    : Icons.circle,
+                                color: notification.isRead
+                                    ? AppColors.primaryBlue
+                                    : AppColors.unreadIndicatorColor,
+                                size: notification.isRead
+                                    ? iconSize * 0.8
+                                    : iconSize * 0.5,
+                              ),
                             ),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: bodyTimestampSpacing),
-                          Text(
-                            DateFormat('MMM d, yyyy HH:mm').format(notification.timestamp),
-                            style: TextStyle(
-                              fontSize: notificationTimestampFontSize,
-                              color: AppColors.textLight,
-                              fontFamily: 'Poppins',
+                          SizedBox(width: leadingIconSpacing),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  notification.title,
+                                  style: TextStyle(
+                                    fontSize: notificationTitleFontSize,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textColorPrimary,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                SizedBox(height: titleBodySpacing),
+                                Text(
+                                  notification.body,
+                                  style: TextStyle(
+                                    fontSize: notificationBodyFontSize,
+                                    color: AppColors.textColorSecondary,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                SizedBox(height: bodyTimestampSpacing),
+                                Text(
+                                  DateFormat(
+                                    'MMM d, yyyy HH:mm',
+                                  ).format(notification.timestamp),
+                                  style: TextStyle(
+                                    fontSize: notificationTimestampFontSize,
+                                    color: AppColors.textLight,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 }

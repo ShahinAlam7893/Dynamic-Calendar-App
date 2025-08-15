@@ -1,14 +1,11 @@
 import 'package:circleslate/presentation/features/availability/view/create_edit_availability_screen.dart';
 import 'package:circleslate/presentation/features/chat/view/chat_list_screen.dart';
 import 'package:circleslate/presentation/features/event_management/view/upcoming_events_page.dart';
-import 'package:circleslate/presentation/features/group_management/view/group_management_page.dart';
 import 'package:circleslate/presentation/features/settings/view/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart'; // Still useful for internal page navigation (not bottom bar)
-import 'package:circleslate/presentation/features/settings/view/settings_screen.dart';
+// Still useful for internal page navigation (not bottom bar)
 import 'package:circleslate/presentation/features/home/view/home_screen.dart';
-
 
 // --- AppColors (Copied for self-containment) ---
 class AppColors {
@@ -43,28 +40,60 @@ class AppColors {
   static const Color toggleButtonInactiveText = Color(0xFF4285F4);
   static const Color toggleButtonBorder = Color(0xFFE0E0E0);
   static const Color goingButtonColor = Color(0xFF4CAF50); // Green for "Going"
-  static const Color notGoingButtonColor = Color(0xFFF44336); // Red for "Not Going"
-  static const Color chatButtonColor = Color(0xFFE3F2FD); // Light blue for chat button background
-  static const Color chatButtonTextColor = Color(0xFF4285F4); // Blue for chat button text
-  static const Color requestRideButtonColor = Color(0xFF5A8DEE); // Accent blue for Request Ride
+  static const Color notGoingButtonColor = Color(
+    0xFFF44336,
+  ); // Red for "Not Going"
+  static const Color chatButtonColor = Color(
+    0xFFE3F2FD,
+  ); // Light blue for chat button background
+  static const Color chatButtonTextColor = Color(
+    0xFF4285F4,
+  ); // Blue for chat button text
+  static const Color requestRideButtonColor = Color(
+    0xFF5A8DEE,
+  ); // Accent blue for Request Ride
   static const Color requestRideButtonTextColor = Colors.white;
-  static const Color rideRequestCardBackground = Color(0xFFE3F2FD); // Light blue for ride request card
-  static const Color rideRequestCardBorder = Color(0xFF90CAF9); // Slightly darker blue for card border
-  static const Color pendingResponseColor = Color(0xFFFFFBEB); // Light yellow for pending
-  static const Color pendingResponseTextColor = Color(0xFFD97706); // Dark yellow for pending text
-  static const Color acceptedColor = Color(0xFFD1FAE5); // Light green for accepted
-  static const Color acceptedTextColor = Color(0xFF065F46); // Dark green for accepted text
-  static const Color senderBubbleColor = Color(0xFFE3F2FD); // Light blue for sender's message bubble
-  static const Color receiverBubbleColor = Color(0xFFE0F2F1); // Light green/teal for receiver's message bubble
+  static const Color rideRequestCardBackground = Color(
+    0xFFE3F2FD,
+  ); // Light blue for ride request card
+  static const Color rideRequestCardBorder = Color(
+    0xFF90CAF9,
+  ); // Slightly darker blue for card border
+  static const Color pendingResponseColor = Color(
+    0xFFFFFBEB,
+  ); // Light yellow for pending
+  static const Color pendingResponseTextColor = Color(
+    0xFFD97706,
+  ); // Dark yellow for pending text
+  static const Color acceptedColor = Color(
+    0xFFD1FAE5,
+  ); // Light green for accepted
+  static const Color acceptedTextColor = Color(
+    0xFF065F46,
+  ); // Dark green for accepted text
+  static const Color senderBubbleColor = Color(
+    0xFFE3F2FD,
+  ); // Light blue for sender's message bubble
+  static const Color receiverBubbleColor = Color(
+    0xFFE0F2F1,
+  ); // Light green/teal for receiver's message bubble
   static const Color chatTimeColor = Color(0xFF9E9E9E); // Grey for message time
-  static const Color chatInputFillColor = Color(0xFFF5F5F5); // Light grey for chat input field
-  static const Color shadowColor = Color(0x1A000000); // Placeholder for shadow color if not defined
-  static const Color unreadCountBg = Color(0xFFFF6347); // Red-orange for unread count
-  static const Color onlineIndicator = Color(0xFF4CAF50); // Green for online indicator
+  static const Color chatInputFillColor = Color(
+    0xFFF5F5F5,
+  ); // Light grey for chat input field
+  static const Color shadowColor = Color(
+    0x1A000000,
+  ); // Placeholder for shadow color if not defined
+  static const Color unreadCountBg = Color(
+    0xFFFF6347,
+  ); // Red-orange for unread count
+  static const Color onlineIndicator = Color(
+    0xFF4CAF50,
+  ); // Green for online indicator
   static const Color adminTagColor = Color(0xFFF87171); // Red for Admin tag
   static const Color memberTagColor = Color(0xFF4CAF50); // Green for Member tag
   static const Color tagTextColor = Colors.white; // White text for tags
- // Red for delete action
+  // Red for delete action
   static const Color buttonPrimary = Color(0xFF4285F4); // Primary button color
 }
 
@@ -93,17 +122,15 @@ class AppAssets {
   static const String openInviteIcon = 'assets/images/open_invite_icon.png';
 }
 
-
 class SmoothNavigationWrapper extends StatefulWidget {
   final int initialIndex;
 
-  const SmoothNavigationWrapper({
-    Key? key,
-    this.initialIndex = 0,
-  }) : super(key: key);
+  const SmoothNavigationWrapper({Key? key, this.initialIndex = 0})
+    : super(key: key);
 
   @override
-  State<SmoothNavigationWrapper> createState() => _SmoothNavigationWrapperState();
+  State<SmoothNavigationWrapper> createState() =>
+      _SmoothNavigationWrapperState();
 }
 
 class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
@@ -118,11 +145,11 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
   final List<Widget> _pages = [
     const HomePage(), // Your actual Home Page
     const UpcomingEventsPage(), // Your actual Events Page
-    const ChatListPage(currentUserId: '3',),
+    const ChatListPage(currentUserId: '3'),
     const AvailabilityPage(),
-    const SettingsPage(),// Your actual Groups Page
-    // const GroupManagementPage(),
+    const SettingsPage(), // Your actual Groups Page
 
+    // const GroupManagementPage(),
   ];
 
   @override
@@ -136,13 +163,9 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
 
     _animationController.forward();
   }
@@ -179,7 +202,6 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -188,14 +210,18 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
         child: PageView(
           controller: _pageController,
           onPageChanged: _onPageChanged,
-          physics: const BouncingScrollPhysics(), // Provides a nice scroll effect
-          children: _pages.map((page) =>
-          // AnimatedSwitcher for smooth page transitions within PageView
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: page,
-          )
-          ).toList(),
+          physics:
+              const BouncingScrollPhysics(), // Provides a nice scroll effect
+          children: _pages
+              .map(
+                (page) =>
+                    // AnimatedSwitcher for smooth page transitions within PageView
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: page,
+                    ),
+              )
+              .toList(),
         ),
       ),
       bottomNavigationBar: _buildCustomBottomNav(),
@@ -221,10 +247,30 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(0, Icons.home_outlined, Icons.home, 'Home'),
-              _buildNavItem(1, Icons.event_note_outlined, Icons.event_note, 'Events'),
-              _buildNavItem(2, Icons.chat_bubble_outline, Icons.chat_bubble_outline, 'Chats'),
-              _buildNavItem(3, Icons.calendar_today_outlined, Icons.calendar_today, 'Availability'),
-              _buildNavItem(4, Icons.settings_outlined, Icons.settings, 'Settings'),
+              _buildNavItem(
+                1,
+                Icons.event_note_outlined,
+                Icons.event_note,
+                'Events',
+              ),
+              _buildNavItem(
+                2,
+                Icons.chat_bubble_outline,
+                Icons.chat_bubble_outline,
+                'Chats',
+              ),
+              _buildNavItem(
+                3,
+                Icons.calendar_today_outlined,
+                Icons.calendar_today,
+                'Availability',
+              ),
+              _buildNavItem(
+                4,
+                Icons.settings_outlined,
+                Icons.settings,
+                'Settings',
+              ),
             ],
           ),
         ),
@@ -232,7 +278,12 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label) {
+  Widget _buildNavItem(
+    int index,
+    IconData icon,
+    IconData activeIcon,
+    String label,
+  ) {
     final isSelected = _currentIndex == index;
 
     return GestureDetector(
@@ -255,16 +306,15 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
               transitionBuilder: (Widget child, Animation<double> animation) {
                 return ScaleTransition(
                   scale: animation,
-                  child: FadeTransition(
-                    opacity: animation,
-                    child: child,
-                  ),
+                  child: FadeTransition(opacity: animation, child: child),
                 );
               },
               child: Icon(
                 isSelected ? activeIcon : icon,
                 key: ValueKey(isSelected),
-                color: isSelected ? AppColors.primaryBlue : Colors.grey, // Using AppColors
+                color: isSelected
+                    ? AppColors.primaryBlue
+                    : Colors.grey, // Using AppColors
                 size: 24,
               ),
             ),
@@ -272,7 +322,9 @@ class _SmoothNavigationWrapperState extends State<SmoothNavigationWrapper>
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               style: TextStyle(
-                color: isSelected ? AppColors.primaryBlue : Colors.grey, // Using AppColors
+                color: isSelected
+                    ? AppColors.primaryBlue
+                    : Colors.grey, // Using AppColors
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 fontFamily: 'Poppins',
@@ -290,10 +342,7 @@ class _ComingSoonPage extends StatelessWidget {
   final String title;
   final IconData icon;
 
-  const _ComingSoonPage({
-    required this.title,
-    required this.icon,
-  });
+  const _ComingSoonPage({required this.title, required this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -306,7 +355,9 @@ class _ComingSoonPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue.withOpacity(0.1), // Using AppColors
+                color: AppColors.primaryBlue.withOpacity(
+                  0.1,
+                ), // Using AppColors
                 shape: BoxShape.circle,
               ),
               child: Icon(

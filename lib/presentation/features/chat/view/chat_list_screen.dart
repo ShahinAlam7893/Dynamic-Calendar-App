@@ -1,17 +1,14 @@
-import 'dart:convert';
 import 'package:circleslate/core/constants/app_assets.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/services/user_search_service.dart';
 import '../../../../data/models/group_model.dart';
 import '../../../../data/models/user_search_result_model.dart';
 import '../../../routes/route_observer.dart';
 import '../conversation_service.dart';
 import '../../../data/models/chat_model.dart' hide ChatMessageStatus;
-
 
 class ChatListPage extends StatefulWidget {
   final String currentUserId;
@@ -29,7 +26,6 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
   final UserSearchService _userSearchService = UserSearchService();
   bool _isSearching = false;
   String? _searchError;
-
 
   DateTime _parseChatTime(String timeStr) {
     if (timeStr.isEmpty) {
@@ -71,14 +67,16 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
   }
 
   void _refreshChats() {
-    ChatService.fetchChats().then((chatList) {
-      setState(() {
-        _userList = chatList;
-        _sortChatsByUnreadAndRecent();
-      });
-    }).catchError((e) {
-      debugPrint('Error refreshing chat list: $e');
-    });
+    ChatService.fetchChats()
+        .then((chatList) {
+          setState(() {
+            _userList = chatList;
+            _sortChatsByUnreadAndRecent();
+          });
+        })
+        .catchError((e) {
+          debugPrint('Error refreshing chat list: $e');
+        });
   }
 
   @override
@@ -179,12 +177,19 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
             onPressed: () {
               if (widget.currentUserId.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('User ID is missing. Please log in again.')),
+                  const SnackBar(
+                    content: Text('User ID is missing. Please log in again.'),
+                  ),
                 );
                 return;
               }
-              debugPrint('[ChatListPage] Navigating to CreateGroupPage with currentUserId: ${widget.currentUserId}');
-              context.push('/group_chat', extra: {'currentUserId': widget.currentUserId});
+              debugPrint(
+                '[ChatListPage] Navigating to CreateGroupPage with currentUserId: ${widget.currentUserId}',
+              );
+              context.push(
+                '/group_chat',
+                extra: {'currentUserId': widget.currentUserId},
+              );
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Create Group Tapped!')),
               );
@@ -210,16 +215,20 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
               decoration: InputDecoration(
                 hintText: 'Search users...',
                 hintStyle: const TextStyle(
-                    color: AppColors.textColorSecondary, fontFamily: 'Poppins'),
-                prefixIcon: const Icon(Icons.search,
-                    color: AppColors.textColorPrimary),
+                  color: AppColors.textColorSecondary,
+                  fontFamily: 'Poppins',
+                ),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: AppColors.textColorPrimary,
+                ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                  },
-                )
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                      )
                     : null,
                 filled: true,
                 fillColor: Colors.white,
@@ -228,7 +237,9 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                    vertical: 12.0, horizontal: 16.0),
+                  vertical: 12.0,
+                  horizontal: 16.0,
+                ),
               ),
             ),
           ),
@@ -242,9 +253,7 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
 
   Widget _buildSearchResults() {
     if (_isSearching) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_searchError != null) {
@@ -252,19 +261,12 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               _searchError!,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 16,
-              ),
+              style: TextStyle(color: Colors.grey[600], fontSize: 16),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -281,18 +283,11 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: Colors.grey,
-            ),
+            Icon(Icons.search_off, size: 64, color: Colors.grey),
             SizedBox(height: 16),
             Text(
               'No users found',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: Colors.grey, fontSize: 16),
             ),
           ],
         ),
@@ -312,9 +307,7 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
   Widget _buildUserSearchItem(BuildContext context, UserSearchResult user) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       elevation: 0,
       color: Colors.white,
       child: ListTile(
@@ -379,18 +372,11 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              size: 64,
-              color: Colors.grey,
-            ),
+            Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
             SizedBox(height: 16),
             Text(
               'No active chats',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: Colors.grey, fontSize: 16),
             ),
           ],
         ),
@@ -404,7 +390,6 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
         final chat = _userList[index];
         final groupChat = _userList[index];
 
-
         return _buildChatItem(context, chat, groupChat);
       },
     );
@@ -415,8 +400,7 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
       onTap: () {
         if (!chat.isGroupChat && chat.participants.isNotEmpty) {
           final partner = chat.participants.firstWhere(
-
-                (p) => p['id'].toString() != widget.currentUserId,
+            (p) => p['id'].toString() != widget.currentUserId,
             orElse: () => null,
           );
 
@@ -444,7 +428,8 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
             extra: {
               'groupName': groupChat.name,
               'isGroupChat': true,
-              'isCurrentUserAdminInGroup': groupChat.isCurrentUserAdminInGroup ?? false,
+              'isCurrentUserAdminInGroup':
+                  groupChat.isCurrentUserAdminInGroup ?? false,
               'currentUserId': widget.currentUserId,
               'conversationId': groupChat.conversationId,
             },
@@ -469,7 +454,7 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
                     backgroundImage: Image.asset(
                       chat.imageUrl,
                       errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.person),
+                          const Icon(Icons.person),
                     ).image,
                   ),
                 ],
@@ -548,24 +533,39 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
                         ),
                         const SizedBox(width: 4.0),
                         if (chat.status == ChatMessageStatus.sent)
-                          Icon(Icons.check,
-                              size: 14, color: AppColors.textColorSecondary),
+                          Icon(
+                            Icons.check,
+                            size: 14,
+                            color: AppColors.textColorSecondary,
+                          ),
                         if (chat.status == ChatMessageStatus.delivered)
                           Row(
                             children: const [
-                              Icon(Icons.check,
-                                  size: 14, color: AppColors.textColorSecondary),
-                              Icon(Icons.check,
-                                  size: 14, color: AppColors.textColorSecondary),
+                              Icon(
+                                Icons.check,
+                                size: 14,
+                                color: AppColors.textColorSecondary,
+                              ),
+                              Icon(
+                                Icons.check,
+                                size: 14,
+                                color: AppColors.textColorSecondary,
+                              ),
                             ],
                           ),
                         if (chat.status == ChatMessageStatus.seen)
                           Row(
                             children: const [
-                              Icon(Icons.check,
-                                  size: 12, color: AppColors.primaryBlue),
-                              Icon(Icons.check,
-                                  size: 12, color: AppColors.primaryBlue),
+                              Icon(
+                                Icons.check,
+                                size: 12,
+                                color: AppColors.primaryBlue,
+                              ),
+                              Icon(
+                                Icons.check,
+                                size: 12,
+                                color: AppColors.primaryBlue,
+                              ),
                             ],
                           ),
                       ],
@@ -575,7 +575,9 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
                         padding: const EdgeInsets.only(top: 4.0),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0, vertical: 4.0),
+                            horizontal: 8.0,
+                            vertical: 4.0,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.primaryBlue,
                             borderRadius: BorderRadius.circular(12.0),

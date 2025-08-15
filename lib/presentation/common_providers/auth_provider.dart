@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:circleslate/data/services/user_service.dart';
 import 'package:circleslate/data/services/api_base_helper.dart';
@@ -15,7 +14,8 @@ class ApiEndpoints {
   static const String resetPassword = '/auth/reset-password/';
   static const String userProfile = '/auth/profile/';
   static const String updateProfile = '/auth/profile/update/';
-  static const String conversations = '/auth/conversations'; // New API endpoint for conversations
+  static const String conversations =
+      '/auth/conversations'; // New API endpoint for conversations
 }
 
 class AuthProvider extends ChangeNotifier {
@@ -35,7 +35,8 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   Map<String, dynamic>? get userProfile => _userProfile;
-  List<dynamic> get conversations => _conversations; // New: Getter for conversations
+  List<dynamic> get conversations =>
+      _conversations; // New: Getter for conversations
   bool get isLoggedIn => _accessToken != null;
 
   AuthProvider() : _userService = AuthService(ApiBaseHelper()) {
@@ -80,10 +81,10 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
-      final response = await _apiBaseHelper.post(
-        ApiEndpoints.login,
-        {"email": email, "password": password},
-      );
+      final response = await _apiBaseHelper.post(ApiEndpoints.login, {
+        "email": email,
+        "password": password,
+      });
 
       final data = jsonDecode(response.body);
 
@@ -116,7 +117,9 @@ class AuthProvider extends ChangeNotifier {
     // 🛠 Debug: Print request details
     print('--- ADD CHILD API CALL ---');
     print('URL: $url');
-    print('Headers: {Content-Type: application/json, Authorization: Bearer $token}');
+    print(
+      'Headers: {Content-Type: application/json, Authorization: Bearer $token}',
+    );
     print('Body: ${jsonEncode({'name': name, 'age': age})}');
 
     final response = await http.post(
@@ -156,7 +159,6 @@ class AuthProvider extends ChangeNotifier {
         },
       );
 
-
       debugPrint("📡 GET Children Status: ${response.statusCode}");
       debugPrint("📡 Response: ${response.body}");
 
@@ -184,10 +186,9 @@ class AuthProvider extends ChangeNotifier {
     _userEmail = email;
 
     try {
-      final response = await _apiBaseHelper.post(
-        ApiEndpoints.forgotPassword,
-        {'email': email},
-      );
+      final response = await _apiBaseHelper.post(ApiEndpoints.forgotPassword, {
+        'email': email,
+      });
 
       _setLoading(false);
       return response.statusCode == 200;
@@ -205,10 +206,10 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
-      final response = await _apiBaseHelper.post(
-        ApiEndpoints.verifyOtp,
-        {'email': _userEmail, 'otp': otp},
-      );
+      final response = await _apiBaseHelper.post(ApiEndpoints.verifyOtp, {
+        'email': _userEmail,
+        'otp': otp,
+      });
 
       _setLoading(false);
 
@@ -240,15 +241,12 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
-      final response = await _apiBaseHelper.post(
-        ApiEndpoints.resetPassword,
-        {
-          'email': _userEmail,
-          'otp': _userOtp,
-          'new_password': newPassword,
-          'confirm_password': confirmPassword,
-        },
-      );
+      final response = await _apiBaseHelper.post(ApiEndpoints.resetPassword, {
+        'email': _userEmail,
+        'otp': _userOtp,
+        'new_password': newPassword,
+        'confirm_password': confirmPassword,
+      });
 
       _setLoading(false);
 
@@ -296,7 +294,7 @@ class AuthProvider extends ChangeNotifier {
           "bio": data["profile"]?["bio"] ?? "",
           "phone_number": data["profile"]?["phone_number"] ?? "",
           "date_of_birth": data["profile"]?["date_of_birth"] ?? "",
-          "children": data["profile"]?["children"] ?? []
+          "children": data["profile"]?["children"] ?? [],
         };
 
         print("✅ Parsed User Profile: $_userProfile");
@@ -321,7 +319,9 @@ class AuthProvider extends ChangeNotifier {
     Future.microtask(() => _setLoading(true));
 
     if (_accessToken == null) {
-      return _setError("No access token found. Please login to view conversations.");
+      return _setError(
+        "No access token found. Please login to view conversations.",
+      );
     }
 
     try {
@@ -332,7 +332,8 @@ class AuthProvider extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        _conversations = data; // Assuming the API returns a list of conversations
+        _conversations =
+            data; // Assuming the API returns a list of conversations
         Future.microtask(() => _setLoading(false));
         Future.microtask(() => notifyListeners());
         return true;
@@ -340,7 +341,9 @@ class AuthProvider extends ChangeNotifier {
         return _setError("Failed to load conversations: ${response.body}");
       }
     } catch (e) {
-      return _setError("An unexpected error occurred while fetching conversations: $e");
+      return _setError(
+        "An unexpected error occurred while fetching conversations: $e",
+      );
     }
   }
 
@@ -353,8 +356,6 @@ class AuthProvider extends ChangeNotifier {
       final token = _accessToken; // Direct access, no await needed
       print('🔑 Token loaded: ${token != null ? 'Yes' : 'No'}');
       print('🔑 Token loaded: ${token}');
-
-
 
       if (token == null) {
         print('❌ No token found. Cannot update profile.');
@@ -376,12 +377,16 @@ class AuthProvider extends ChangeNotifier {
       // Profile phone number (nested field)
       if (updatedData['phone_number'] != null) {
         request.fields['profile.phone_number'] = updatedData['phone_number'];
-        print('📞 Added field: profile.phone_number = ${updatedData['phone_number']}');
+        print(
+          '📞 Added field: profile.phone_number = ${updatedData['phone_number']}',
+        );
       }
 
       // Children (if needed)
       if (updatedData['children'] != null) {
-        request.fields['profile.children'] = jsonEncode(updatedData['children']);
+        request.fields['profile.children'] = jsonEncode(
+          updatedData['children'],
+        );
       }
 
       // Profile photo
@@ -400,7 +405,9 @@ class AuthProvider extends ChangeNotifier {
 
       // Print all request fields before sending
       print('📤 Final request fields: ${request.fields}');
-      print('📤 Final request files: ${request.files.map((f) => f.filename).toList()}');
+      print(
+        '📤 Final request files: ${request.files.map((f) => f.filename).toList()}',
+      );
 
       // Send request
       final streamedResponse = await request.send();

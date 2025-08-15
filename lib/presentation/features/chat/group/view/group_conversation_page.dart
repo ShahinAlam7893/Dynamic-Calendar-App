@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:circleslate/data/models/conversation_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -18,27 +16,26 @@ class GroupConversationPage extends StatefulWidget {
   final String currentUserId;
   final String groupName;
 
-
   const GroupConversationPage({
     super.key,
     required this.groupId,
     required this.currentUserId,
     required this.groupName,
-     // Default to false if not provided
 
+    // Default to false if not provided
   });
 
   @override
   State<GroupConversationPage> createState() => _GroupConversationPageState();
 }
 
-class _GroupConversationPageState extends State<GroupConversationPage> with WidgetsBindingObserver {
+class _GroupConversationPageState extends State<GroupConversationPage>
+    with WidgetsBindingObserver {
   final TextEditingController _messageController = TextEditingController();
   final List<StoredMessage> _messages = [];
   final ScrollController _scrollController = ScrollController();
   bool _isCurrentUserAdmin = false; // Track if the current user is an admin
   final Uuid _uuid = const Uuid();
-
 
   late GroupChatSocketService _groupChatSocketService;
 
@@ -82,7 +79,6 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     });
   }
 
-
   Future<void> _loadMessagesFromLocal() async {
     try {
       final messages = await MessageStorageService.loadMessages(widget.groupId);
@@ -119,8 +115,12 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
       text: message.content,
       timestamp: DateTime.parse(message.timestamp),
       senderId: message.senderId,
-      sender: message.senderId == widget.currentUserId ? MessageSender.user : MessageSender.other,
-      senderImageUrl: message.senderId == widget.currentUserId ? AppAssets.jennyProfile : AppAssets.sarahMartinez,
+      sender: message.senderId == widget.currentUserId
+          ? MessageSender.user
+          : MessageSender.other,
+      senderImageUrl: message.senderId == widget.currentUserId
+          ? AppAssets.jennyProfile
+          : AppAssets.sarahMartinez,
       status: MessageStatus.seen,
       clientMessageId: null,
     );
@@ -165,11 +165,25 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     await MessageStorageService.addMessage(widget.groupId, message);
 
     try {
-      _groupChatSocketService.sendMessage(widget.groupId, widget.currentUserId, text);
-      await MessageStorageService.updateMessageStatus(widget.groupId, message.id, MessageStatus.sent, clientMessageId: clientMessageId);
+      _groupChatSocketService.sendMessage(
+        widget.groupId,
+        widget.currentUserId,
+        text,
+      );
+      await MessageStorageService.updateMessageStatus(
+        widget.groupId,
+        message.id,
+        MessageStatus.sent,
+        clientMessageId: clientMessageId,
+      );
     } catch (e) {
       debugPrint('Failed to send message: $e');
-      await MessageStorageService.updateMessageStatus(widget.groupId, message.id, MessageStatus.failed, clientMessageId: clientMessageId);
+      await MessageStorageService.updateMessageStatus(
+        widget.groupId,
+        message.id,
+        MessageStatus.failed,
+        clientMessageId: clientMessageId,
+      );
     }
   }
 
@@ -197,7 +211,6 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.primaryBlue,
@@ -209,8 +222,12 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.groupName,  // Display group name here
-              style: const TextStyle(color: Colors.white, fontSize: 20.0, fontWeight: FontWeight.w500),
+              widget.groupName, // Display group name here
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20.0,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             if (_isSomeoneTyping)
               const Text(
@@ -228,12 +245,14 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
               onPressed: () {
                 debugPrint("PRINT groupId: ${widget.groupId}");
                 debugPrint("PRINT conversationId: ${widget.groupId}");
-                context.push(RoutePaths.groupManagement, extra: {
-                  'groupId': widget.groupId,
-                  'conversationId': widget.groupId,
-                  'currentUserId': widget.currentUserId,
-
-                });
+                context.push(
+                  RoutePaths.groupManagement,
+                  extra: {
+                    'groupId': widget.groupId,
+                    'conversationId': widget.groupId,
+                    'currentUserId': widget.currentUserId,
+                  },
+                );
               },
             ),
           const SizedBox(width: 8),
@@ -245,13 +264,19 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _messages.isEmpty
-                ? const Center(child: Text('No messages yet. Start the conversation!', style: TextStyle(color: Colors.grey, fontSize: 16)))
+                ? const Center(
+                    child: Text(
+                      'No messages yet. Start the conversation!',
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                    ),
+                  )
                 : ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16.0),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) => _buildMessageBubble(_messages[index]),
-            ),
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) =>
+                        _buildMessageBubble(_messages[index]),
+                  ),
           ),
           _buildMessageInput(),
         ],
@@ -267,25 +292,40 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Column(
-          crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isUser
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (!isUser)
-                  CircleAvatar(radius: 16, backgroundImage: AssetImage(message.senderImageUrl ?? AppAssets.sarahMartinez)),
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundImage: AssetImage(
+                      message.senderImageUrl ?? AppAssets.sarahMartinez,
+                    ),
+                  ),
                 const SizedBox(width: 8.0),
                 Flexible(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 10.0,
+                    ),
                     decoration: BoxDecoration(
-                      color: isUser ? AppColors.receiverBubbleColor : AppColors.senderBubbleColor,
+                      color: isUser
+                          ? AppColors.receiverBubbleColor
+                          : AppColors.senderBubbleColor,
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                     child: Text(
                       message.text,
-                      style: const TextStyle(fontSize: 14.0, fontFamily: 'Poppins'),
+                      style: const TextStyle(
+                        fontSize: 14.0,
+                        fontFamily: 'Poppins',
+                      ),
                     ),
                   ),
                 ),
@@ -295,7 +335,12 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
                     children: [
                       _buildMessageStatusIcon(message.status),
                       const SizedBox(width: 4.0),
-                      CircleAvatar(radius: 16, backgroundImage: AssetImage(message.senderImageUrl ?? AppAssets.jennyProfile)),
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundImage: AssetImage(
+                          message.senderImageUrl ?? AppAssets.jennyProfile,
+                        ),
+                      ),
                     ],
                   ),
               ],
@@ -355,7 +400,9 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
             onTap: _isConversationReady ? _sendMessage : null,
             child: Icon(
               Icons.send,
-              color: _isConversationReady ? AppColors.primaryBlue : AppColors.buttonPrimary,
+              color: _isConversationReady
+                  ? AppColors.primaryBlue
+                  : AppColors.buttonPrimary,
             ),
           ),
         ],
@@ -363,5 +410,3 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     );
   }
 }
-
-

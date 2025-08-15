@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:circleslate/presentation/common_providers/auth_provider.dart';
-import 'package:circleslate/presentation/widgets/auth_input_field.dart';
 
 // Assuming AppColors and AuthInputField are defined in your project.
 class AppColors {
@@ -20,7 +18,6 @@ class AppColors {
   static const Color emailIconBackground = Color(0x1AD8ECFF);
   static const Color otpInputFill = Color(0xFFF9FAFB);
 }
-
 
 class AuthInputField extends StatefulWidget {
   final TextEditingController controller;
@@ -85,22 +82,21 @@ class _AuthInputFieldState extends State<AuthInputField> {
         hintStyle: const TextStyle(color: AppColors.inputHintColor),
         suffixIcon: widget.isPassword
             ? IconButton(
-          icon: Icon(
-            _obscureText ? Icons.visibility : Icons.visibility_off,
-            color: Colors.grey,
-          ),
-          onPressed: () {
-            setState(() {
-              _obscureText = !_obscureText;
-            });
-          },
-        )
+                icon: Icon(
+                  _obscureText ? Icons.visibility : Icons.visibility_off,
+                  color: Colors.grey,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscureText = !_obscureText;
+                  });
+                },
+              )
             : widget.suffixIcon,
       ),
     );
   }
 }
-
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});
@@ -112,7 +108,8 @@ class ResetPasswordPage extends StatefulWidget {
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   @override
   void dispose() {
@@ -126,9 +123,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
       // Show loading indicator
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Resetting password...')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Resetting password...')));
 
       final success = await authProvider.resetPassword(
         newPassword: _newPasswordController.text,
@@ -141,12 +138,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       } else {
         // On failure, show an error message
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(authProvider.errorMessage ?? 'Password reset failed.')),
+          SnackBar(
+            content: Text(
+              authProvider.errorMessage ?? 'Password reset failed.',
+            ),
+          ),
         );
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -231,7 +231,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 child: Consumer<AuthProvider>(
                   builder: (context, authProvider, child) {
                     return ElevatedButton(
-                      onPressed: authProvider.isLoading ? null : () => _handlePasswordReset(context),
+                      onPressed: authProvider.isLoading
+                          ? null
+                          : () => _handlePasswordReset(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryBlue,
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -242,17 +244,17 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       ),
                       child: authProvider.isLoading
                           ? const CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      )
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            )
                           : const Text(
-                        'Done',
-                        style: TextStyle(
-                          fontSize: 14.0,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
+                              'Done',
+                              style: TextStyle(
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
                     );
                   },
                 ),
