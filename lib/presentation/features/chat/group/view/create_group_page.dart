@@ -7,7 +7,6 @@ import 'package:circleslate/core/services/group/group_conversation_manager.dart'
 import 'package:circleslate/core/services/user_search_service.dart';
 import 'package:circleslate/data/models/user_search_result_model.dart';
 
-
 class CreateGroupPage extends StatefulWidget {
   final String currentUserId;
 
@@ -27,12 +26,12 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   bool _isLoading = false;
   String? _errorMessage;
 
-
-
   @override
   void initState() {
     super.initState();
-    debugPrint('[CreateGroupPage] Initialized with currentUserId: ${widget.currentUserId}');
+    debugPrint(
+      '[CreateGroupPage] Initialized with currentUserId: ${widget.currentUserId}',
+    );
     if (widget.currentUserId.isEmpty) {
       debugPrint('[CreateGroupPage] Warning: currentUserId is empty');
       setState(() {
@@ -60,7 +59,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     try {
       final results = await _userSearchService.searchUsers(query);
       setState(() {
-        _searchResults = results.where((user) => user.id.toString() != widget.currentUserId).toList();
+        _searchResults = results
+            .where((user) => user.id.toString() != widget.currentUserId)
+            .toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -75,14 +76,18 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     if (_formKey.currentState!.validate()) {
       if (_selectedUsers.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select at least one member for the group.')),
+          const SnackBar(
+            content: Text('Please select at least one member for the group.'),
+          ),
         );
         return;
       }
 
       if (widget.currentUserId.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User ID is missing. Please log in again.')),
+          const SnackBar(
+            content: Text('User ID is missing. Please log in again.'),
+          ),
         );
         return;
       }
@@ -94,24 +99,32 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
 
       try {
         final groupName = _groupNameController.text.trim();
-        final participantIds = _selectedUsers.map((user) => user.id.toString()).toList();
+        final participantIds = _selectedUsers
+            .map((user) => user.id.toString())
+            .toList();
 
-        debugPrint('[CreateGroupPage] Creating group with currentUserId: ${widget.currentUserId}, participantIds: $participantIds');
-
-        final newGroupChat = await GroupConversationManager.createGroupConversation(
-          widget.currentUserId,
-          participantIds,
-          groupName,
+        debugPrint(
+          '[CreateGroupPage] Creating group with currentUserId: ${widget.currentUserId}, participantIds: $participantIds',
         );
 
+        final newGroupChat =
+            await GroupConversationManager.createGroupConversation(
+              widget.currentUserId,
+              participantIds,
+              groupName,
+            );
+
         if (mounted) {
-          context.push(RoutePaths.groupConversationPage, extra: {
-            'groupName': newGroupChat.name,            // pass groupName here
-            'isGroupChat': true,
-            'isCurrentUserAdminInGroup': true,
-            'currentUserId': widget.currentUserId,
-            'conversationId': newGroupChat.id,
-          });
+          context.push(
+            RoutePaths.groupConversationPage,
+            extra: {
+              'groupName': newGroupChat.name, // pass groupName here
+              'isGroupChat': true,
+              'isCurrentUserAdminInGroup': true,
+              'currentUserId': widget.currentUserId,
+              'conversationId': newGroupChat.id,
+            },
+          );
           _selectedUsers.clear();
           _groupNameController.clear();
           _searchController.clear();
@@ -122,9 +135,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             _isLoading = false;
             _errorMessage = 'Failed to create group: $e';
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to create group: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Failed to create group: $e')));
         }
       } finally {
         if (mounted) {
@@ -135,7 +148,6 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       }
     }
   }
-
 
   void _removeSelectedUser(UserSearchResult user) {
     setState(() {
@@ -197,7 +209,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                     decoration: InputDecoration(
                       hintText: 'Type group name',
                       hintStyle: const TextStyle(
-                          color: AppColors.textColorSecondary, fontFamily: 'Poppins'),
+                        color: AppColors.textColorSecondary,
+                        fontFamily: 'Poppins',
+                      ),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -205,7 +219,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
-                          vertical: 12.0, horizontal: 16.0),
+                        vertical: 12.0,
+                        horizontal: 16.0,
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -230,7 +246,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                     decoration: InputDecoration(
                       hintText: 'Search by name or email',
                       hintStyle: const TextStyle(
-                          color: AppColors.textColorSecondary, fontFamily: 'Poppins'),
+                        color: AppColors.textColorSecondary,
+                        fontFamily: 'Poppins',
+                      ),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -238,7 +256,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
-                          vertical: 12.0, horizontal: 16.0),
+                        vertical: 12.0,
+                        horizontal: 16.0,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16.0),
@@ -275,7 +295,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                                 radius: 14,
                                 backgroundImage: user.profilePhotoUrl != null
                                     ? NetworkImage(user.profilePhotoUrl!)
-                                    : AssetImage(AppAssets.profilePicture) as ImageProvider,
+                                    : AssetImage(AppAssets.profilePicture)
+                                          as ImageProvider,
                               ),
                               deleteIcon: const Icon(Icons.close, size: 18),
                               onDeleted: () => _removeSelectedUser(user),
@@ -303,7 +324,10 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
                   _errorMessage!,
-                  style: const TextStyle(color: Colors.red, fontFamily: 'Poppins'),
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontFamily: 'Poppins',
+                  ),
                 ),
               )
             else
@@ -357,7 +381,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                               radius: 24,
                               backgroundImage: user.profilePhotoUrl != null
                                   ? NetworkImage(user.profilePhotoUrl!)
-                                  : AssetImage(AppAssets.profilePicture) as ImageProvider,
+                                  : AssetImage(AppAssets.profilePicture)
+                                        as ImageProvider,
                             ),
                             if (user.isOnline)
                               Positioned(
@@ -369,7 +394,10 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                                   decoration: BoxDecoration(
                                     color: AppColors.onlineIndicator,
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 1.5),
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 1.5,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -397,14 +425,14 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
-                    'Create Group',
-                    style: TextStyle(
-                      fontSize: 16.0,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
+                          'Create Group',
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
                 ),
               ),
             ),
