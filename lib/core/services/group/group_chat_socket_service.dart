@@ -60,8 +60,6 @@ class GroupChatSocketService {
       debugPrint('[GroupChatSocketService] WebSocket not connected');
       return;
     }
-
-
     final message = {
       'conversation_id': conversationId,
       'sender_id': senderId,

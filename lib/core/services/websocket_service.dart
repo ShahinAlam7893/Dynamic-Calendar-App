@@ -197,6 +197,21 @@ class ChatSocketService {
     } catch (_) {}
   }
 
+  /// Send a raw message (for custom message types)
+  void sendRawMessage(String message) {
+    if (!isConnected) {
+      debugPrint('[ChatSocketService] Cannot send raw message, socket not connected yet.');
+      return;
+    }
+
+    try {
+      _channel?.sink.add(message);
+      debugPrint('[ChatSocketService] Sent raw message: $message');
+    } catch (e) {
+      _handleConnectionError(e);
+    }
+  }
+
   bool get isConnected => _isConnected && _channel != null && (_channel!.closeCode == null);
 
   Future<void> reconnect() async {

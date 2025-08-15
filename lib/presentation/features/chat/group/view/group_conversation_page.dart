@@ -8,10 +8,14 @@ import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:circleslate/core/services/message_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import 'package:circleslate/core/utils/user_image_helper.dart';
+import 'package:provider/provider.dart';
+import 'package:circleslate/presentation/common_providers/auth_provider.dart';
 
 import '../../../../../core/services/group/group_chat_socket_service.dart';
 import '../../../../../data/models/group_model.dart';
 import '../../../../routes/app_router.dart';
+import 'package:http/http.dart' as http;
 
 class GroupConversationPage extends StatefulWidget {
   final String groupId;       // This is the unique group ID
@@ -41,6 +45,13 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
   bool _isConversationReady = false;
   bool _isTyping = false;
   bool _isSomeoneTyping = false;
+  
+  // Store user images for better performance
+  final Map<String, String?> _userImages = {};
+  
+  // Group information
+  String? _groupImageUrl;
+  int _memberCount = 0;
 
   @override
   void initState() {
@@ -53,6 +64,22 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
 
     _initializeConversation();
     _messageController.addListener(_handleTyping);
+    _messageController.addListener(() {
+      // Trigger rebuild to update send button state
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('[GroupConversationPage] App resumed - reconnecting if needed');
+      if (!_isConversationReady) {
+        _connectWebSocket();
+      }
+    } else if (state == AppLifecycleState.paused) {
+      debugPrint('[GroupConversationPage] App paused');
+    }
   }
 
   Future<void> _initializeConversation() async {
@@ -60,11 +87,41 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
 
     await _loadMessagesFromLocal();
     await _connectWebSocket();
+    await _loadGroupInformation();
 
     setState(() {
       _isConversationReady = true;
       _isLoading = false;
     });
+  }
+
+  /// Load group information including image and member count
+  Future<void> _loadGroupInformation() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('accessToken');
+      
+      if (token == null) return;
+      
+      final response = await http.get(
+        Uri.parse('http://10.10.13.27:8000/api/chat/conversations/${widget.groupId}/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final groupData = jsonDecode(response.body);
+        setState(() {
+          _groupImageUrl = groupData['display_photo'];
+          _memberCount = groupData['participant_count'] ?? 0;
+        });
+        debugPrint('[GroupConversationPage] Group info loaded: $_memberCount members');
+      }
+    } catch (e) {
+      debugPrint('[GroupConversationPage] Error loading group information: $e');
+    }
   }
 
   Future<void> _loadMessagesFromLocal() async {
@@ -86,25 +143,55 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     final token = prefs.getString('accessToken');
     if (token == null) {
       debugPrint('[GroupConversationPage] No token found!');
+      setState(() {
+        _isConversationReady = false;
+      });
       return;
     }
 
     try {
+      debugPrint('[GroupConversationPage] Connecting to WebSocket...');
       await _groupChatSocketService.connect(widget.groupId, token);
-      debugPrint('[GroupConversationPage] WebSocket connected');
+      debugPrint('[GroupConversationPage] WebSocket connected successfully');
+      
+      // Monitor connection status
+      _groupChatSocketService.connectionStatusStream.listen((isConnected) {
+        debugPrint('[GroupConversationPage] WebSocket connection status: $isConnected');
+        if (mounted) {
+          setState(() {
+            _isConversationReady = isConnected;
+          });
+        }
+      });
+      
     } catch (e) {
       debugPrint('[GroupConversationPage] WebSocket connection failed: $e');
+      setState(() {
+        _isConversationReady = false;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to connect to chat: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   void _handleIncomingMessage(Message message) async {
+    // Get real user image URL
+    String? senderImageUrl = await _getUserImageUrl(message.senderId);
+    
     final storedMessage = StoredMessage(
       id: message.id,
       text: message.content,
       timestamp: DateTime.parse(message.timestamp),
       senderId: message.senderId,
       sender: message.senderId == widget.currentUserId ? MessageSender.user : MessageSender.other,
-      senderImageUrl: message.senderId == widget.currentUserId ? AppAssets.jennyProfile : AppAssets.sarahMartinez,
+      senderImageUrl: senderImageUrl, // Use real user image
       status: MessageStatus.seen,
       clientMessageId: null,
     );
@@ -122,10 +209,44 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     // You can implement typing indicator here if you want
   }
 
+  /// Get user image URL with caching
+  Future<String?> _getUserImageUrl(String userId) async {
+    // Check cache first
+    if (_userImages.containsKey(userId)) {
+      return _userImages[userId];
+    }
+    
+    // Get from API
+    String? imageUrl;
+    if (userId == widget.currentUserId) {
+      // Current user - get from AuthProvider
+      imageUrl = UserImageHelper.getCurrentUserImageUrl(context);
+    } else {
+      // Other user - get from API
+      imageUrl = await UserImageHelper.getUserImageUrl(userId);
+    }
+    
+    // Cache the result
+    _userImages[userId] = imageUrl;
+    return imageUrl;
+  }
+
   void _sendMessage() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty) {
+      debugPrint('[GroupConversationPage] Cannot send empty message');
+      return;
+    }
 
+    if (!_isConversationReady) {
+      debugPrint('[GroupConversationPage] Conversation not ready, cannot send message');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Connecting to chat... Please wait.')),
+      );
+      return;
+    }
+
+    debugPrint('[GroupConversationPage] Sending message: $text');
     final clientMessageId = _uuid.v4();
 
     final message = StoredMessage(
@@ -134,7 +255,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
       timestamp: DateTime.now(),
       sender: MessageSender.user,
       senderId: widget.currentUserId,
-      senderImageUrl: AppAssets.jennyProfile,
+      senderImageUrl: UserImageHelper.getCurrentUserImageUrl(context), // Use real user image
       status: MessageStatus.sending,
       clientMessageId: clientMessageId,
     );
@@ -149,11 +270,23 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     await MessageStorageService.addMessage(widget.groupId, message);
 
     try {
-      _groupChatSocketService.sendMessage(widget.groupId, widget.currentUserId as String, text);
+      debugPrint('[GroupConversationPage] Sending via WebSocket...');
+      _groupChatSocketService.sendMessage(widget.groupId, widget.currentUserId, text);
       await MessageStorageService.updateMessageStatus(widget.groupId, message.id, MessageStatus.sent, clientMessageId: clientMessageId);
+      debugPrint('[GroupConversationPage] Message sent successfully');
     } catch (e) {
-      debugPrint('Failed to send message: $e');
+      debugPrint('[GroupConversationPage] Failed to send message: $e');
       await MessageStorageService.updateMessageStatus(widget.groupId, message.id, MessageStatus.failed, clientMessageId: clientMessageId);
+      
+      // Show error to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send message: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -188,23 +321,59 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            Text(
-              widget.groupName,  // Display group name here
-              style: const TextStyle(color: Colors.white, fontSize: 20.0, fontWeight: FontWeight.w500),
-            ),
-            if (_isSomeoneTyping)
-              const Text(
-                'Someone is typing...',
-                style: TextStyle(color: Colors.white70, fontSize: 12.0),
+            // Group avatar
+            _groupImageUrl != null && _groupImageUrl!.isNotEmpty
+                ? UserImageHelper.buildUserAvatarWithErrorHandling(
+                    imageUrl: _groupImageUrl,
+                    radius: 18,
+                    backgroundColor: Colors.white,
+                    iconColor: Colors.grey[600],
+                  )
+                : CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.group,
+                      color: Colors.grey[600],
+                      size: 20,
+                    ),
+                  ),
+            const SizedBox(width: 12),
+            // Group name and member count
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.groupName,
+                    style: const TextStyle(color: Colors.white, fontSize: 20.0, fontWeight: FontWeight.w500),
+                  ),
+                  if (_memberCount > 0)
+                    Text(
+                      '$_memberCount members',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12.0),
+                    ),
+                  if (_isSomeoneTyping)
+                    const Text(
+                      'Someone is typing...',
+                      style: TextStyle(color: Colors.white70, fontSize: 12.0),
+                    ),
+                ],
               ),
+            ),
           ],
         ),
         centerTitle: false,
         actions: [
-
+          // Connection status indicator
+          Container(
+            margin: const EdgeInsets.only(right: 8.0),
+            child: _isConversationReady
+                ? const Icon(Icons.wifi, color: Colors.green, size: 20)
+                : const Icon(Icons.wifi_off, color: Colors.red, size: 20),
+          ),
           IconButton(
             icon: const Icon(Icons.manage_accounts, color: Colors.white),
             tooltip: 'Group Manager',
@@ -257,7 +426,12 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (!isUser)
-                  CircleAvatar(radius: 16, backgroundImage: AssetImage(message.senderImageUrl ?? AppAssets.sarahMartinez)),
+                  UserImageHelper.buildUserAvatarWithErrorHandling(
+                    imageUrl: message.senderImageUrl,
+                    radius: 16,
+                    backgroundColor: Colors.grey[200],
+                    iconColor: Colors.grey[600],
+                  ),
                 const SizedBox(width: 8.0),
                 Flexible(
                   child: Container(
@@ -278,7 +452,12 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
                     children: [
                       _buildMessageStatusIcon(message.status),
                       const SizedBox(width: 4.0),
-                      CircleAvatar(radius: 16, backgroundImage: AssetImage(message.senderImageUrl ?? AppAssets.jennyProfile)),
+                      UserImageHelper.buildUserAvatarWithErrorHandling(
+                        imageUrl: message.senderImageUrl,
+                        radius: 16,
+                        backgroundColor: Colors.grey[200],
+                        iconColor: Colors.grey[600],
+                      ),
                     ],
                   ),
               ],
@@ -312,33 +491,68 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
   }
 
   Widget _buildMessageInput() {
+    final bool canSend = _isConversationReady && _messageController.text.trim().isNotEmpty;
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      color: Colors.white,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
+          // Current user avatar
+          UserImageHelper.buildCurrentUserAvatar(
+            context: context,
+            radius: 18,
+            backgroundColor: Colors.grey[200],
+            iconColor: Colors.grey[600],
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: TextField(
               controller: _messageController,
               enabled: _isConversationReady,
+              maxLines: null,
+              textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                hintText: 'Type a message',
+                hintText: _isConversationReady ? 'Type a message...' : 'Connecting to chat...',
+                hintStyle: TextStyle(
+                  color: _isConversationReady ? Colors.grey[600] : Colors.grey[400],
+                ),
                 filled: true,
-                fillColor: AppColors.chatInputFillColor,
+                fillColor: _isConversationReady ? AppColors.chatInputFillColor : Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25.0),
                   borderSide: BorderSide.none,
                 ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               ),
-              onSubmitted: (_) => _isConversationReady ? _sendMessage() : null,
+              onSubmitted: (_) => canSend ? _sendMessage() : null,
             ),
           ),
           const SizedBox(width: 8.0),
-          GestureDetector(
-            onTap: _isConversationReady ? _sendMessage : null,
-            child: Icon(
-              Icons.send,
-              color: _isConversationReady ? AppColors.primaryBlue : AppColors.buttonPrimary,
+          Container(
+            decoration: BoxDecoration(
+              color: canSend ? AppColors.primaryBlue : Colors.grey[300],
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              onPressed: canSend ? _sendMessage : null,
+              icon: Icon(
+                canSend ? Icons.send : Icons.send_outlined,
+                color: canSend ? Colors.white : Colors.grey[600],
+                size: 20,
+              ),
+              padding: const EdgeInsets.all(8.0),
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              tooltip: canSend ? 'Send message' : (_isConversationReady ? 'Type a message' : 'Connecting...'),
             ),
           ),
         ],

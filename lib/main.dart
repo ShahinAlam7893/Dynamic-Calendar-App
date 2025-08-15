@@ -23,6 +23,8 @@ Future<void> main() async {
             final authProvider = AuthProvider();
             if (tokens != null) {
               authProvider.setTokens(tokens.accessToken, tokens.refreshToken);
+              // Initialize user data after setting tokens
+              Future.microtask(() => authProvider.initializeUserData());
             }
             return authProvider;
           },

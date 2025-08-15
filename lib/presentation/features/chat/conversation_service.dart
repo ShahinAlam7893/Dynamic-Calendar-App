@@ -8,18 +8,26 @@ import '../../data/models/chat_model.dart';
 class ChatService {
   static const String baseUrl = 'http://10.10.13.27:8000/api/chat';
 
-  /// Get or create a conversation, return its ID
+
   static Future<String?> getOrCreateConversation(
-      int currentUserId,
+      String currentUserId,
       String partnerId, {
         required String partnerName,
       }) async {
     try {
+      debugPrint('[getOrCreateConversation] Starting with:');
+      debugPrint('[getOrCreateConversation] currentUserId: $currentUserId (type: ${currentUserId.runtimeType})');
+      debugPrint('[getOrCreateConversation] partnerId: $partnerId (type: ${partnerId.runtimeType})');
+      debugPrint('[getOrCreateConversation] partnerName: $partnerName');
+      
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('accessToken'); // ✅ updated to use same key as fetchChats
+      final token = prefs.getString('accessToken');
       if (token == null) throw Exception("No access token found");
 
+      debugPrint('[getOrCreateConversation] Token found: ${token.substring(0, 20)}...');
+
       // --- 1. Try to find existing conversation ---
+      debugPrint('[getOrCreateConversation] Fetching existing conversations...');
       final existingResponse = await http.get(
         Uri.parse('$baseUrl/conversations/'),
         headers: {
@@ -28,46 +36,95 @@ class ChatService {
         },
       );
 
+      debugPrint('[getOrCreateConversation] Existing conversations response: ${existingResponse.statusCode}');
+      debugPrint('[getOrCreateConversation] Response body: ${existingResponse.body}');
+
       if (existingResponse.statusCode == 200) {
-        final List conversations = jsonDecode(existingResponse.body);
-        final existing = conversations.firstWhere(
-              (conv) =>
-          (conv['participants'] as List)
-              .any((p) => p['id'] == partnerId) &&
-              (conv['participants'] as List)
-                  .any((p) => p['id'] == currentUserId),
-          orElse: () => null,
-        );
+        final data = jsonDecode(existingResponse.body);
+        final List conversations = data['conversations'] ?? [];
+        debugPrint('[getOrCreateConversation] Found ${conversations.length} conversations');
+        
+        // Look for existing conversation with the partner
+        dynamic existing;
+        for (var conv in conversations) {
+          final participants = conv['participants'] as List;
+          final hasPartner = participants.any((p) => p['id'].toString() == partnerId);
+          debugPrint('[getOrCreateConversation] Checking conversation ${conv['id']}: hasPartner=$hasPartner, participants=${participants.map((p) => p['id']).toList()}');
+          
+          if (hasPartner) {
+            existing = conv;
+            break;
+          }
+        }
+        
         if (existing != null) {
-          debugPrint("Found existing conversation: ${existing['id']}");
+          debugPrint("[getOrCreateConversation] Found existing conversation: ${existing['id']}");
           return existing['id'].toString();
         }
       }
 
       // --- 2. Create new conversation if not found ---
-      final createResponse = await http.post(
-        Uri.parse('$baseUrl/conversations/'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'participants': [currentUserId, partnerId],
-          'partner_name': partnerName,
-        }),
-      );
+      debugPrint('[getOrCreateConversation] Creating new conversation...');
+      final requestBody = {
+        'participants': [partnerId],
+        'partner_name': partnerName,
+      };
+      debugPrint('[getOrCreateConversation] Request body: ${jsonEncode(requestBody)}');
+      
+      // Try different endpoints for creating conversations
+      Uri createUrl;
+      try {
+        // First try the conversations endpoint
+        createUrl = Uri.parse('$baseUrl/conversations/');
+        debugPrint('[getOrCreateConversation] Trying POST to: $createUrl');
+        
+        final createResponse = await http.post(
+          createUrl,
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(requestBody),
+        );
 
-      if (createResponse.statusCode == 201) {
-        final data = jsonDecode(createResponse.body);
-        debugPrint("Created new conversation: ${data['id']}");
-        return data['id'].toString();
-      }
+        debugPrint('[getOrCreateConversation] Create response: ${createResponse.statusCode}');
+        debugPrint('[getOrCreateConversation] Create response body: ${createResponse.body}');
 
-      debugPrint(
-          "Error creating conversation: ${createResponse.statusCode} ${createResponse.body}");
-      return null;
+        if (createResponse.statusCode == 201) {
+          final data = jsonDecode(createResponse.body);
+          debugPrint("[getOrCreateConversation] Created new conversation: ${data['id']}");
+          return data['id'].toString();
+        }
+        
+        // If POST fails, try PUT method
+        if (createResponse.statusCode == 405) {
+          debugPrint('[getOrCreateConversation] POST not allowed, trying PUT...');
+          final putResponse = await http.put(
+            createUrl,
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(requestBody),
+          );
+          
+          debugPrint('[getOrCreateConversation] PUT response: ${putResponse.statusCode}');
+          debugPrint('[getOrCreateConversation] PUT response body: ${putResponse.body}');
+          
+          if (putResponse.statusCode == 201 || putResponse.statusCode == 200) {
+            final data = jsonDecode(putResponse.body);
+            debugPrint("[getOrCreateConversation] Created new conversation via PUT: ${data['id']}");
+            return data['id'].toString();
+          }
+        }
+             } catch (e) {
+         debugPrint('[getOrCreateConversation] Error with POST/PUT: $e');
+       }
+
+       debugPrint("[getOrCreateConversation] Failed to create conversation via POST/PUT");
+       return null;
     } catch (e) {
-      debugPrint("Error in getOrCreateConversation: $e");
+      debugPrint("[getOrCreateConversation] Error in getOrCreateConversation: $e");
       return null;
     }
   }

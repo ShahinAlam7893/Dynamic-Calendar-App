@@ -23,9 +23,7 @@ class AppColors {
   static const Color inputOutline = Color(0x1A101010);
   static const Color textColorPrimary = Color(0xE51B1D2A); // Added this for consistency
 }
-class AppAssets {
-  static const String calendarIcon = 'assets/icons/calendar_icon.png'; // Placeholder for the asset path
-}
+
 class AuthInputField extends StatefulWidget {
   final TextEditingController controller;
   final String labelText;
@@ -366,7 +364,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       radius: const Radius.circular(12.0),
                       child: Container(
                         width: double.infinity,
-                        height: 50, // Increased height for better visibility
+                        height: 60, // Increased height for better visibility
                         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
                         decoration: BoxDecoration(
                           color: AppColors.lightBlueBackground,
@@ -376,7 +374,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             ? const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.camera_alt, size: 40.0, color: AppColors.textMedium),
+                            Icon(Icons.camera_alt, size: 30.0, color: AppColors.textMedium),
                             SizedBox(width: 10.0),
                             Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -469,25 +467,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     ],
                   ),
                   const SizedBox(height: 20.0),
-                  Container(
-                    padding: const EdgeInsets.all(12.0),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey.withOpacity(0.5)),
-                    ),
-                    child: Image.network(
-                      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
-                      height: 30.0,
-                      width: 30.0,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
-                          Icons.g_mobiledata,
-                          size: 30.0,
-                          color: AppColors.primaryBlue,
-                        );
-                      },
-                    ),
-                  ),
                 ],
               ),
             ),

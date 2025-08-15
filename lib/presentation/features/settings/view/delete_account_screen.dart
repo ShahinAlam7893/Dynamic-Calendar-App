@@ -1,4 +1,3 @@
-// lib/presentation/features/settings/view/delete_account_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:circleslate/core/constants/app_colors.dart'; // Ensure this import path is correct
@@ -14,19 +13,10 @@ class DeleteAccountScreen extends StatefulWidget {
 }
 
 class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
-  // You can add logic here for deletion, e.g., showing a loading indicator
-  // or interacting with an authentication service.
+
 
   void _confirmDeleteAccount() {
-    // In a real application, you would perform the actual deletion here.
-    // This might involve:
-    // 1. Showing a loading spinner.
-    // 2. Calling an API endpoint to delete the user's account.
-    // 3. Handling success (e.g., navigating to login, showing a success message).
-    // 4. Handling errors (e.g., showing an error message).
 
-    // For demonstration, let's just print to console and then navigate back
-    // or to the login screen as if deletion was successful.
     print('Attempting to delete account...');
     // Simulate a delay for API call
     Future.delayed(const Duration(seconds: 2), () {
@@ -34,9 +24,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Account deleted successfully!')),
         );
-        // After deletion, typically navigate to login or splash screen
-        // context.go(AppRoutes.login); // Assuming you have a login route
-        context.pop(); // For now, just pop back
+        context.pop();
       }
     });
   }
@@ -46,24 +34,24 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryBlue, // Blue app bar as per image
+        backgroundColor: AppColors.primaryBlue,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white), // White back arrow
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            context.pop(); // Go back to the previous screen (e.g., settings)
+            context.pop();
           },
         ),
         title: const Text(
-          AppStrings.deleteAccountTitle, // "Delete Account"
+          AppStrings.deleteAccountTitle,
           style: TextStyle(
             color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.w500,
-            fontFamily: 'Poppins', // Assuming Poppins is your main font
+            fontFamily: 'Poppins',
           ),
         ),
-        centerTitle: true, // Center title as per image
+        centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -77,24 +65,24 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               Container(
                 padding: const EdgeInsets.all(20.0),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withOpacity(0.1), // Light blue background for icon
+                  color: AppColors.primaryBlue.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.delete_outline, // Trash can icon
+                  Icons.delete_outline,
                   size: 60,
-                  color: AppColors.primaryBlue, // Blue icon color
+                  color: AppColors.primaryBlue,
                 ),
               ),
               const SizedBox(height: 30),
 
               // Main Title
               const Text(
-                AppStrings.deleteAccountTitle, // "Delete Account"
+                AppStrings.deleteAccountTitle,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textColorPrimary, // Dark text color
+                  color: AppColors.textColorPrimary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -102,10 +90,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
 
               // Confirmation Text
               const Text(
-                AppStrings.deleteAccountConfirmation, // "Are you sure..."
+                AppStrings.deleteAccountConfirmation,
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textColorSecondary, // Medium grey text
+                  color: AppColors.textColorSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -115,9 +103,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFEBEE), // Light red background for warning
+                  color: const Color(0xFFFFEBEE),
                   borderRadius: BorderRadius.circular(8.0),
-                  border: Border.all(color: Colors.red.shade300, width: 1), // Red border
+                  border: Border.all(color: Colors.red.shade300, width: 1),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
