@@ -1,7 +1,13 @@
+import 'dart:convert';
+
+import 'package:circleslate/core/network/endpoints.dart';
+import 'package:circleslate/presentation/features/event_management/view/direct_invite_page.dart';
 import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart'; // Import go_router for navigation
-import 'package:intl/intl.dart'; // For date formatting
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // For date formatting
 
 // --- AppColors ---
 // Defined here for self-containment. In a real project, this would be a shared file.
@@ -204,6 +210,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
   final TextEditingController _eventTitleController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
+  final TextEditingController _endtimeController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
@@ -218,9 +225,77 @@ class _CreateEventPageState extends State<CreateEventPage> {
     _eventTitleController.dispose();
     _dateController.dispose();
     _timeController.dispose();
+    _endtimeController.dispose();
     _locationController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> createEvent() async {
+    final url = Uri.parse(Urls.Create_events);
+
+    final invitesJson = InviteStorage().invitesJson;
+    final List<int> invitees = invitesJson != null
+        ? List<int>.from(
+            jsonDecode(invitesJson).map(
+              (item) => int.parse(item.toString()),
+            ), // Ensure each item is an int
+          )
+        : [];
+
+    print(invitees);
+
+    // Collect form data
+    final Map<String, dynamic> eventData = {
+      "title": _eventTitleController.text,
+      "date": _dateController.text, // Ensure this is in 'yyyy-MM-dd' format
+      "start_time": _timeController.text,
+      "end_time":
+          _endtimeController.text, // Ensure this is in 'HH:mm:ss' format
+      "location": _locationController.text,
+      "description": _descriptionController.text,
+
+      "event_type": _isOpenInvite ? "open" : "direct",
+      "add_to_google_calendar": _addToGoogleCalendar,
+      "ride_needed_for_event": _rideNeeded,
+      "invitees": invitees, // You can dynamically populate this if needed
+    };
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('accessToken');
+    print('[Create Event] Retrieved token: $token');
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token', // Replace with the actual token
+    };
+
+    print('Preparing to send data to API:');
+    print('URL: $url');
+    print('Headers: $headers');
+    print('Event Data: ${json.encode(eventData)}');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: json.encode(eventData),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 201) {
+        print('Event created successfully!');
+        // Optionally parse the response body if needed
+        final responseData = json.decode(response.body);
+        print('Event ID: ${responseData['id']}');
+      } else {
+        print('Failed to create event. Status code: ${response.statusCode}');
+        print('Response Body: ${response.body}');
+      }
+    } catch (e) {
+      print('Error creating event: $e');
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -249,7 +324,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
     );
     if (picked != null) {
       setState(() {
-        _dateController.text = DateFormat('MM/dd/yyyy').format(picked);
+        _dateController.text = DateFormat(
+          'yyyy-MM-dd',
+        ).format(picked); // Correct date format
       });
     }
   }
@@ -277,8 +354,43 @@ class _CreateEventPageState extends State<CreateEventPage> {
       },
     );
     if (picked != null) {
+      // Manually format the time to HH:mm:ss (24-hour format)
+      String formattedTime =
+          '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}:00'; // HH:mm:ss
       setState(() {
-        _timeController.text = picked.format(context);
+        _timeController.text = formattedTime; // Set formatted time
+      });
+    }
+  }
+
+  Future<void> _selectendTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primaryBlue, // Header background color
+              onPrimary: Colors.white, // Header text color
+              onSurface: AppColors.textDark, // Body text color
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryBlue, // Button text color
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      // Manually format the end time to HH:mm:ss (24-hour format)
+      String formattedEndTime =
+          '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}:00'; // HH:mm:ss
+      setState(() {
+        _endtimeController.text = formattedEndTime; // Set formatted end time
       });
     }
   }
@@ -337,18 +449,34 @@ class _CreateEventPageState extends State<CreateEventPage> {
             ),
             SizedBox(height: inputFieldSpacing), // Responsive spacing
             // Date and Time
+            GestureDetector(
+              onTap: () => _selectDate(context),
+              child: AbsorbPointer(
+                child: AuthInputField(
+                  controller: _dateController,
+                  labelText: 'Date *',
+                  hintText: '07/15/2025',
+                  suffixIcon: Icon(
+                    Icons.calendar_today_outlined,
+                    size: screenWidth * 0.045,
+                  ),
+                  keyboardType: TextInputType.datetime,
+                ),
+              ),
+            ),
             Row(
               children: [
+                // Responsive spacing
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => _selectDate(context),
+                    onTap: () => _selectTime(context),
                     child: AbsorbPointer(
                       child: AuthInputField(
-                        controller: _dateController,
-                        labelText: 'Date *',
-                        hintText: '07/15/2025',
+                        controller: _timeController,
+                        labelText: 'Start Time *',
+                        hintText: '11:02 AM',
                         suffixIcon: Icon(
-                          Icons.calendar_today_outlined,
+                          Icons.access_time,
                           size: screenWidth * 0.045,
                         ), // Responsive icon size
                         keyboardType: TextInputType.datetime,
@@ -356,14 +484,13 @@ class _CreateEventPageState extends State<CreateEventPage> {
                     ),
                   ),
                 ),
-                SizedBox(width: horizontalSpacing), // Responsive spacing
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => _selectTime(context),
+                    onTap: () => _selectendTime(context),
                     child: AbsorbPointer(
                       child: AuthInputField(
-                        controller: _timeController,
-                        labelText: 'Time *',
+                        controller: _endtimeController,
+                        labelText: 'End Time *',
                         hintText: '11:02 AM',
                         suffixIcon: Icon(
                           Icons.access_time,
@@ -414,7 +541,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                       setState(() {
                         _isOpenInvite = true;
                       });
-                      context.push(RoutePaths.openInvite);
+                      // context.push(RoutePaths.openInvite);
                     },
                   ),
                 ),
@@ -583,6 +710,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
               child: ElevatedButton(
                 onPressed: () {
                   context.push('/up_coming_events');
+                  createEvent();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Create Event Tapped!')),
                   );

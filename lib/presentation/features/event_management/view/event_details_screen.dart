@@ -1,7 +1,12 @@
+import 'dart:convert';
+
+import 'package:circleslate/core/network/endpoints.dart';
 import 'package:circleslate/presentation/features/event_management/models/eventsModels.dart';
 import 'package:circleslate/presentation/features/ride_request/view/ride_sharing_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../controllers/eventManagementControllers.dart';
 
@@ -706,42 +711,49 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                           SizedBox(
                             height: screenWidth * 0.04,
                           ), // Responsive spacing
-                          // SizedBox(
-                          //   width: double.infinity,
-                          //   height:
-                          //       screenWidth *
-                          //       0.1, // Responsive height for button
-                          //   child: ElevatedButton(
-                          //     onPressed: () {
-                          //       context.push('/ride_share');
-                          //     },
-                          //     style: ElevatedButton.styleFrom(
-                          //       backgroundColor:
-                          //           AppColors.requestRideButtonColor,
-                          //       shape: RoundedRectangleBorder(
-                          //         borderRadius: BorderRadius.circular(8.0),
-                          //       ),
-                          //       elevation: 0,
-                          //       padding: EdgeInsets.symmetric(
-                          //         horizontal: screenWidth * 0.04,
-                          //       ), // Responsive horizontal padding
-                          //     ),
-                          //     child: FittedBox(
-                          //       // Use FittedBox for button text
-                          //       fit: BoxFit.scaleDown,
-                          //       child: Text(
-                          //         'Send Request Ride',
-                          //         style: TextStyle(
-                          //           fontSize:
-                          //               bodyFontSize, // Consistent font size
-                          //           fontWeight: FontWeight.w600,
-                          //           color: AppColors.requestRideButtonTextColor,
-                          //           fontFamily: 'Poppins',
-                          //         ),
-                          //       ),
-                          //     ),
-                          //   ),
-                          // ),
+                          SizedBox(
+                            width: double.infinity,
+                            height:
+                                screenWidth *
+                                0.1, // Responsive height for button
+                            child: ElevatedButton(
+                              onPressed: () {
+                                sendRideRequest(
+                                  event.id, // Event ID
+                                  'lol', // Pickup location (replace with user input)
+                                  'string', // Special instructions (replace with user input)
+                                  context, // Pass BuildContext for SnackBar
+                                );
+                              },
+
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    AppColors.requestRideButtonColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                elevation: 0,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: screenWidth * 0.04,
+                                ), // Responsive horizontal padding
+                              ),
+                              child: FittedBox(
+                                // Use FittedBox for button text
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Send Request Ride',
+                                  style: TextStyle(
+                                    fontSize:
+                                        bodyFontSize, // Consistent font size
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.requestRideButtonTextColor,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
                           SizedBox(height: screenWidth * 0.02),
                           SizedBox(
                             width: double.infinity,
@@ -766,16 +778,6 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                                 );
                               },
 
-                              // onPressed: () {
-                              //   print(event.id);
-                              //   // Example of navigation from EventDetailsPage to RideSharingPage
-                              //   context.push(
-                              //     '/ride_share',
-                              //     //'${RoutePaths.ridesharingpage}/${event.id}/${event.date}/${event.startTime}/${event.endTime}/${event.location}',
-                              //   );
-
-                              //   // context.push("${RoutePaths.eventDetails}/${event.id}");
-                              // },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
                                     AppColors.requestRideButtonColor,
@@ -818,6 +820,75 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
         },
       ),
     );
+  }
+
+  static Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('accessToken');
+    print("🔑 _getToken returned: $token");
+    return token;
+  }
+
+  Future<void> sendRideRequest(
+    String eventId,
+    String pickupLocation,
+    String specialInstructions,
+    BuildContext context,
+  ) async {
+    final token = await _getToken();
+    // API endpoint
+    final String apiUrl = '${Urls.baseUrl}/event/events/$eventId/request_ride/';
+
+    // Authorization header
+    final headers = {
+      'Authorization': 'Bearer $token', // Replace with actual token
+      'Content-Type': 'application/json',
+    };
+
+    // Request body
+    final body = jsonEncode({
+      'pickup_location': pickupLocation,
+      'special_instructions': specialInstructions,
+    });
+
+    // Print out the API endpoint, request body, and headers for debugging
+    print('API URL: $apiUrl');
+    print('Headers: $headers');
+    print('Body: $body');
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: headers,
+        body: body,
+      );
+
+      // Print response details for debugging
+      print('Response Status: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 201) {
+        // Successful request
+        final responseData = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Ride request sent: ${responseData['status_display']}',
+            ),
+          ),
+        );
+      } else {
+        // Handle errors
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send request: ${response.body}')),
+        );
+      }
+    } catch (error) {
+      print('Error: $error');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $error')));
+    }
   }
 
   // Passing BuildContext to _buildParticipantTile for responsive sizing
