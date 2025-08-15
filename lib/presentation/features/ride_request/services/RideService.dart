@@ -5,24 +5,20 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RideService {
-  static const String baseUrl =
-      Urls.baseUrl; // Update this with your actual base URL
+  static const String baseUrl = Urls.baseUrl;
 
   static Future<List<RideRequest>> fetchRideRequests(
-    String eventId,
+    String eventId, // ← use this parameter
     String eventDate,
     String eventTime,
     String eventLocation,
   ) async {
-    final token = await _getToken(); // Get token from shared preferences
-    print("🔑 Token: $token"); // Print the token for debugging
+    final token = await _getToken();
+    print("🔑 Token: $token");
 
-    final url = Uri.parse(
-      '$baseUrl/event/events/2cb1f0e5-d8e3-42e9-9a2c-f1535aec3bb8/ride-requests/',
-    );
-    print("🌐 Request URL: $eventId");
-
-    print("🌐 Request URL: $url"); // Print the URL for debugging
+    // Step: Use eventId dynamically in the URL
+    final url = Uri.parse('$baseUrl/event/events/$eventId/ride-requests/');
+    print("🌐 Request URL: $url");
 
     final headers = {
       'Authorization': 'Bearer $token',
@@ -32,10 +28,8 @@ class RideService {
     try {
       final response = await http.get(url, headers: headers);
 
-      print(
-        "📬 Response Status Code: ${response.statusCode}",
-      ); // Print status code
-      print("📬 Response Body: ${response.body}"); // Print response body
+      print("📬 Response Status Code: ${response.statusCode}");
+      print("📬 Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
@@ -56,13 +50,10 @@ class RideService {
     }
   }
 
-  // Function to retrieve the token from SharedPreferences
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('accessToken');
-    print(
-      "🔑 Retrieved token from SharedPreferences: $token",
-    ); // Print the retrieved token
+    print("🔑 Retrieved token from SharedPreferences: $token");
     return token;
   }
 }

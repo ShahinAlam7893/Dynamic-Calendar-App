@@ -1,5 +1,3 @@
-import 'package:circleslate/core/constants/app_assets.dart';
-
 class Contact {
   final String id; // Numeric ID for API (e.g., "31")
   final String name;

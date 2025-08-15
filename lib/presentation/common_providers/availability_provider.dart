@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../data/services/api_base_helper.dart';
-import '../features/settings/view/edit_profile_page.dart';
-
 class ApiEndpoints {
-  static const String getAvailability = '/calendar/availability/'; // Adjust this to match your actual endpoint
+  static const String getAvailability =
+      '/calendar/availability/'; // Adjust this to match your actual endpoint
 }
+
 class AvailabilityProvider extends ChangeNotifier {
   // API endpoint
   static const String _apiUrl =
@@ -198,7 +197,6 @@ class AvailabilityProvider extends ChangeNotifier {
     }
   }
 
-
   // -------------------- Fetch Availability from API --------------------
   Future<void> fetchAvailabilityFromAPI(String token) async {
     try {
@@ -208,10 +206,7 @@ class AvailabilityProvider extends ChangeNotifier {
         "Authorization": "Bearer $token",
       };
 
-      final response = await http.get(
-        Uri.parse(_apiUrl),
-        headers: headers,
-      );
+      final response = await http.get(Uri.parse(_apiUrl), headers: headers);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -227,7 +222,6 @@ class AvailabilityProvider extends ChangeNotifier {
       print("🔥 Error fetching availability: $e");
     }
   }
-
 
   // Put this helper method inside the class (or just below it)
   Map<int, Map<String, dynamic>> _mapApiData(List<dynamic> apiResponse) {
@@ -273,7 +267,6 @@ class AvailabilityProvider extends ChangeNotifier {
     }
   }
 
-
   // -------------------- Fetches availability for the current month --------------------
   Future<void> fetchMonthAvailabilityFromAPI(int year, int month) async {
     final token = await _getToken();
@@ -296,10 +289,13 @@ class AvailabilityProvider extends ChangeNotifier {
       final daysInMonth = DateTime(year, month + 1, 0).day;
 
       for (int day = 1; day <= daysInMonth; day++) {
-        final dateString = "${year.toString().padLeft(4, '0')}-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}";
+        final dateString =
+            "${year.toString().padLeft(4, '0')}-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}";
 
         final response = await http.get(
-          Uri.parse("http://10.10.13.27:8000/api/calendar/day/?date=$dateString"),
+          Uri.parse(
+            "http://10.10.13.27:8000/api/calendar/day/?date=$dateString",
+          ),
           headers: headers,
         );
 
@@ -324,7 +320,6 @@ class AvailabilityProvider extends ChangeNotifier {
       }
 
       print("📅 Calendar data updated for $month/$year: $_calendarDateStates");
-
     } catch (e) {
       print("🔥 Error fetching month availability: $e");
     }
@@ -332,5 +327,4 @@ class AvailabilityProvider extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
   }
-
 }

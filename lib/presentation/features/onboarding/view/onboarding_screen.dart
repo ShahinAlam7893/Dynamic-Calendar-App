@@ -6,16 +6,13 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../../../widgets/primary_button.dart';
-import '../../../widgets/secondary_button.dart';
 import '../../../widgets/page_indicator_dots.dart';
-
 
 // Import the individual onboarding page files
 import 'onboarding_page_content.dart'; // Keep this for OnboardingPage1 and general structure
 import 'onboarding_page_2.dart'; // NEW
 import 'onboarding_page_3.dart'; // NEW
 import 'onboarding_page_4.dart'; // NEW
-
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -63,11 +60,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Align(
               alignment: Alignment.topLeft,
               child: Padding(
-                padding: const EdgeInsets.only(top: 16.0, left: 16.0), // Adjust padding as needed
+                padding: const EdgeInsets.only(
+                  top: 16.0,
+                  left: 16.0,
+                ), // Adjust padding as needed
                 child: Visibility(
-                  visible: _currentPage > 0, // Only visible if not on the first page
+                  visible:
+                      _currentPage > 0, // Only visible if not on the first page
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: AppColors.textColorPrimary, size: 24), // Customize icon and color
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: AppColors.textColorPrimary,
+                      size: 24,
+                    ), // Customize icon and color
                     onPressed: () {
                       _pageController.previousPage(
                         duration: const Duration(milliseconds: 300),
@@ -91,7 +96,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 20.0,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -99,7 +107,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   if (_currentPage < pages.length - 1)
                     TextButton(
                       onPressed: () {
-                        context.go(RoutePaths.login); // Skip to Login/Signup (placeholder)
+                        context.go(
+                          RoutePaths.login,
+                        ); // Skip to Login/Signup (placeholder)
                       },
                       child: const Text(
                         AppStrings.skip,
@@ -111,7 +121,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     )
                   else
                     const SizedBox(width: 48), // Placeholder to keep alignment
-
                   // Page indicator dots
                   PageIndicatorDots(
                     pageCount: pages.length,
@@ -124,7 +133,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       width: 100,
                       height: 45,
                       text: AppStrings.next,
-                       onPressed: () {
+                      onPressed: () {
                         _pageController.nextPage(
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeIn,
