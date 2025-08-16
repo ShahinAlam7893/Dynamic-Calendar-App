@@ -6,13 +6,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:circleslate/data/services/user_service.dart';
 import 'package:circleslate/data/services/api_base_helper.dart';
 import 'package:http/http.dart' as http;
+import 'package:circleslate/core/utils/profile_data_manager.dart';
+
+import '../../core/network/endpoints.dart';
 
 class ApiEndpoints {
   static const String register = '/auth/register/';
   static const String login = '/auth/login/';
   static const String forgotPassword = '/auth/forgot-password/';
   static const String verifyOtp = '/auth/verify-otp/';
-  static const String resetPassword = '/auth/reset-password/';
+  static const String resetPassword = '/auth/change-password/';
   static const String userProfile = '/auth/profile/';
   static const String updateProfile = '/auth/profile/update/';
   static const String conversations = '/auth/conversations'; // New API endpoint for conversations
@@ -37,9 +40,29 @@ class AuthProvider extends ChangeNotifier {
   Map<String, dynamic>? get userProfile => _userProfile;
   List<dynamic> get conversations => _conversations; // New: Getter for conversations
   bool get isLoggedIn => _accessToken != null;
+  
+  // Getter for current user ID
+  String? get currentUserId => _userProfile?['id']?.toString();
 
   AuthProvider() : _userService = AuthService(ApiBaseHelper()) {
     Future.microtask(() => loadTokensFromStorage());
+  }
+
+  /// Initialize user data on app startup
+  Future<void> initializeUserData() async {
+    try {
+      // Load tokens and cached profile
+      await loadTokensFromStorage();
+      
+      // If user is logged in, fetch fresh profile data
+      if (_accessToken != null && _userProfile == null) {
+        await fetchUserProfile();
+      }
+      
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[AuthProvider] Error initializing user data: $e');
+    }
   }
 
   // -------------------- REGISTER --------------------
@@ -222,48 +245,66 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+
   // -------------------- RESET PASSWORD --------------------
+
+
   Future<bool> resetPassword({
+    required String currentPassword,
     required String newPassword,
     required String confirmPassword,
   }) async {
-    if (_userEmail == null) {
-      return _setError('Email is missing for password reset.');
-    }
-    if (_userOtp == null) {
-      return _setError('OTP is missing for password reset.');
-    }
     if (newPassword != confirmPassword) {
       return _setError('Passwords do not match.');
+    }
+
+    if (_accessToken == null) {
+      return _setError('No access token found. Please login again.');
     }
 
     _setLoading(true);
 
     try {
-      final response = await _apiBaseHelper.post(
-        ApiEndpoints.resetPassword,
-        {
-          'email': _userEmail,
-          'otp': _userOtp,
+      final token = _accessToken;
+
+      final url = Uri.parse('${Urls.baseUrl}${ApiEndpoints.resetPassword}');
+
+      final response = await http.put(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'old_password': currentPassword,
           'new_password': newPassword,
           'confirm_password': confirmPassword,
-        },
+        }),
       );
 
       _setLoading(false);
 
+      print("🔍 Reset Password Full Response: ${response.body}");
+      print("📡 Status Code: ${response.statusCode}");
+
       if (response.statusCode == 200) {
-        _userEmail = null;
-        _userOtp = null;
+        print('✅ Password reset successful.');
         return true;
       }
 
-      final data = jsonDecode(response.body);
-      return _setError(data['message'] ?? 'Password reset failed.');
+      // Handle cases where message field might not exist
+      final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+      final errorMessage = data['message'] ?? data['detail'] ?? 'Password reset failed.';
+      return _setError(errorMessage);
+
     } catch (e) {
+      _setLoading(false);
+      print('💥 Exception during password reset: $e');
       return _setError('An unexpected error occurred during password reset.');
     }
   }
+
+
 
   // -------------------- FETCH USER PROFILE (For Home Screen) --------------------
   Future<bool> fetchUserProfile() async {
@@ -300,6 +341,9 @@ class AuthProvider extends ChangeNotifier {
         };
 
         print("✅ Parsed User Profile: $_userProfile");
+        
+        // Save user ID to SharedPreferences for persistence
+        await _saveUserProfileToStorage();
 
         _setLoading(false);
         notifyListeners();
@@ -353,8 +397,6 @@ class AuthProvider extends ChangeNotifier {
       final token = _accessToken; // Direct access, no await needed
       print('🔑 Token loaded: ${token != null ? 'Yes' : 'No'}');
       print('🔑 Token loaded: ${token}');
-
-
 
       if (token == null) {
         print('❌ No token found. Cannot update profile.');
@@ -411,7 +453,8 @@ class AuthProvider extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         print('✅ Profile updated successfully!');
-        await fetchUserProfile(); // <--- refresh after update
+        // Refresh profile data and notify listeners
+        await refreshUserData();
         return true;
       } else {
         print('❌ Update failed.');
@@ -423,11 +466,46 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Refresh user data from API and update local storage
+  Future<void> refreshUserData() async {
+    try {
+      await fetchUserProfile();
+      // Also refresh children data if needed
+      await fetchChildren();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[AuthProvider] Error refreshing user data: $e');
+    }
+  }
+
+  /// Get cached user profile from local storage
+  Map<String, dynamic>? getCachedUserProfile() {
+    return _userProfile;
+  }
+
+  /// Check if user profile is loaded
+  bool get isProfileLoaded => _userProfile != null;
+
   // -------------------- TOKEN STORAGE --------------------
   Future<void> _saveTokensToStorage() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('accessToken', _accessToken ?? '');
     await prefs.setString('refreshToken', _refreshToken ?? '');
+  }
+
+  Future<void> _saveUserProfileToStorage() async {
+    if (_userProfile != null) {
+      await ProfileDataManager.saveProfileData(_userProfile!);
+      debugPrint('[AuthProvider] User profile saved to storage: ${_userProfile!['id']}');
+    }
+  }
+
+  Future<void> _loadUserProfileFromStorage() async {
+    final profileData = await ProfileDataManager.loadProfileData();
+    if (profileData != null) {
+      _userProfile = profileData;
+      debugPrint('[AuthProvider] User profile loaded from storage: ${_userProfile!['id']}');
+    }
   }
 
   Future<String?> loadTokensFromStorage() async {
@@ -437,6 +515,9 @@ class AuthProvider extends ChangeNotifier {
 
     _accessToken = savedAccessToken;
     _refreshToken = savedRefreshToken;
+
+    // Load user profile from storage
+    await _loadUserProfileFromStorage();
 
     // return the token so caller can print/use it
     return savedAccessToken;
@@ -460,5 +541,28 @@ class AuthProvider extends ChangeNotifier {
     _accessToken = accessToken;
     _refreshToken = refreshToken;
     Future.microtask(() => notifyListeners());
+  }
+
+  // Logout method to clear all user data
+  Future<void> logout() async {
+    debugPrint('[AuthProvider] Logging out user...');
+    
+    // Clear in-memory data
+    _accessToken = null;
+    _refreshToken = null;
+    _userProfile = null;
+    _userEmail = null;
+    _userOtp = null;
+    _errorMessage = null;
+    _conversations.clear();
+    
+    // Clear stored data
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('accessToken');
+    await prefs.remove('refreshToken');
+    await ProfileDataManager.clearProfileData();
+    
+    debugPrint('[AuthProvider] User logged out successfully');
+    notifyListeners();
   }
 }

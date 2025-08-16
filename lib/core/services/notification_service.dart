@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:circleslate/core/network/endpoints.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -49,7 +50,6 @@ class AppNotification {
   }
 
 }
-
 
 class NotificationService {
   final String _baseUrl = 'http://10.10.13.27:8000/api/chat/notifications/';
@@ -109,20 +109,37 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('accessToken');
 
-    if (token == null) return 0;
+    print('🔑 Access Token: $token');
+
+    if (token == null) {
+      print('⚠️ No token found, returning 0');
+      return 0;
+    }
+
+    final url = Uri.parse('${Urls.baseUrl}/chat/notifications/unread-count/');
+    print('🌐 Sending request to: $url');
 
     final response = await http.get(
-      Uri.parse('http://10.10.13.27:8000/chat/notifications/unread-count/'),
+      url,
       headers: {
         'Authorization': 'Bearer $token',
       },
     );
 
+    print('📩 Response Status Code: ${response.statusCode}');
+    print('📩 Response Body: ${response.body}');
+
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['unread_count'] ?? 0;
+      print('✅ Decoded Response: $data');
+
+      final unreadCount = data['unread_count'] ?? 0;
+      print('🔢 Unread Count: $unreadCount');
+      return unreadCount;
     } else {
+      print('❌ Request failed with status: ${response.statusCode}');
       return 0;
     }
   }
+
 }

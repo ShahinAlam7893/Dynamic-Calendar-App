@@ -126,6 +126,7 @@ class AppRouter {
       ),
       GoRoute(
         path: RoutePaths.onboarding,
+        name: AppRoutes.onboarding,
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
@@ -265,7 +266,7 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/group_create',
+        path: RoutePaths.creategrouppage,
         name: AppRoutes.creategrouppage,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>? ?? {};

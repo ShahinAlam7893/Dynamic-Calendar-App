@@ -33,11 +33,16 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   void initState() {
     super.initState();
     debugPrint('[CreateGroupPage] Initialized with currentUserId: ${widget.currentUserId}');
+    debugPrint('[CreateGroupPage] currentUserId length: ${widget.currentUserId.length}');
+    debugPrint('[CreateGroupPage] currentUserId is empty: ${widget.currentUserId.isEmpty}');
+    
     if (widget.currentUserId.isEmpty) {
       debugPrint('[CreateGroupPage] Warning: currentUserId is empty');
       setState(() {
         _errorMessage = 'User ID is missing. Please log in again.';
       });
+    } else {
+      debugPrint('[CreateGroupPage] currentUserId is valid: ${widget.currentUserId}');
     }
     _searchController.addListener(_onSearchChanged);
   }

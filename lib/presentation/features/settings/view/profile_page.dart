@@ -122,48 +122,84 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     _fetchProfileData();
+    // Add a timeout to prevent infinite loading
+    _addLoadingTimeout();
+  }
+
+  /// Add timeout to prevent infinite loading
+  void _addLoadingTimeout() {
+    Future.delayed(const Duration(seconds: 10), () {
+      if (mounted && _isLoadingChildren) {
+        setState(() {
+          _isLoadingChildren = false;
+        });
+        debugPrint("⚠️ Children loading timeout - forcing state to false");
+      }
+    });
   }
 
   /// ✅ Fetch profile and children
   Future<void> _fetchProfileData() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _isLoadingChildren = true;
+    });
 
     final authProvider = context.read<AuthProvider>();
+    
+    // First try to load from cache for immediate display
+    final cachedProfile = authProvider.getCachedUserProfile();
+    if (cachedProfile != null) {
+      _updateLocalDataFromProfile(cachedProfile);
+      setState(() => _isLoadingChildren = false);
+    }
+    
+    // Then fetch fresh data from API
     final success = await authProvider.fetchUserProfile();
 
     if (success && mounted) {
       final profile = authProvider.userProfile ?? {};
-
-      // ✅ Children inside profile["profile"]["children"]
-      final childrenList = (profile["profile"]?["children"] as List?) ?? [];
-
-      // ✅ Ensure profile image is absolute URL
-      String imageUrl = profile['profile_photo'] ?? '';
-      if (imageUrl.isNotEmpty && !imageUrl.startsWith("http")) {
-        imageUrl =
-        "http://10.10.13.27:8000${imageUrl}"; // ← Change base URL if needed
-      }
-
+      _updateLocalDataFromProfile(profile);
       setState(() {
-        _fullName = profile['full_name'] ?? '';
-        _email = profile['email'] ?? '';
-        _mobile = profile['phone_number'] ?? '';
-        _profileImageUrl = imageUrl;
-        _children = childrenList.map((child) {
-          return {
-            'name': child['name']?.toString() ?? '',
-            'age': child['age']?.toString() ?? '',
-          };
-        }).toList();
         _isLoading = false;
+        _isLoadingChildren = false;
       });
-
-      debugPrint(
-          "✅ Loaded Profile: $_fullName, $_email, $_mobile, $_children");
+      debugPrint("✅ Loaded Profile: $_fullName, $_email, $_mobile, $_children");
     } else {
       debugPrint("❌ Failed to fetch profile data.");
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _isLoadingChildren = false;
+      });
     }
+  }
+
+  /// Update local data from profile
+  void _updateLocalDataFromProfile(Map<String, dynamic> profile) {
+    // ✅ Children inside profile["children"]
+    final childrenList = (profile["children"] as List?) ?? [];
+
+    // ✅ Ensure profile image is absolute URL
+    String imageUrl = profile['profile_photo'] ?? '';
+    if (imageUrl.isNotEmpty && !imageUrl.startsWith("http")) {
+      imageUrl = "http://10.10.13.27:8000${imageUrl}";
+    }
+
+    setState(() {
+      _fullName = profile['full_name'] ?? '';
+      _email = profile['email'] ?? '';
+      _mobile = profile['phone_number'] ?? '';
+      _profileImageUrl = imageUrl;
+      _children = childrenList.map((child) {
+        return {
+          'name': child['name']?.toString() ?? '',
+          'age': child['age']?.toString() ?? '',
+        };
+      }).toList();
+      _isLoadingChildren = false; // Set loading to false when data is updated
+    });
+    
+    debugPrint("✅ Children data updated: ${_children.length} children, loading: $_isLoadingChildren");
   }
 
   /// ✅ Add new child & refresh
@@ -174,115 +210,144 @@ class _ProfilePageState extends State<ProfilePage> {
     // }
   }
 
-
-  void _showLogoutConfirmationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          elevation: 0,
-          backgroundColor: Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  color: AppColors.unavailableRed,
-                  size: 60.0,
-                ),
-                const SizedBox(height: 20.0),
-                const Text(
-                  'Are you sure you want to Log Out?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textColorPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-                const SizedBox(height: 10.0),
-                const Text(
-                  'This action cannot be undone. Are you sure you want to continue?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12.0,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.textColorSecondary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-                const SizedBox(height: 30.0),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12.0),
-                          side: const BorderSide(
-                            color: AppColors.primaryBlue,
-                            width: 1,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: 12.0,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryBlue,
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16.0),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Logging Out...')),
-                          );
-                          context.go(RoutePaths.login);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.unavailableRed,
-                          padding: const EdgeInsets.symmetric(vertical: 12.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          elevation: 3,
-                        ),
-                        child: const Text(
-                          'Log Out',
-                          style: TextStyle(
-                            fontSize: 12.0,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  /// Refresh children data specifically
+  Future<void> _refreshChildrenData() async {
+    setState(() => _isLoadingChildren = true);
+    
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final profile = authProvider.userProfile;
+      
+      if (profile != null) {
+        _updateLocalDataFromProfile(profile);
+        debugPrint("✅ Children data refreshed from AuthProvider");
+      } else {
+        // If no profile data, try to fetch it
+        debugPrint("⚠️ No profile data found, fetching fresh data...");
+        await _fetchProfileData();
+      }
+    } catch (e) {
+      debugPrint("❌ Error refreshing children data: $e");
+      setState(() => _isLoadingChildren = false);
+    }
   }
+
+  /// Force refresh children data (for debugging/testing)
+  void _forceRefreshChildren() {
+    debugPrint("🔄 Force refreshing children data...");
+    _refreshChildrenData();
+  }
+
+
+  // void _showLogoutConfirmationDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return Dialog(
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(12.0),
+  //         ),
+  //         elevation: 0,
+  //         backgroundColor: Colors.white,
+  //         child: Padding(
+  //           padding: const EdgeInsets.all(24.0),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               Icon(
+  //                 Icons.error_outline,
+  //                 color: AppColors.unavailableRed,
+  //                 size: 60.0,
+  //               ),
+  //               const SizedBox(height: 20.0),
+  //               const Text(
+  //                 'Are you sure you want to Log Out?',
+  //                 textAlign: TextAlign.center,
+  //                 style: TextStyle(
+  //                   fontSize: 16.0,
+  //                   fontWeight: FontWeight.w600,
+  //                   color: AppColors.textColorPrimary,
+  //                   fontFamily: 'Poppins',
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 10.0),
+  //               const Text(
+  //                 'This action cannot be undone. Are you sure you want to continue?',
+  //                 textAlign: TextAlign.center,
+  //                 style: TextStyle(
+  //                   fontSize: 12.0,
+  //                   fontWeight: FontWeight.w400,
+  //                   color: AppColors.textColorSecondary,
+  //                   fontFamily: 'Poppins',
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 30.0),
+  //               Row(
+  //                 mainAxisAlignment: MainAxisAlignment.spaceAround,
+  //                 children: [
+  //                   Expanded(
+  //                     child: OutlinedButton(
+  //                       onPressed: () => Navigator.of(context).pop(),
+  //                       style: OutlinedButton.styleFrom(
+  //                         padding: const EdgeInsets.symmetric(vertical: 12.0),
+  //                         side: const BorderSide(
+  //                           color: AppColors.primaryBlue,
+  //                           width: 1,
+  //                         ),
+  //                         shape: RoundedRectangleBorder(
+  //                           borderRadius: BorderRadius.circular(8.0),
+  //                         ),
+  //                       ),
+  //                       child: const Text(
+  //                         'Cancel',
+  //                         style: TextStyle(
+  //                           fontSize: 12.0,
+  //                           fontWeight: FontWeight.w600,
+  //                           color: AppColors.primaryBlue,
+  //                           fontFamily: 'Poppins',
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                   const SizedBox(width: 16.0),
+  //                   Expanded(
+  //                     child: ElevatedButton(
+  //                       onPressed: () {
+  //                         Navigator.of(context).pop();
+  //                         ScaffoldMessenger.of(context).showSnackBar(
+  //                           const SnackBar(content: Text('Logging Out...')),
+  //                         );
+  //                         context.go(RoutePaths.login);
+  //                       },
+  //                       style: ElevatedButton.styleFrom(
+  //                         backgroundColor: AppColors.unavailableRed,
+  //                         padding: const EdgeInsets.symmetric(vertical: 12.0),
+  //                         shape: RoundedRectangleBorder(
+  //                           borderRadius: BorderRadius.circular(8.0),
+  //                         ),
+  //                         elevation: 3,
+  //                       ),
+  //                       child: const Text(
+  //                         'Log Out',
+  //                         style: TextStyle(
+  //                           fontSize: 12.0,
+  //                           fontWeight: FontWeight.w600,
+  //                           color: Colors.white,
+  //                           fontFamily: 'Poppins',
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
 
   @override
   Widget build(BuildContext context) {
@@ -323,30 +388,34 @@ class _ProfilePageState extends State<ProfilePage> {
               );
 
               if (updatedData != null) {
+                // Update local state with new data
                 setState(() {
                   _fullName = updatedData['fullName'] ?? _fullName;
                   _email = updatedData['email'] ?? _email;
                   _mobile = updatedData['mobile'] ?? _mobile;
-
-                  // ✅ FIX — Place conversion HERE, not at class level
                   _children = (updatedData['children'] as List?)?.map((child) {
                     return {
                       'name': child['name']?.toString() ?? '',
                       'age': child['age']?.toString() ?? '',
                     };
                   }).toList() ?? _children;
-
-                  _profileImageUrl =
-                      updatedData['profileImageUrl']?.toString() ?? _profileImageUrl;
+                  _profileImageUrl = updatedData['profileImageUrl']?.toString() ?? _profileImageUrl;
+                  _isLoadingChildren = false; // Ensure loading state is false
                 });
+
+                // Refresh profile data to ensure consistency
+                await _fetchProfileData();
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Profile updated successfully!'),
+                    backgroundColor: Colors.green,
                   ),
                 );
+              } else {
+                // If no data returned, still refresh to get latest data
+                await _refreshChildrenData();
               }
-
             },
           ),
         ],
@@ -378,23 +447,24 @@ class _ProfilePageState extends State<ProfilePage> {
                                 )
                               : null,
                         ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryBlue,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                        ),
+                        // // TODO: Add child name to the profile page
+                        // Positioned(
+                        //   bottom: 0,
+                        //   right: 0,
+                        //   child: Container(
+                        //     padding: const EdgeInsets.all(4),
+                        //     decoration: BoxDecoration(
+                        //       color: AppColors.primaryBlue,
+                        //       shape: BoxShape.circle,
+                        //       border: Border.all(color: Colors.white, width: 2),
+                        //     ),
+                        //     child: const Icon(
+                        //       Icons.camera_alt,
+                        //       color: Colors.white,
+                        //       size: 20,
+                        //     ),
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),
@@ -494,65 +564,109 @@ class _ProfilePageState extends State<ProfilePage> {
                       ],
                     ),
                     child: _isLoadingChildren
-                        ? const Center(child: CircularProgressIndicator())
-                        : _children.isEmpty
-                        ? const Text(
-                      "No children added.",
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        color: AppColors.textColorPrimary,
-                      ),
-                    )
-                        : Column(
-                      children: _children.map((child) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  '${child['name']}: ${child['age']}',
-                                  style: const TextStyle(
-                                    fontSize: 16.0,
-                                    color: AppColors.textColorPrimary,
+                        ? const Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(),
+                                SizedBox(height: 8.0),
+                                Text(
+                                  'Loading children...',
+                                  style: TextStyle(
+                                    fontSize: 12.0,
+                                    color: AppColors.textColorSecondary,
                                     fontFamily: 'Poppins',
                                   ),
                                 ),
+                              ],
+                            ),
+                          )
+                        : _children.isEmpty
+                            ? const Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.child_care_outlined,
+                                      size: 48,
+                                      color: AppColors.textColorSecondary,
+                                    ),
+                                    SizedBox(height: 8.0),
+                                    Text(
+                                      "No children added yet.",
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        color: AppColors.textColorSecondary,
+                                        fontSize: 14.0,
+                                      ),
+                                    ),
+                                    Text(
+                                      "Add children in Edit Profile",
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        color: AppColors.textColorSecondary,
+                                        fontSize: 12.0,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : Column(
+                                children: _children.map((child) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.child_care,
+                                          size: 20,
+                                          color: AppColors.primaryBlue,
+                                        ),
+                                        const SizedBox(width: 8.0),
+                                        Expanded(
+                                          child: Text(
+                                            '${child['name']} (${child['age']} years old)',
+                                            style: const TextStyle(
+                                              fontSize: 16.0,
+                                              color: AppColors.textColorPrimary,
+                                              fontFamily: 'Poppins',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
                               ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
                   ),
 
 
                   const SizedBox(height: 30.0),
 
                   // Log Out Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => _showLogoutConfirmationDialog(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.unavailableRed,
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        elevation: 3,
-                      ),
-                      child: const Text(
-                        'Log Out',
-                        style: TextStyle(
-                          fontSize: 18.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                    ),
-                  ),
+                  // SizedBox(
+                  //   width: double.infinity,
+                  //   child: ElevatedButton(
+                  //     onPressed: () => _showLogoutConfirmationDialog(context),
+                  //     style: ElevatedButton.styleFrom(
+                  //       backgroundColor: AppColors.unavailableRed,
+                  //       padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  //       shape: RoundedRectangleBorder(
+                  //         borderRadius: BorderRadius.circular(12.0),
+                  //       ),
+                  //       elevation: 3,
+                  //     ),
+                  //     child: const Text(
+                  //       'Log Out',
+                  //       style: TextStyle(
+                  //         fontSize: 18.0,
+                  //         fontWeight: FontWeight.bold,
+                  //         color: Colors.white,
+                  //         fontFamily: 'Poppins',
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
                   const SizedBox(height: 20.0),
                 ],
               ),

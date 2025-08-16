@@ -5,18 +5,18 @@ import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/services/user_search_service.dart';
 import '../../../../data/models/group_model.dart';
 import '../../../../data/models/user_search_result_model.dart';
 import '../../../routes/route_observer.dart';
 import '../conversation_service.dart';
 import '../../../data/models/chat_model.dart' hide ChatMessageStatus;
+import '../../../common_providers/auth_provider.dart';
 
 
 class ChatListPage extends StatefulWidget {
-  final String currentUserId;
-
-  const ChatListPage({super.key, required this.currentUserId});
+  const ChatListPage({super.key});
 
   @override
   State<ChatListPage> createState() => _ChatListPageState();
@@ -29,6 +29,29 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
   final UserSearchService _userSearchService = UserSearchService();
   bool _isSearching = false;
   String? _searchError;
+  bool _isLoadingProfile = false;
+
+  // Get current user ID from AuthProvider
+  String? get currentUserId {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    return authProvider.currentUserId;
+  }
+
+  // Ensure user profile is loaded
+  Future<void> _ensureUserProfileLoaded() async {
+    if (currentUserId == null || currentUserId!.isEmpty) {
+      setState(() {
+        _isLoadingProfile = true;
+      });
+      
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.fetchUserProfile();
+      
+      setState(() {
+        _isLoadingProfile = false;
+      });
+    }
+  }
 
 
   DateTime _parseChatTime(String timeStr) {
@@ -104,7 +127,9 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
   @override
   void initState() {
     super.initState();
-    _refreshChats();
+    _ensureUserProfileLoaded().then((_) {
+      _refreshChats();
+    });
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -129,15 +154,20 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
 
   void _performSearch(String query) async {
     try {
+      debugPrint('[ChatListPage] Performing search for: "$query"');
       final results = await _userSearchService.searchUsers(query);
+      debugPrint('[ChatListPage] Search returned ${results.length} results');
+      
       if (mounted) {
         setState(() {
           _userSearchResults = results;
           _isSearching = false;
           _searchError = null;
         });
+        debugPrint('[ChatListPage] Search results updated in UI');
       }
     } catch (e) {
+      debugPrint('[ChatListPage] Search error: $e');
       if (mounted) {
         setState(() {
           _userSearchResults.clear();
@@ -151,6 +181,45 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
   @override
   Widget build(BuildContext context) {
     final isSearchMode = _searchController.text.trim().isNotEmpty;
+    
+    // Show loading if profile is being loaded
+    if (_isLoadingProfile) {
+      return Scaffold(
+        backgroundColor: Colors.grey[100],
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: AppColors.primaryBlue,
+          elevation: 0,
+          title: const Text(
+            'Chat',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20.0,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Poppins',
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text(
+                'Loading user profile...',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -169,18 +238,51 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
         centerTitle: true,
         actions: [
           TextButton(
-            onPressed: () {
-              if (widget.currentUserId.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('User ID is missing. Please log in again.')),
+            onPressed: () async {
+              try {
+                if (currentUserId == null || currentUserId!.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('User ID is missing. Please log in again.')),
+                  );
+                  return;
+                }
+                
+                debugPrint('[ChatListPage] Navigating to CreateGroupPage with currentUserId: $currentUserId');
+                debugPrint('[ChatListPage] Route path: ${RoutePaths.creategrouppage}');
+                
+                // Try navigation with await to catch any errors
+                final result = await context.push(
+                  RoutePaths.creategrouppage, 
+                  extra: {'currentUserId': currentUserId}
                 );
-                return;
+                
+                debugPrint('[ChatListPage] Successfully navigated to CreateGroupPage, result: $result');
+                
+                // Refresh chat list after returning from create group
+                _refreshChats();
+                
+              } catch (e) {
+                debugPrint('[ChatListPage] Error navigating to CreateGroupPage: $e');
+                
+                // Fallback: try with hardcoded path
+                try {
+                  debugPrint('[ChatListPage] Trying fallback navigation with hardcoded path');
+                  await context.push(
+                    '/group_create', 
+                    extra: {'currentUserId': currentUserId}
+                  );
+                  debugPrint('[ChatListPage] Fallback navigation successful');
+                  _refreshChats();
+                } catch (fallbackError) {
+                  debugPrint('[ChatListPage] Fallback navigation also failed: $fallbackError');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error navigating to Create Group: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
-              debugPrint('[ChatListPage] Navigating to CreateGroupPage with currentUserId: ${widget.currentUserId}');
-              context.push('/group_chat', extra: {'currentUserId': widget.currentUserId});
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Create Group Tapped!')),
-              );
             },
             child: const Text(
               'Create Group',
@@ -360,27 +462,64 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
         onTap: () async {
           // Try to get or create conversation before navigating
           try {
+            // Ensure user profile is loaded before proceeding
+            await _ensureUserProfileLoaded();
+            
+            if (currentUserId == null || currentUserId!.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('User ID is missing. Please log in again.')),
+              );
+              return;
+            }
+            
+            debugPrint('[ChatListPage] Starting chat with user: ${user.fullName}');
+            debugPrint('[ChatListPage] currentUserId: $currentUserId');
+            debugPrint('[ChatListPage] partnerId: ${user.id}');
+            
             final conversationId = await ChatService.getOrCreateConversation(
-              widget.currentUserId as int,
-              user.id, partnerName: '',
+              currentUserId!,
+              user.id, 
+              partnerName: user.fullName,
             );
 
             if (!mounted) return;
 
-            context.push(
-              RoutePaths.onetooneconversationpage,
-              extra: {
-                'chatPartnerName': user.fullName,
-                'chatPartnerId': user.id,
-                'currentUserId': widget.currentUserId,
-                'isGroupChat': false,
-                'isCurrentUserAdminInGroup': false,
-                'conversationId': conversationId,
-              },
-            );
+            if (conversationId != null) {
+              debugPrint('[ChatListPage] Conversation created/found: $conversationId');
+              context.push(
+                RoutePaths.onetooneconversationpage,
+                extra: {
+                  'chatPartnerName': user.fullName,
+                  'chatPartnerId': user.id,
+                  'currentUserId': currentUserId,
+                  'isGroupChat': false,
+                  'isCurrentUserAdminInGroup': false,
+                  'conversationId': conversationId,
+                },
+              );
+            } else {
+              // If conversation creation fails, try to use a default conversation ID
+              // This is a fallback for when the server doesn't support conversation creation
+              debugPrint('[ChatListPage] Using fallback conversation approach');
+              context.push(
+                RoutePaths.onetooneconversationpage,
+                extra: {
+                  'chatPartnerName': user.fullName,
+                  'chatPartnerId': user.id,
+                  'currentUserId': currentUserId,
+                  'isGroupChat': false,
+                  'isCurrentUserAdminInGroup': false,
+                  'conversationId': null, // Let the chat screen handle conversation creation
+                },
+              );
+            }
           } catch (e) {
+            debugPrint('[ChatListPage] Error starting chat: $e');
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to start chat: $e')),
+              SnackBar(
+                content: const Text('Starting chat... Please wait.'),
+                duration: const Duration(seconds: 2),
+              ),
             );
           }
         },
@@ -431,8 +570,7 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
       onTap: () {
         if (!chat.isGroupChat && chat.participants.isNotEmpty) {
           final partner = chat.participants.firstWhere(
-
-                (p) => p['id'].toString() != widget.currentUserId,
+            (p) => p['id'].toString() != currentUserId,
             orElse: () => null,
           );
 
@@ -448,7 +586,7 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
             extra: {
               'chatPartnerName': chat.name,
               'chatPartnerId': partner['id'].toString(),
-              'currentUserId': widget.currentUserId,
+              'currentUserId': currentUserId,
               'isGroupChat': false,
               'isCurrentUserAdminInGroup': false,
               'conversationId': chat.conversationId,
@@ -461,7 +599,7 @@ class _ChatListPageState extends State<ChatListPage> with RouteAware {
               'groupName': groupChat.name,
               'isGroupChat': true,
               'isCurrentUserAdminInGroup': groupChat.isCurrentUserAdminInGroup ?? false,
-              'currentUserId': widget.currentUserId,
+              'currentUserId': currentUserId,
               'conversationId': groupChat.conversationId,
             },
           );

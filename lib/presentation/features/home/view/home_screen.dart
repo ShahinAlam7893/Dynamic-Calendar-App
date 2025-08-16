@@ -79,57 +79,61 @@ class _NotificationIconWithBadgeState extends State<NotificationIconWithBadge> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        IconButton(
-          icon: Icon(
-            Icons.notifications,
-            color: Colors.white,
-            size: widget.iconSize,
-          ),
-          onPressed: () {
-            widget.onPressed();
-            // Refresh count after navigating to notifications
-            Future.delayed(const Duration(milliseconds: 500), () {
-              if (mounted) {
-                _loadUnreadCount();
-              }
-            });
-          },
-        ),
-        if (_unreadCount > 0)
-          Positioned(
-            right: 8,
-            top: 8,
-            child: Container(
-              padding: EdgeInsets.all(_unreadCount > 99 ? 4 : 6),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 3,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              constraints: const BoxConstraints(
-                minWidth: 20,
-                minHeight: 20,
-              ),
-              child: Text(
-                _unreadCount > 99 ? '99+' : _unreadCount.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
+
+    return GestureDetector(
+      onTap:  () {
+      widget.onPressed();
+      // Refresh count after navigating to notifications
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _loadUnreadCount();
+        }
+      });
+    },
+      child: Stack(
+        children: [
+           Icon(
+              Icons.notifications,
+              color: Colors.white,
+              size: widget.iconSize,
+            ),
+
+
+          //if (_unreadCount > 0)
+            Positioned(
+              right: 0,
+              top: 0,
+              child: Container(
+                padding: EdgeInsets.all(widget.iconSize * 0.1), // Responsive padding
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
                 ),
-                textAlign: TextAlign.center,
+                constraints: const BoxConstraints(
+                  minWidth: 0,
+                  minHeight: 10,
+                ),
+                child: Text(
+               _unreadCount.toString(),
+
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -507,7 +511,7 @@ class _HomePageState extends State<HomePage> {
                       NotificationIconWithBadge(
                         iconSize: screenWidth * 0.06,
                         onPressed: () {
-                          context.push('/notifications');
+                          context.pushReplacement('/notifications');
                         },
                       ),
                     ],

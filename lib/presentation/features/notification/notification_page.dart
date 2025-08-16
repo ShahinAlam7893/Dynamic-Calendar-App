@@ -95,7 +95,12 @@ class _NotificationPageState extends State<NotificationPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Notifications"),
+        foregroundColor: Colors.white,
         backgroundColor: AppColors.buttonPrimary,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () =>  context.pushReplacement('/home'), // Use pushReplacement to avoid going back to this page
+      ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

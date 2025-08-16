@@ -111,11 +111,13 @@ class ResetPasswordPage extends StatefulWidget {
 
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _currentPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
   @override
   void dispose() {
+    _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -125,28 +127,24 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      // Show loading indicator
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Resetting password...')),
       );
 
       final success = await authProvider.resetPassword(
+        currentPassword: _currentPasswordController.text,
         newPassword: _newPasswordController.text,
         confirmPassword: _confirmPasswordController.text,
       );
-
       if (success) {
-        // On success, navigate to the success page
         context.go('/pass_cng_succussful');
       } else {
-        // On failure, show an error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(authProvider.errorMessage ?? 'Password reset failed.')),
         );
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -192,6 +190,19 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 child: Column(
                   children: [
                     AuthInputField(
+                      controller: _currentPasswordController,
+                      labelText: 'Old Password *',
+                      hintText: 'Enter current password...',
+                      isPassword: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your current password';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20.0),
+                    AuthInputField(
                       controller: _newPasswordController,
                       labelText: 'New Password *',
                       hintText: 'Enter new password...',
@@ -202,6 +213,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         }
                         if (value.length < 6) {
                           return 'Password must be at least 6 characters';
+                        }
+                        if (value == _currentPasswordController.text) {
+                          return 'New password must be different from current password';
                         }
                         return null;
                       },
@@ -231,7 +245,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 child: Consumer<AuthProvider>(
                   builder: (context, authProvider, child) {
                     return ElevatedButton(
-                      onPressed: authProvider.isLoading ? null : () => _handlePasswordReset(context),
+                      onPressed: authProvider.isLoading
+                          ? null
+                          : () => _handlePasswordReset(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryBlue,
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -257,7 +273,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   },
                 ),
               ),
-              const SizedBox(height: 20.0),
             ],
           ),
         ),

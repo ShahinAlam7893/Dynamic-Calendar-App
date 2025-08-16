@@ -231,37 +231,68 @@ class _EditProfilePageState extends State<EditProfilePage> {
           return;
         }
 
-        // 1) Save profile info except children first (optional, depending on backend)
-        // ... your existing profile update code here ...
+        // Prepare update data
+        Map<String, dynamic> updateData = {
+          'full_name': _fullNameController.text.trim(),
+          'phone_number': _mobileController.text.trim(),
+        };
 
-        // 2) Add children by calling API individually
-        for (int i = 0; i < _childNameControllers.length; i++) {
-          String name = _childNameControllers[i].text;
-          int age = int.tryParse(_childAgeControllers[i].text) ?? 0;
-
-          if (name.isNotEmpty) {
-            bool success = await authProvider.addChild(
-               // or get token however your provider stores it
-              name,
-              age,
-            );
-
-            if (!success) {
-              _showErrorMessage('Failed to add child $name');
-              // You can choose to continue or break here
-            }
-          }
+        // Add profile image if selected
+        if (_pickedImageFile != null) {
+          updateData['profile_image'] = _pickedImageFile!.path;
         }
 
-        // 3) If all succeeds
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile and children updated successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          context.pop(); // or pass updated data as you already do
+        // Update profile
+        bool profileUpdated = await authProvider.updateUserProfile(updateData);
+
+        if (profileUpdated) {
+          // Add children by calling API individually
+          bool allChildrenSuccess = true;
+          for (int i = 0; i < _childNameControllers.length; i++) {
+            String name = _childNameControllers[i].text.trim();
+            int age = int.tryParse(_childAgeControllers[i].text.trim()) ?? 0;
+
+            if (name.isNotEmpty && age > 0) {
+              bool success = await authProvider.addChild(name, age);
+              if (!success) {
+                allChildrenSuccess = false;
+                _showErrorMessage('Failed to add child $name');
+              }
+            }
+          }
+
+          // Refresh user data to update all screens
+          await authProvider.refreshUserData();
+
+          if (mounted) {
+            // Return updated data to profile page
+            final updatedData = {
+              'fullName': _fullNameController.text.trim(),
+              'email': _emailController.text.trim(),
+              'mobile': _mobileController.text.trim(),
+              'children': _childNameControllers.asMap().entries.map((entry) {
+                int index = entry.key;
+                TextEditingController controller = entry.value;
+                return {
+                  'name': controller.text.trim(),
+                  'age': _childAgeControllers[index].text.trim(),
+                };
+              }).toList(),
+              'profileImageUrl': _pickedImageFile?.path ?? _currentProfileImageUrl,
+            };
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile updated successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+
+            // Pop with updated data
+            context.pop(updatedData);
+          }
+        } else {
+          _showErrorMessage('Failed to update profile');
         }
       } catch (e) {
         _showErrorMessage('Error updating profile: $e');
@@ -488,7 +519,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
               controller: _childNameControllers[index],
               labelText: 'Child\'s Name',
               hintText: 'Enter name',
-              validator: (v) => v == null || v.isEmpty ? 'Enter name' : null,
+              validator: (v) {
+                // Optional: If empty, skip validation
+                if (v == null || v.trim().isEmpty) return null;
+
+                // Example: If not empty, check length
+                if (v.trim().length < 3) {
+                  return 'Name must be at least 3 characters';
+                }
+                return null;
+              },
             ),
           ),
           const SizedBox(width: 16.0),
@@ -499,7 +539,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
               labelText: 'Age',
               hintText: 'Age',
               keyboardType: TextInputType.number,
-              validator: (v) => v == null || v.isEmpty ? 'Enter age' : null,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return null; // optional
+
+                final age = int.tryParse(v.trim());
+                if (age == null || age <= 0) {
+                  return 'Enter a valid age';
+                }
+                return null;
+              },
+
             ),
           ),
           if (index > 0)
