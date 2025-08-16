@@ -8,6 +8,8 @@ import 'package:circleslate/data/services/api_base_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:circleslate/core/utils/profile_data_manager.dart';
 
+import '../../core/network/endpoints.dart';
+
 class ApiEndpoints {
   static const String register = '/auth/register/';
   static const String login = '/auth/login/';
@@ -265,9 +267,9 @@ class AuthProvider extends ChangeNotifier {
     try {
       final token = _accessToken;
 
-      final url = Uri.parse('http://127.0.0.1:8000/api${ApiEndpoints.resetPassword}');
+      final url = Uri.parse('${Urls.baseUrl}${ApiEndpoints.resetPassword}');
 
-      final response = await http.patch(
+      final response = await http.put(
         url,
         headers: {
           'Authorization': 'Bearer $token',

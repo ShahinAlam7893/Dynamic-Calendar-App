@@ -136,7 +136,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         newPassword: _newPasswordController.text,
         confirmPassword: _confirmPasswordController.text,
       );
-
       if (success) {
         context.go('/pass_cng_succussful');
       } else {

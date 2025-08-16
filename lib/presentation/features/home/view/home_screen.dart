@@ -7,11 +7,13 @@ import 'package:circleslate/core/constants/shared_utilities.dart';
 import 'package:circleslate/presentation/common_providers/availability_provider.dart';
 import 'package:intl/intl.dart'; // For date formatting
 import 'package:circleslate/presentation/common_providers/auth_provider.dart';
-import 'package:circleslate/core/services/notification_service.dart';
-import 'package:circleslate/core/utils/profile_data_manager.dart';
-
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/notification_service.dart';
+import '../../../../presentation/common_providers/auth_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../widgets/calendar_part.dart';
-import '../widgets/defult_group_section.dart';
 
 class NotificationIconWithBadge extends StatefulWidget {
   final double iconSize;
@@ -24,8 +26,7 @@ class NotificationIconWithBadge extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<NotificationIconWithBadge> createState() =>
-      _NotificationIconWithBadgeState();
+  State<NotificationIconWithBadge> createState() => _NotificationIconWithBadgeState();
 }
 
 class _NotificationIconWithBadgeState extends State<NotificationIconWithBadge> {
@@ -78,54 +79,61 @@ class _NotificationIconWithBadgeState extends State<NotificationIconWithBadge> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        IconButton(
-          icon: Icon(
-            Icons.notifications,
-            color: Colors.white,
-            size: widget.iconSize,
-          ),
-          onPressed: () {
-            widget.onPressed();
-            // Refresh count after navigating to notifications
-            Future.delayed(const Duration(milliseconds: 500), () {
-              if (mounted) {
-                _loadUnreadCount();
-              }
-            });
-          },
-        ),
-        if (_unreadCount > 0)
-          Positioned(
-            right: 8,
-            top: 8,
-            child: Container(
-              padding: EdgeInsets.all(_unreadCount > 99 ? 4 : 6),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 3,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-              child: Text(
-                _unreadCount > 99 ? '99+' : _unreadCount.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
+
+    return GestureDetector(
+      onTap:  () {
+      widget.onPressed();
+      // Refresh count after navigating to notifications
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _loadUnreadCount();
+        }
+      });
+    },
+      child: Stack(
+        children: [
+           Icon(
+              Icons.notifications,
+              color: Colors.white,
+              size: widget.iconSize,
+            ),
+
+
+          //if (_unreadCount > 0)
+            Positioned(
+              right: 0,
+              top: 0,
+              child: Container(
+                padding: EdgeInsets.all(widget.iconSize * 0.1), // Responsive padding
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
                 ),
-                textAlign: TextAlign.center,
+                constraints: const BoxConstraints(
+                  minWidth: 0,
+                  minHeight: 10,
+                ),
+                child: Text(
+               _unreadCount.toString(),
+
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -134,6 +142,8 @@ class _NotificationIconWithBadgeState extends State<NotificationIconWithBadge> {
     super.dispose();
   }
 }
+
+
 
 class HeaderSection extends StatefulWidget {
   const HeaderSection({Key? key}) : super(key: key);
@@ -143,130 +153,67 @@ class HeaderSection extends StatefulWidget {
 }
 
 class _HeaderSectionState extends State<HeaderSection> {
-  String _childName = '';
-  bool _isLoadingChildren = false;
+  String childName = '';
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _loadChildren();
   }
 
-  /// Load user data from AuthProvider and local storage
-  Future<void> _loadUserData() async {
-    setState(() {
-      _isLoadingChildren = true;
-    });
-
-    try {
-      final authProvider = context.read<AuthProvider>();
-
-      // First, try to load from local storage (fast)
-      await _loadFromLocalStorage();
-
-      // Then fetch fresh data from API (background refresh)
-      await _fetchFreshData();
-    } catch (e) {
-      debugPrint("Error loading user data: $e");
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingChildren = false;
-        });
-      }
-    }
-  }
-
-  /// Load data from local storage for immediate display
-  Future<void> _loadFromLocalStorage() async {
-    final profileData = await ProfileDataManager.loadProfileData();
-    if (profileData != null) {
-      _updateChildNameFromProfile(profileData);
-    }
-  }
-
-  /// Fetch fresh data from API
-  Future<void> _fetchFreshData() async {
+  Future<void> _loadChildren() async {
     final authProvider = context.read<AuthProvider>();
-
-    // Fetch user profile if not already loaded
-    if (authProvider.userProfile == null) {
-      await authProvider.fetchUserProfile();
-    }
-
-    // Fetch children data
     final children = await authProvider.fetchChildren();
 
-    if (mounted && children.isNotEmpty) {
+    if (children.isNotEmpty && mounted) {
       setState(() {
-        _childName = children.first['name'] ?? '';
+        childName = children.first['name'] ?? '';
       });
     }
   }
 
-  /// Update child name from profile data
-  void _updateChildNameFromProfile(Map<String, dynamic> profile) {
-    final childName = ProfileDataManager.getChildName(profile);
-    if (childName != null) {
-      setState(() {
-        _childName = childName;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
-        // Show loading indicator if auth provider is loading
-        if (authProvider.isLoading || _isLoadingChildren) {
-          return const SizedBox(
-            height: 40,
-            child: Center(
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
-            ),
-          );
-        }
+    final authProvider = context.watch<AuthProvider>();
 
-        final profile = authProvider.userProfile ?? {};
-        final fullName = profile["full_name"] ?? "";
+    if (authProvider.isLoading) {
+      return const CircularProgressIndicator();
+    }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Hello, $fullName!",
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w400,
-                color: Colors.white,
-                fontFamily: 'Poppins',
-              ),
+    final profile = authProvider.userProfile ?? {};
+    final fullName = profile["full_name"] ?? "";
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Hello, $fullName!",
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w400,
+            color: Colors.white,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        if (childName.isNotEmpty)
+          Text(
+            "Manage $childName’s activities",
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: Color(0xCCFFFFFF),
+              fontFamily: 'Poppins',
             ),
-            if (_childName.isNotEmpty)
-              Text(
-                "Manage $_childName's activities",
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xCCFFFFFF),
-                  fontFamily: 'Poppins',
-                ),
-              ),
-          ],
-        );
-      },
+          ),
+      ],
     );
   }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }
+
+
+
+
 
 // --- AuthInputField --- (Copied from previous response for self-containment)
 class AuthInputField extends StatefulWidget {
@@ -294,6 +241,7 @@ class AuthInputField extends StatefulWidget {
   @override
   _AuthInputFieldState createState() => _AuthInputFieldState();
 }
+
 
 class _AuthInputFieldState extends State<AuthInputField> {
   bool _obscureText = true;
@@ -335,65 +283,53 @@ class _AuthInputFieldState extends State<AuthInputField> {
             hintText: widget.hintText,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(screenWidth * 0.01),
-              borderSide: const BorderSide(
-                color: AppColors.inputOutline,
-                width: 1,
-              ),
+              borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(screenWidth * 0.01),
-              borderSide: const BorderSide(
-                color: AppColors.inputOutline,
-                width: 1,
-              ),
+              borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(screenWidth * 0.01),
-              borderSide: const BorderSide(
-                color: AppColors.primaryBlue,
-                width: 1.5,
-              ),
+              borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
             ),
-            hintStyle: TextStyle(
-              color: AppColors.inputHintColor,
-              fontSize: hintFontSize,
-              fontWeight: FontWeight.w400,
-            ),
+            hintStyle: TextStyle(color: AppColors.inputHintColor, fontSize: hintFontSize, fontWeight: FontWeight.w400),
             filled: true,
             fillColor: Colors.white,
-            contentPadding: EdgeInsets.symmetric(
-              vertical: inputContentPaddingVertical,
-              horizontal: inputContentPaddingHorizontal,
-            ),
+            contentPadding: EdgeInsets.symmetric(vertical: inputContentPaddingVertical, horizontal: inputContentPaddingHorizontal),
             suffixIcon: widget.isPassword
                 ? IconButton(
-                    icon: Icon(
-                      _obscureText ? Icons.visibility : Icons.visibility_off,
-                      color: AppColors.textColorSecondary,
-                      size: screenWidth * 0.05,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureText = !_obscureText;
-                      });
-                    },
-                  )
+              icon: Icon(
+                _obscureText ? Icons.visibility : Icons.visibility_off,
+                color: AppColors.textColorSecondary,
+                size: screenWidth * 0.05,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscureText = !_obscureText;
+                });
+              },
+            )
                 : (widget.suffixIcon != null
-                      ? SizedBox(
-                          width: screenWidth * 0.08,
-                          height: screenWidth * 0.08,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: widget.suffixIcon,
-                          ),
-                        )
-                      : null),
+                ? SizedBox(
+              width: screenWidth * 0.08,
+              height: screenWidth * 0.08,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: widget.suffixIcon,
+              ),
+            )
+                : null),
           ),
         ),
       ],
     );
   }
 }
+
+
+
+
 
 // --- PlaceholderScreen for other routes, kept here for self-containment
 class PlaceholderScreen extends StatelessWidget {
@@ -419,9 +355,7 @@ class PlaceholderScreen extends StatelessWidget {
   // FIX: Use routerDelegate.currentConfiguration.uri.toString() to get the current location
   // This method should ideally be in a utility or a top-level widget that manages navigation state
   int _getCurrentIndex(BuildContext context) {
-    final String location = GoRouter.of(
-      context,
-    ).routerDelegate.currentConfiguration.uri.toString();
+    final String location = GoRouter.of(context).routerDelegate.currentConfiguration.uri.toString();
     if (location == '/home') return 0;
     if (location == '/up_coming_events') return 1;
     if (location == '/group_chat') return 2;
@@ -438,53 +372,28 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+
 class _HomePageState extends State<HomePage> {
+
   int _selectedIndex = 0; // For the bottom navigation bar
 
   // Controllers for Child Information
-  final List<TextEditingController> _childNameControllers = [
-    TextEditingController(),
-  ];
-  final List<TextEditingController> _childAgeControllers = [
-    TextEditingController(),
-  ];
+  final List<TextEditingController> _childNameControllers = [TextEditingController()];
+  final List<TextEditingController> _childAgeControllers = [TextEditingController()];
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeData();
-  }
-
-  /// Initialize data when home screen loads
-  Future<void> _initializeData() async {
-    final authProvider = context.read<AuthProvider>();
-
-    // Ensure user profile is loaded
-    if (!authProvider.isProfileLoaded) {
-      await authProvider.fetchUserProfile();
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Refresh data when dependencies change (e.g., when returning from other screens)
-    _refreshDataIfNeeded();
-  }
-
-  /// Refresh data if needed when returning to home screen
-  void _refreshDataIfNeeded() {
-    final authProvider = context.read<AuthProvider>();
-    if (authProvider.isProfileLoaded) {
-      // Data is already loaded, no need to refresh
-      return;
-    }
-
-    // Refresh data in background
-    Future.microtask(() async {
-      await authProvider.fetchUserProfile();
-    });
-  }
+  // State for Join Groups checkboxes
+  final Map<String, bool> _groupSelections = {
+    'Kindergarten': false,
+    '1st Grade': false,
+    '2nd Grade': false,
+    '3rd Grade': false,
+    '4th Grade': false,
+    'Soccer Team': false,
+    'Moms Group': false,
+    'Dads Group': false,
+    'Basketball': false,
+    'Art Class': false,
+  };
 
   @override
   void dispose() {
@@ -496,7 +405,6 @@ class _HomePageState extends State<HomePage> {
     }
     super.dispose();
   }
-
   void _addChildField() {
     setState(() {
       _childNameControllers.add(TextEditingController());
@@ -507,9 +415,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(
-      context,
-    ).size.height; // Not directly used here, but good for context
+    final screenHeight = MediaQuery.of(context).size.height; // Not directly used here, but good for context
 
     // Responsive font sizes
     final double headerNameFontSize = screenWidth * 0.055;
@@ -527,6 +433,7 @@ class _HomePageState extends State<HomePage> {
     final double legendFontSize = screenWidth * 0.032;
     final double saveButtonFontSize = screenWidth * 0.04;
 
+
     // Responsive spacing
     final double largeSpacing = screenWidth * 0.05;
     final double mediumSpacing = screenWidth * 0.04;
@@ -542,89 +449,61 @@ class _HomePageState extends State<HomePage> {
         children: [
           // Top Header Section
           Container(
-            padding: EdgeInsets.fromLTRB(
-              screenWidth * 0.06,
-              screenHeight * 0.05,
-              screenWidth * 0.06,
-              screenHeight * 0.03,
-            ), // Responsive padding
+            padding: EdgeInsets.fromLTRB(screenWidth * 0.06, screenHeight * 0.05, screenWidth * 0.06, screenHeight * 0.03), // Responsive padding
             decoration: BoxDecoration(
               color: AppColors.buttonPrimary,
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(screenWidth * 0.05),
-              ), // Responsive border radius
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(screenWidth * 0.05)), // Responsive border radius
             ),
             child: SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment
-                        .spaceBetween, // Changed to spaceBetween
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween, // Changed to spaceBetween
                     children: [
                       // This inner Row groups the profile picture and text
                       Row(
-                        mainAxisAlignment: MainAxisAlignment
-                            .start, // Keep this inner row content aligned to start
+                        mainAxisAlignment: MainAxisAlignment.start, // Keep this inner row content aligned to start
                         children: [
                           GestureDetector(
                             onTap: () {
-                              context.push(
-                                '/profile',
-                              ); // Replace with your actual profile route
+                              context.push('/profile'); // Replace with your actual profile route
                             },
                             child: Container(
-                              width:
-                                  screenWidth *
-                                  0.12, // Responsive profile picture size
+                              width: screenWidth * 0.12, // Responsive profile picture size
                               height: screenWidth * 0.12,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: screenWidth * 0.005,
-                                ), // Responsive border width
+                                border: Border.all(color: Colors.white, width: screenWidth * 0.005), // Responsive border width
                               ),
                               child: ClipOval(
                                 child: Consumer<AuthProvider>(
                                   builder: (context, auth, _) {
-                                    final photo =
-                                        auth.userProfile?["profile_photo"] ??
-                                        "";
+                                    final photo = auth.userProfile?["profile_photo"] ?? "";
 
                                     if (photo.toString().isNotEmpty) {
-                                      final imageUrl =
-                                          photo.toString().startsWith("http")
+                                      final imageUrl = photo.toString().startsWith("http")
                                           ? photo.toString()
                                           : "http://10.10.13.27:8000$photo";
 
                                       return Image.network(
                                         imageUrl,
                                         fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                              return Icon(
-                                                Icons.person,
-                                                size: screenWidth * 0.09,
-                                                color: Colors.white,
-                                              );
-                                            },
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Icon(Icons.person, size: screenWidth * 0.09, color: Colors.white);
+                                        },
                                       );
                                     } else {
-                                      return Icon(
-                                        Icons.person,
-                                        size: screenWidth * 0.09,
-                                        color: Colors.white,
-                                      );
+                                      return Icon(Icons.person, size: screenWidth * 0.09, color: Colors.white);
                                     }
                                   },
                                 ),
                               ),
+
                             ),
                           ),
-                          SizedBox(
-                            width: screenWidth * 0.03,
-                          ), // Responsive spacing
+
+                          SizedBox(width: screenWidth * 0.03), // Responsive spacing
                           const HeaderSection(),
                         ],
                       ),
@@ -632,25 +511,21 @@ class _HomePageState extends State<HomePage> {
                       NotificationIconWithBadge(
                         iconSize: screenWidth * 0.06,
                         onPressed: () {
-                          context.push('/notifications');
+                          context.pushReplacement('/notifications');
                         },
                       ),
                     ],
                   ),
                   SizedBox(height: largeSpacing), // Responsive spacing
+
                   Row(
                     children: [
-                      Icon(
-                        Icons.circle,
-                        size: screenWidth * 0.03,
-                        color: Colors.green,
-                      ), // Responsive icon size
+                      Icon(Icons.circle, size: screenWidth * 0.03, color: Colors.green), // Responsive icon size
                       SizedBox(width: extraSmallSpacing), // Responsive spacing
                       Text(
                         'Available for playdates',
                         style: TextStyle(
-                          fontSize:
-                              availabilityTextFontSize, // Responsive font size
+                          fontSize: availabilityTextFontSize, // Responsive font size
                           color: Colors.white,
                           fontWeight: FontWeight.w500,
                           fontFamily: 'Poppins',
@@ -662,21 +537,18 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+
           // Main Content Area (Scrollable)
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: screenWidth * 0.06,
-                vertical: mediumSpacing,
-              ), // Responsive padding
+              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06, vertical: mediumSpacing), // Responsive padding
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Quick Actions',
                     style: TextStyle(
-                      fontSize:
-                          quickActionTitleFontSize, // Responsive font size
+                      fontSize: quickActionTitleFontSize, // Responsive font size
                       fontWeight: FontWeight.w500,
                       color: AppColors.textColorPrimary,
                       fontFamily: 'Poppins',
@@ -688,16 +560,7 @@ class _HomePageState extends State<HomePage> {
                       Expanded(
                         child: _buildQuickActionCard(
                           context: context, // Pass context
-                          icon: Image.asset(
-                            AppAssets.plusIcon,
-                            width: screenWidth * 0.06,
-                            height: screenWidth * 0.06,
-                            errorBuilder: (context, error, stackTrace) => Icon(
-                              Icons.add_circle_outline,
-                              size: screenWidth * 0.06,
-                              color: AppColors.primaryBlue,
-                            ),
-                          ), // Responsive icon size
+                          icon: Image.asset(AppAssets.plusIcon, width: screenWidth * 0.06, height: screenWidth * 0.06, errorBuilder: (context, error, stackTrace) => Icon(Icons.add_circle_outline, size: screenWidth * 0.06, color: AppColors.primaryBlue)), // Responsive icon size
                           title: 'Add Event',
                           onTap: () {
                             context.push('/create_event');
@@ -711,23 +574,12 @@ class _HomePageState extends State<HomePage> {
                       Expanded(
                         child: _buildQuickActionCard(
                           context: context, // Pass context
-                          icon: Image.asset(
-                            AppAssets.eventCalendarIcon,
-                            width: screenWidth * 0.06,
-                            height: screenWidth * 0.06,
-                            errorBuilder: (context, error, stackTrace) => Icon(
-                              Icons.calendar_month,
-                              size: screenWidth * 0.06,
-                              color: AppColors.primaryBlue,
-                            ),
-                          ), // Responsive icon size
+                          icon: Image.asset(AppAssets.eventCalendarIcon, width: screenWidth * 0.06, height: screenWidth * 0.06, errorBuilder: (context, error, stackTrace) => Icon(Icons.calendar_month, size: screenWidth * 0.06, color: AppColors.primaryBlue)), // Responsive icon size
                           title: 'View Events',
                           onTap: () {
                             context.push('/up_coming_events');
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('View Events Tapped'),
-                              ),
+                              const SnackBar(content: Text('View Events Tapped')),
                             );
                           },
                         ),
@@ -735,16 +587,13 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                   SizedBox(height: mediumSpacing), // Responsive spacing
+
                   // Child Information Section
                   Container(
-                    padding: EdgeInsets.all(
-                      screenWidth * 0.04,
-                    ), // Responsive padding
+                    padding: EdgeInsets.all(screenWidth * 0.04), // Responsive padding
                     decoration: BoxDecoration(
                       border: Border.all(color: AppColors.primaryBlue),
-                      borderRadius: BorderRadius.circular(
-                        screenWidth * 0.03,
-                      ), // Responsive border radius
+                      borderRadius: BorderRadius.circular(screenWidth * 0.03), // Responsive border radius
                       color: const Color(0x26D8ECFF),
                       boxShadow: [
                         BoxShadow(
@@ -762,8 +611,7 @@ class _HomePageState extends State<HomePage> {
                             Text(
                               'Child Information *',
                               style: TextStyle(
-                                fontSize:
-                                    sectionTitleFontSize, // Responsive font size
+                                fontSize: sectionTitleFontSize, // Responsive font size
                                 fontWeight: FontWeight.w500,
                                 color: AppColors.textColorPrimary,
                                 fontFamily: 'Poppins',
@@ -772,21 +620,15 @@ class _HomePageState extends State<HomePage> {
                             GestureDetector(
                               onTap: _addChildField,
                               child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: screenWidth * 0.025,
-                                  vertical: screenWidth * 0.01,
-                                ), // Responsive padding
+                                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.025, vertical: screenWidth * 0.01), // Responsive padding
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(
-                                    screenWidth * 0.015,
-                                  ), // Responsive border radius
+                                  borderRadius: BorderRadius.circular(screenWidth * 0.015), // Responsive border radius
                                   color: const Color(0xFFD8ECFF),
                                 ),
                                 child: Text(
                                   '+ Add Another Child',
                                   style: TextStyle(
-                                    fontSize:
-                                        childInfoAddChildFontSize, // Responsive font size
+                                    fontSize: childInfoAddChildFontSize, // Responsive font size
                                     fontWeight: FontWeight.w400,
                                     color: AppColors.primaryBlue,
                                     fontFamily: 'Poppins',
@@ -803,46 +645,33 @@ class _HomePageState extends State<HomePage> {
                           itemCount: _childNameControllers.length,
                           itemBuilder: (context, index) {
                             return Padding(
-                              padding: EdgeInsets.only(
-                                bottom: screenWidth * 0.04,
-                              ), // Responsive padding
+                              padding: EdgeInsets.only(bottom: screenWidth * 0.04), // Responsive padding
                               child: Stack(
                                 clipBehavior: Clip.none,
                                 children: [
                                   Container(
-                                    padding: EdgeInsets.all(
-                                      screenWidth * 0.04,
-                                    ), // Responsive padding
+                                    padding: EdgeInsets.all(screenWidth * 0.04), // Responsive padding
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(
-                                        screenWidth * 0.03,
-                                      ), // Responsive border radius
-                                      border: Border.all(
-                                        color: AppColors.primaryBlue,
-                                      ),
+                                      borderRadius: BorderRadius.circular(screenWidth * 0.03), // Responsive border radius
+                                      border: Border.all(color: AppColors.primaryBlue),
                                       color: Colors.white,
                                     ),
                                     child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Expanded(
                                           flex: 2,
                                           child: AuthInputField(
-                                            controller:
-                                                _childNameControllers[index],
+                                            controller: _childNameControllers[index],
                                             labelText: 'Child\'s Name',
                                             hintText: 'Child\'s name please..',
                                           ),
                                         ),
-                                        SizedBox(
-                                          width: screenWidth * 0.03,
-                                        ), // Responsive spacing
+                                        SizedBox(width: screenWidth * 0.03), // Responsive spacing
                                         Expanded(
                                           flex: 1,
                                           child: AuthInputField(
-                                            controller:
-                                                _childAgeControllers[index],
+                                            controller: _childAgeControllers[index],
                                             labelText: 'Age',
                                             hintText: 'Age',
                                             keyboardType: TextInputType.number,
@@ -852,29 +681,19 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   ),
                                   Positioned(
-                                    top:
-                                        -screenWidth *
-                                        0.025, // Responsive position
-                                    left:
-                                        screenWidth *
-                                        0.04, // Responsive position
+                                    top: -screenWidth * 0.025, // Responsive position
+                                    left: screenWidth * 0.04, // Responsive position
                                     child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: screenWidth * 0.025,
-                                        vertical: screenWidth * 0.01,
-                                      ), // Responsive padding
+                                      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.025, vertical: screenWidth * 0.01), // Responsive padding
                                       decoration: BoxDecoration(
                                         color: AppColors.primaryBlue,
-                                        borderRadius: BorderRadius.circular(
-                                          screenWidth * 0.05,
-                                        ), // Responsive border radius
+                                        borderRadius: BorderRadius.circular(screenWidth * 0.05), // Responsive border radius
                                       ),
                                       child: Text(
                                         'Child ${index + 1}',
                                         style: TextStyle(
                                           color: Colors.white,
-                                          fontSize:
-                                              childInfoChildNumFontSize, // Responsive font size
+                                          fontSize: childInfoChildNumFontSize, // Responsive font size
                                           fontWeight: FontWeight.w500,
                                           fontFamily: 'Poppins',
                                         ),
@@ -883,58 +702,40 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   if (index > 0)
                                     Positioned(
-                                      top:
-                                          -screenWidth *
-                                          0.025, // Responsive position
-                                      right:
-                                          screenWidth *
-                                          0.005, // Responsive position
+                                      top: -screenWidth * 0.025, // Responsive position
+                                      right: screenWidth * 0.005, // Responsive position
                                       child: Container(
-                                        height:
-                                            screenWidth *
-                                            0.05, // Responsive size
+                                        height: screenWidth * 0.05, // Responsive size
                                         width: screenWidth * 0.05,
                                         decoration: BoxDecoration(
                                           color: Colors.red,
                                           shape: BoxShape.circle,
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.black.withOpacity(
-                                                0.1,
-                                              ),
+                                              color: Colors.black.withOpacity(0.1),
                                               blurRadius: 2,
-                                            ),
+                                            )
                                           ],
                                         ),
                                         child: IconButton(
                                           constraints: const BoxConstraints(),
-                                          padding: EdgeInsets.all(
-                                            screenWidth * 0.01,
-                                          ), // Responsive padding
-                                          icon: Icon(
-                                            Icons.close_rounded,
-                                            color: Colors.white,
-                                            size: screenWidth * 0.03,
-                                          ), // Responsive icon size
+                                          padding: EdgeInsets.all(screenWidth * 0.01), // Responsive padding
+                                          icon: Icon(Icons.close_rounded, color: Colors.white, size: screenWidth * 0.03), // Responsive icon size
                                           onPressed: () {
                                             setState(() {
-                                              _childNameControllers[index]
-                                                  .dispose();
-                                              _childAgeControllers[index]
-                                                  .dispose();
-                                              _childNameControllers.removeAt(
-                                                index,
-                                              );
-                                              _childAgeControllers.removeAt(
-                                                index,
-                                              );
+                                              _childNameControllers[index].dispose();
+                                              _childAgeControllers[index].dispose();
+                                              _childNameControllers.removeAt(index);
+                                              _childAgeControllers.removeAt(index);
                                             });
                                           },
                                         ),
                                       ),
+
                                     ),
                                 ],
                               ),
+
                             );
                           },
                         ),
@@ -946,33 +747,20 @@ class _HomePageState extends State<HomePage> {
                               bool allSuccess = true;
 
                               // Loop through each child entry
-                              for (
-                                int i = 0;
-                                i < _childNameControllers.length;
-                                i++
-                              ) {
-                                String name = _childNameControllers[i].text
-                                    .trim();
-                                String ageText = _childAgeControllers[i].text
-                                    .trim();
+                              for (int i = 0; i < _childNameControllers.length; i++) {
+                                String name = _childNameControllers[i].text.trim();
+                                String ageText = _childAgeControllers[i].text.trim();
 
                                 if (name.isEmpty || ageText.isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "Please fill in all child details.",
-                                      ),
-                                    ),
+                                    const SnackBar(content: Text("Please fill in all child details.")),
                                   );
                                   allSuccess = false;
                                   continue;
                                 }
 
                                 int age = int.tryParse(ageText) ?? 0;
-                                bool success = await authProvider.addChild(
-                                  name,
-                                  age,
-                                );
+                                bool success = await authProvider.addChild(name, age);
 
                                 if (!success) {
                                   allSuccess = false;
@@ -981,16 +769,11 @@ class _HomePageState extends State<HomePage> {
 
                               if (allSuccess) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "Children saved successfully!",
-                                    ),
-                                  ),
+                                  const SnackBar(content: Text("Children saved successfully!")),
                                 );
 
                                 // Refresh children list in Home Page
-                                final children = await authProvider
-                                    .fetchChildren();
+                                final children = await authProvider.fetchChildren();
                                 setState(() {
                                   // Optionally update local state if you show them immediately
                                 });
@@ -1003,11 +786,7 @@ class _HomePageState extends State<HomePage> {
                                 });
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "Some children could not be saved.",
-                                    ),
-                                  ),
+                                  const SnackBar(content: Text("Some children could not be saved.")),
                                 );
                               }
                             },
@@ -1015,9 +794,7 @@ class _HomePageState extends State<HomePage> {
                               shadowColor: const Color(0x1A000000),
                               backgroundColor: AppColors.primaryBlue,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  screenWidth * 0.02,
-                                ),
+                                borderRadius: BorderRadius.circular(screenWidth * 0.02),
                               ),
                               padding: EdgeInsets.symmetric(
                                 vertical: screenWidth * 0.025,
@@ -1026,20 +803,53 @@ class _HomePageState extends State<HomePage> {
                             ),
                             child: Text(
                               'Save',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: saveButtonFontSize,
-                              ),
+                              style: TextStyle(color: Colors.white, fontSize: saveButtonFontSize),
                             ),
                           ),
-                        ),
+                        )
+
                       ],
                     ),
                   ),
                   SizedBox(height: mediumSpacing), // Responsive spacing
 
-                  const JoinGroupsSection(),
+                  // Join Groups Section
+                  Text(
+                    'Join Groups *',
+                    style: TextStyle(
+                      fontSize: sectionTitleFontSize, // Responsive font size
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textColorPrimary,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                  Text(
+                    "Select one or more groups you'd like to join",
+                    style: TextStyle(
+                      fontSize: groupSelectionHintFontSize, // Responsive font size
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0x991B1D2A),
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                  SizedBox(height: extraSmallSpacing), // Responsive spacing
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: screenWidth / (screenWidth * 0.3), // Responsive aspect ratio
+                      crossAxisSpacing: screenWidth * 0.025, // Responsive spacing
+                      mainAxisSpacing: screenWidth * 0.025, // Responsive spacing
+                    ),
+                    itemCount: _groupSelections.length,
+                    itemBuilder: (context, index) {
+                      String groupName = _groupSelections.keys.elementAt(index);
+                      return _buildCheckboxTile(context, groupName); // Pass context
+                    },
+                  ),
                   SizedBox(height: mediumSpacing), // Responsive spacing
+
                   // Calendar Section
                   Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -1054,7 +864,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
   Widget _buildQuickActionCard({
     required BuildContext context, // Added context
     required Widget icon,
@@ -1072,13 +881,8 @@ class _HomePageState extends State<HomePage> {
         padding: EdgeInsets.all(cardPadding), // Responsive padding
         decoration: BoxDecoration(
           color: AppColors.quickActionCardBackground,
-          borderRadius: BorderRadius.circular(
-            screenWidth * 0.03,
-          ), // Responsive border radius
-          border: Border.all(
-            color: AppColors.quickActionCardBorder,
-            width: 1.0,
-          ),
+          borderRadius: BorderRadius.circular(screenWidth * 0.03), // Responsive border radius
+          border: Border.all(color: AppColors.quickActionCardBorder, width: 1.0),
         ),
         child: Column(
           children: [
@@ -1100,31 +904,55 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildCalendarGrid(
-    BuildContext context,
-    Map<int, int> calendarDateStates,
-  ) {
+  Widget _buildCheckboxTile(BuildContext context, String title) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final double weekdayFontSize =
-        screenWidth * 0.035; // Responsive weekday font size
-    final double dateNumberFontSize =
-        screenWidth * 0.04; // Responsive date number font size
-    final double cellSpacing =
-        screenWidth * 0.01; // Responsive spacing between cells
-    final double borderRadius =
-        screenWidth * 0.02; // Responsive border radius for date cells
+    final double titleFontSize = screenWidth * 0.038; // Responsive font size
+
+    return Container(
+      decoration: BoxDecoration(
+        color: _groupSelections[title]! ? AppColors.primaryBlue.withOpacity(0.1) : Colors.white,
+        borderRadius: BorderRadius.circular(screenWidth * 0.02), // Responsive border radius
+        border: Border.all(
+          color: _groupSelections[title]! ? AppColors.primaryBlue : AppColors.inputOutline,
+          width: 1.0,
+        ),
+      ),
+      child: CheckboxListTile(
+        title: Text(
+          title,
+          style: TextStyle(
+            color: _groupSelections[title]! ? AppColors.primaryBlue : AppColors.textColorPrimary,
+            fontFamily: 'Poppins',
+            fontSize: titleFontSize, // Responsive font size
+          ),
+        ),
+        value: _groupSelections[title],
+        onChanged: (bool? newValue) {
+          setState(() {
+            _groupSelections[title] = newValue!;
+          });
+        },
+        controlAffinity: ListTileControlAffinity.leading,
+        activeColor: AppColors.primaryBlue,
+        checkColor: Colors.white,
+        contentPadding: EdgeInsets.zero, // Keep zero for tight fit inside the container
+      ),
+    );
+  }
+
+  Widget _buildCalendarGrid(BuildContext context, Map<int, int> calendarDateStates) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double weekdayFontSize = screenWidth * 0.035; // Responsive weekday font size
+    final double dateNumberFontSize = screenWidth * 0.04; // Responsive date number font size
+    final double cellSpacing = screenWidth * 0.01; // Responsive spacing between cells
+    final double borderRadius = screenWidth * 0.02; // Responsive border radius for date cells
 
     final List<String> weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
     final List<DateTime> calendarDates = [];
 
-    DateTime startDate = DateTime(
-      2025,
-      6,
-      29,
-    ); // Start from the Sunday before July 1st
+    DateTime startDate = DateTime(2025, 6, 29); // Start from the Sunday before July 1st
 
-    for (int i = 0; i < 35; i++) {
-      // Display 5 weeks (7 days * 5 rows = 35 days)
+    for (int i = 0; i < 35; i++) { // Display 5 weeks (7 days * 5 rows = 35 days)
       calendarDates.add(startDate.add(Duration(days: i)));
     }
 
@@ -1168,9 +996,7 @@ class _HomePageState extends State<HomePage> {
             final date = calendarDates[index];
             final bool isCurrentMonth = date.month == 7 && date.year == 2025;
 
-            final state = isCurrentMonth
-                ? calendarDateStates[date.day] ?? 2
-                : 2;
+            final state = isCurrentMonth ? calendarDateStates[date.day] ?? 2 : 2;
 
             Color bgColor = Colors.transparent;
             Color borderColor = Colors.transparent;
@@ -1197,22 +1023,18 @@ class _HomePageState extends State<HomePage> {
               textColor = AppColors.dateText.withOpacity(0.5);
             }
 
+
             return GestureDetector(
               onTap: isCurrentMonth
                   ? () {
-                      Provider.of<AvailabilityProvider>(
-                        context,
-                        listen: false,
-                      ).toggleDateState(date.day);
-                    }
+                Provider.of<AvailabilityProvider>(context, listen: false).toggleDateState(date.day);
+              }
                   : null,
               child: Container(
                 decoration: BoxDecoration(
                   color: bgColor,
                   border: Border.all(color: borderColor, width: 1.5),
-                  borderRadius: BorderRadius.circular(
-                    borderRadius,
-                  ), // Responsive border radius
+                  borderRadius: BorderRadius.circular(borderRadius), // Responsive border radius
                 ),
                 child: Center(
                   child: Text(

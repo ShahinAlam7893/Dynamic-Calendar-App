@@ -45,10 +45,10 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
   bool _isConversationReady = false;
   bool _isTyping = false;
   bool _isSomeoneTyping = false;
-  
+
   // Store user images for better performance
   final Map<String, String?> _userImages = {};
-  
+
   // Group information
   String? _groupImageUrl;
   int _memberCount = 0;
@@ -100,9 +100,9 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('accessToken');
-      
+
       if (token == null) return;
-      
+
       final response = await http.get(
         Uri.parse('http://10.10.13.27:8000/api/chat/conversations/${widget.groupId}/'),
         headers: {
@@ -110,7 +110,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
           'Content-Type': 'application/json',
         },
       );
-      
+
       if (response.statusCode == 200) {
         final groupData = jsonDecode(response.body);
         setState(() {
@@ -153,7 +153,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
       debugPrint('[GroupConversationPage] Connecting to WebSocket...');
       await _groupChatSocketService.connect(widget.groupId, token);
       debugPrint('[GroupConversationPage] WebSocket connected successfully');
-      
+
       // Monitor connection status
       _groupChatSocketService.connectionStatusStream.listen((isConnected) {
         debugPrint('[GroupConversationPage] WebSocket connection status: $isConnected');
@@ -163,13 +163,13 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
           });
         }
       });
-      
+
     } catch (e) {
       debugPrint('[GroupConversationPage] WebSocket connection failed: $e');
       setState(() {
         _isConversationReady = false;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -184,7 +184,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
   void _handleIncomingMessage(Message message) async {
     // Get real user image URL
     String? senderImageUrl = await _getUserImageUrl(message.senderId);
-    
+
     final storedMessage = StoredMessage(
       id: message.id,
       text: message.content,
@@ -215,7 +215,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     if (_userImages.containsKey(userId)) {
       return _userImages[userId];
     }
-    
+
     // Get from API
     String? imageUrl;
     if (userId == widget.currentUserId) {
@@ -225,7 +225,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
       // Other user - get from API
       imageUrl = await UserImageHelper.getUserImageUrl(userId);
     }
-    
+
     // Cache the result
     _userImages[userId] = imageUrl;
     return imageUrl;
@@ -277,7 +277,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     } catch (e) {
       debugPrint('[GroupConversationPage] Failed to send message: $e');
       await MessageStorageService.updateMessageStatus(widget.groupId, message.id, MessageStatus.failed, clientMessageId: clientMessageId);
-      
+
       // Show error to user
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -492,7 +492,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
 
   Widget _buildMessageInput() {
     final bool canSend = _isConversationReady && _messageController.text.trim().isNotEmpty;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       decoration: BoxDecoration(
@@ -560,5 +560,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     );
   }
 }
+
+
 
 
