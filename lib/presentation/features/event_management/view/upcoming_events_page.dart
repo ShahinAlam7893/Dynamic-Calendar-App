@@ -1,4 +1,3 @@
-import 'package:circleslate/main.dart';
 import 'package:circleslate/presentation/features/event_management/controllers/eventManagementControllers.dart';
 import 'package:circleslate/presentation/features/event_management/models/eventsModels.dart';
 import 'package:circleslate/presentation/routes/app_router.dart';
@@ -111,7 +110,7 @@ class _UpcomingEventsPageState extends State<UpcomingEventsPage> {
     // Added BuildContext context
     Color statusBackgroundColor;
     Color statusTextColor;
- 
+
     if (event.status == 'Open') {
       statusBackgroundColor = AppColors.openStatusColor;
       statusTextColor = AppColors.openStatusText;

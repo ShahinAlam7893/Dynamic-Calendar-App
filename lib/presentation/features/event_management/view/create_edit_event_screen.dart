@@ -1,8 +1,13 @@
-import 'package:circleslate/presentation/features/event_management/view/create_edit_event_screen.dart';
+import 'dart:convert';
+
+import 'package:circleslate/core/network/endpoints.dart';
+import 'package:circleslate/presentation/features/event_management/view/direct_invite_page.dart';
 import 'package:circleslate/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart'; // Import go_router for navigation
-import 'package:intl/intl.dart'; // For date formatting
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // For date formatting
 
 // --- AppColors ---
 // Defined here for self-containment. In a real project, this would be a shared file.
@@ -11,7 +16,9 @@ class AppColors {
   static const Color inputBorderColor = Colors.grey;
   static const Color textColorSecondary = Color(0xFF333333);
   static const Color inputHintColor = Colors.grey;
-  static const Color lightBlueBackground = Color(0x1AD8ECFF); // Used for the checkbox container background
+  static const Color lightBlueBackground = Color(
+    0x1AD8ECFF,
+  ); // Used for the checkbox container background
   static const Color textDark = Color(0xE51B1D2A);
   static const Color textMedium = Color(0x991B1D2A);
   static const Color textLight = Color(0xB21B1D2A);
@@ -29,17 +36,29 @@ class AppColors {
   static const Color quickActionCardBackground = Color(0xFFE3F2FD);
   static const Color quickActionCardBorder = Color(0xFF90CAF9);
   static const Color openStatusColor = Color(0xFFD8ECFF);
-  static const Color openStatusText = Color(0xA636D399); // This color looks more green/teal in the image
-  static const Color rideNeededStatusColor = Color(0x1AF87171); // Light red background
-  static const Color rideNeededStatusText = Color(0xFFF87171); // Darker red text
-  static const Color toggleButtonActiveBg = Color(0xFF4285F4); // Primary blue for active button background
-  static const Color toggleButtonActiveText = Colors.white; // White text for active button
-  static const Color toggleButtonInactiveBg = Colors.white; // White background for inactive button
-  static const Color toggleButtonInactiveText = Color(0xFF4285F4); // Primary blue text for inactive button
-  static const Color toggleButtonBorder = Color(0xFFE0E0E0); // Light grey border for inactive button
+  static const Color openStatusText = Color(
+    0xA636D399,
+  ); // This color looks more green/teal in the image
+  static const Color rideNeededStatusColor = Color(
+    0x1AF87171,
+  ); // Light red background
+  static const Color rideNeededStatusText = Color(
+    0xFFF87171,
+  ); // Darker red text
+  static const Color toggleButtonActiveBg = Color(
+    0xFF4285F4,
+  ); // Primary blue for active button background
+  static const Color toggleButtonActiveText =
+      Colors.white; // White text for active button
+  static const Color toggleButtonInactiveBg =
+      Colors.white; // White background for inactive button
+  static const Color toggleButtonInactiveText = Color(
+    0xFF4285F4,
+  ); // Primary blue text for inactive button
+  static const Color toggleButtonBorder = Color(
+    0xFFE0E0E0,
+  ); // Light grey border for inactive button
 }
-
-
 
 // --- AuthInputField ---
 // Modified to have a static label above the text field
@@ -84,8 +103,10 @@ class _AuthInputFieldState extends State<AuthInputField> {
     // Define font sizes and spacing relative to screenWidth
     final double labelFontSize = screenWidth * 0.032; // Smaller for labels
     final double hintFontSize = screenWidth * 0.03; // Even smaller for hints
-    final double inputContentPaddingVertical = screenWidth * 0.035; // Vertical padding for input
-    final double inputContentPaddingHorizontal = screenWidth * 0.04; // Horizontal padding for input
+    final double inputContentPaddingVertical =
+        screenWidth * 0.035; // Vertical padding for input
+    final double inputContentPaddingHorizontal =
+        screenWidth * 0.04; // Horizontal padding for input
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,44 +130,67 @@ class _AuthInputFieldState extends State<AuthInputField> {
           decoration: InputDecoration(
             hintText: widget.hintText,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(screenWidth * 0.01), // Responsive border radius
-              borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
+              borderRadius: BorderRadius.circular(
+                screenWidth * 0.01,
+              ), // Responsive border radius
+              borderSide: const BorderSide(
+                color: AppColors.inputOutline,
+                width: 1,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(screenWidth * 0.01), // Responsive border radius
-              borderSide: const BorderSide(color: AppColors.inputOutline, width: 1),
+              borderRadius: BorderRadius.circular(
+                screenWidth * 0.01,
+              ), // Responsive border radius
+              borderSide: const BorderSide(
+                color: AppColors.inputOutline,
+                width: 1,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(screenWidth * 0.01), // Responsive border radius
-              borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+              borderRadius: BorderRadius.circular(
+                screenWidth * 0.01,
+              ), // Responsive border radius
+              borderSide: const BorderSide(
+                color: AppColors.primaryBlue,
+                width: 1.5,
+              ),
             ),
-            hintStyle: TextStyle(color: AppColors.inputHintColor, fontSize: hintFontSize, fontWeight: FontWeight.w400), // Responsive font size
+            hintStyle: TextStyle(
+              color: AppColors.inputHintColor,
+              fontSize: hintFontSize,
+              fontWeight: FontWeight.w400,
+            ), // Responsive font size
             filled: true,
             fillColor: Colors.white,
-            contentPadding: EdgeInsets.symmetric(vertical: inputContentPaddingVertical, horizontal: inputContentPaddingHorizontal), // Responsive padding
+            contentPadding: EdgeInsets.symmetric(
+              vertical: inputContentPaddingVertical,
+              horizontal: inputContentPaddingHorizontal,
+            ), // Responsive padding
             suffixIcon: widget.isPassword
                 ? IconButton(
-              icon: Icon(
-                _obscureText ? Icons.visibility : Icons.visibility_off,
-                color: AppColors.textColorSecondary,
-                size: screenWidth * 0.05, // Responsive icon size
-              ),
-              onPressed: () {
-                setState(() {
-                  _obscureText = !_obscureText;
-                });
-              },
-            )
+                    icon: Icon(
+                      _obscureText ? Icons.visibility : Icons.visibility_off,
+                      color: AppColors.textColorSecondary,
+                      size: screenWidth * 0.05, // Responsive icon size
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureText = !_obscureText;
+                      });
+                    },
+                  )
                 : (widget.suffixIcon != null
-                ? SizedBox(
-              width: screenWidth * 0.08, // Constrain suffix icon size
-              height: screenWidth * 0.08,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: widget.suffixIcon,
-              ),
-            )
-                : null),
+                      ? SizedBox(
+                          width:
+                              screenWidth * 0.08, // Constrain suffix icon size
+                          height: screenWidth * 0.08,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: widget.suffixIcon,
+                          ),
+                        )
+                      : null),
           ),
         ),
       ],
@@ -166,6 +210,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
   final TextEditingController _eventTitleController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
+  final TextEditingController _endtimeController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
@@ -180,9 +225,77 @@ class _CreateEventPageState extends State<CreateEventPage> {
     _eventTitleController.dispose();
     _dateController.dispose();
     _timeController.dispose();
+    _endtimeController.dispose();
     _locationController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> createEvent() async {
+    final url = Uri.parse(Urls.Create_events);
+
+    final invitesJson = InviteStorage().invitesJson;
+    final List<int> invitees = invitesJson != null
+        ? List<int>.from(
+            jsonDecode(invitesJson).map(
+              (item) => int.parse(item.toString()),
+            ), // Ensure each item is an int
+          )
+        : [];
+
+    print(invitees);
+
+    // Collect form data
+    final Map<String, dynamic> eventData = {
+      "title": _eventTitleController.text,
+      "date": _dateController.text, // Ensure this is in 'yyyy-MM-dd' format
+      "start_time": _timeController.text,
+      "end_time":
+          _endtimeController.text, // Ensure this is in 'HH:mm:ss' format
+      "location": _locationController.text,
+      "description": _descriptionController.text,
+
+      "event_type": _isOpenInvite ? "open" : "direct",
+      "add_to_google_calendar": _addToGoogleCalendar,
+      "ride_needed_for_event": _rideNeeded,
+      "invitees": invitees, // You can dynamically populate this if needed
+    };
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('accessToken');
+    print('[Create Event] Retrieved token: $token');
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token', // Replace with the actual token
+    };
+
+    print('Preparing to send data to API:');
+    print('URL: $url');
+    print('Headers: $headers');
+    print('Event Data: ${json.encode(eventData)}');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: json.encode(eventData),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 201) {
+        print('Event created successfully!');
+        // Optionally parse the response body if needed
+        final responseData = json.decode(response.body);
+        print('Event ID: ${responseData['id']}');
+      } else {
+        print('Failed to create event. Status code: ${response.statusCode}');
+        print('Response Body: ${response.body}');
+      }
+    } catch (e) {
+      print('Error creating event: $e');
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -211,7 +324,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
     );
     if (picked != null) {
       setState(() {
-        _dateController.text = DateFormat('MM/dd/yyyy').format(picked);
+        _dateController.text = DateFormat(
+          'yyyy-MM-dd',
+        ).format(picked); // Correct date format
       });
     }
   }
@@ -239,12 +354,46 @@ class _CreateEventPageState extends State<CreateEventPage> {
       },
     );
     if (picked != null) {
+      // Manually format the time to HH:mm:ss (24-hour format)
+      String formattedTime =
+          '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}:00'; // HH:mm:ss
       setState(() {
-        _timeController.text = picked.format(context);
+        _timeController.text = formattedTime; // Set formatted time
       });
     }
   }
 
+  Future<void> _selectendTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primaryBlue, // Header background color
+              onPrimary: Colors.white, // Header text color
+              onSurface: AppColors.textDark, // Body text color
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryBlue, // Button text color
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      // Manually format the end time to HH:mm:ss (24-hour format)
+      String formattedEndTime =
+          '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}:00'; // HH:mm:ss
+      setState(() {
+        _endtimeController.text = formattedEndTime; // Set formatted end time
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -252,12 +401,16 @@ class _CreateEventPageState extends State<CreateEventPage> {
 
     // Define responsive font sizes for this page
     final double appBarTitleFontSize = screenWidth * 0.05;
-    final double sectionTitleFontSize = screenWidth * 0.038; // For "Invite Type *"
+    final double sectionTitleFontSize =
+        screenWidth * 0.038; // For "Invite Type *"
     final double buttonTextFontSize = screenWidth * 0.04;
     final double checkboxTextFontSize = screenWidth * 0.035;
-    final double generalSpacing = screenWidth * 0.05; // General vertical spacing
-    final double inputFieldSpacing = screenWidth * 0.04; // Spacing between input fields
-    final double horizontalSpacing = screenWidth * 0.04; // General horizontal spacing
+    final double generalSpacing =
+        screenWidth * 0.05; // General vertical spacing
+    final double inputFieldSpacing =
+        screenWidth * 0.04; // Spacing between input fields
+    final double horizontalSpacing =
+        screenWidth * 0.04; // General horizontal spacing
 
     return Scaffold(
       backgroundColor: Colors.grey[100], // Light grey background
@@ -282,7 +435,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(screenWidth * 0.06), // Responsive overall padding
+        padding: EdgeInsets.all(
+          screenWidth * 0.06,
+        ), // Responsive overall padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -293,34 +448,54 @@ class _CreateEventPageState extends State<CreateEventPage> {
               hintText: 'Enter event title..',
             ),
             SizedBox(height: inputFieldSpacing), // Responsive spacing
-
             // Date and Time
+            GestureDetector(
+              onTap: () => _selectDate(context),
+              child: AbsorbPointer(
+                child: AuthInputField(
+                  controller: _dateController,
+                  labelText: 'Date *',
+                  hintText: '07/15/2025',
+                  suffixIcon: Icon(
+                    Icons.calendar_today_outlined,
+                    size: screenWidth * 0.045,
+                  ),
+                  keyboardType: TextInputType.datetime,
+                ),
+              ),
+            ),
             Row(
               children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _selectDate(context),
-                    child: AbsorbPointer(
-                      child: AuthInputField(
-                        controller: _dateController,
-                        labelText: 'Date *',
-                        hintText: '07/15/2025',
-                        suffixIcon: Icon(Icons.calendar_today_outlined, size: screenWidth * 0.045), // Responsive icon size
-                        keyboardType: TextInputType.datetime,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: horizontalSpacing), // Responsive spacing
+                // Responsive spacing
                 Expanded(
                   child: GestureDetector(
                     onTap: () => _selectTime(context),
                     child: AbsorbPointer(
                       child: AuthInputField(
                         controller: _timeController,
-                        labelText: 'Time *',
+                        labelText: 'Start Time *',
                         hintText: '11:02 AM',
-                        suffixIcon: Icon(Icons.access_time, size: screenWidth * 0.045), // Responsive icon size
+                        suffixIcon: Icon(
+                          Icons.access_time,
+                          size: screenWidth * 0.045,
+                        ), // Responsive icon size
+                        keyboardType: TextInputType.datetime,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _selectendTime(context),
+                    child: AbsorbPointer(
+                      child: AuthInputField(
+                        controller: _endtimeController,
+                        labelText: 'End Time *',
+                        hintText: '11:02 AM',
+                        suffixIcon: Icon(
+                          Icons.access_time,
+                          size: screenWidth * 0.045,
+                        ), // Responsive icon size
                         keyboardType: TextInputType.datetime,
                       ),
                     ),
@@ -329,7 +504,6 @@ class _CreateEventPageState extends State<CreateEventPage> {
               ],
             ),
             SizedBox(height: inputFieldSpacing), // Responsive spacing
-
             // Location
             AuthInputField(
               controller: _locationController,
@@ -337,7 +511,6 @@ class _CreateEventPageState extends State<CreateEventPage> {
               hintText: 'Enter location..',
             ),
             SizedBox(height: inputFieldSpacing), // Responsive spacing
-
             // Description (Optional)
             AuthInputField(
               controller: _descriptionController,
@@ -346,7 +519,6 @@ class _CreateEventPageState extends State<CreateEventPage> {
               maxLines: 4,
             ),
             SizedBox(height: generalSpacing), // Responsive spacing
-
             // Invite Type
             Text(
               'Invite Type *',
@@ -369,7 +541,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                       setState(() {
                         _isOpenInvite = true;
                       });
-                      context.push(RoutePaths.openInvite);
+                      // context.push(RoutePaths.openInvite);
                     },
                   ),
                 ),
@@ -381,7 +553,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
                     isSelected: !_isOpenInvite,
                     onTap: () {
                       setState(() {
-                        _isOpenInvite = false; // Correctly set to false for Direct Invite
+                        _isOpenInvite =
+                            false; // Correctly set to false for Direct Invite
                       });
                       context.push(RoutePaths.directInvite);
                     },
@@ -390,14 +563,21 @@ class _CreateEventPageState extends State<CreateEventPage> {
               ],
             ),
             SizedBox(height: inputFieldSpacing), // Responsive spacing
-
             // Add Google Calendar Event
             Container(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenWidth * 0.02), // Responsive padding
+              padding: EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.04,
+                vertical: screenWidth * 0.02,
+              ), // Responsive padding
               decoration: BoxDecoration(
                 color: AppColors.lightBlueBackground,
-                borderRadius: BorderRadius.circular(screenWidth * 0.03), // Responsive border radius
-                border: Border.all(color: AppColors.toggleButtonBorder, width: 1.0),
+                borderRadius: BorderRadius.circular(
+                  screenWidth * 0.03,
+                ), // Responsive border radius
+                border: Border.all(
+                  color: AppColors.toggleButtonBorder,
+                  width: 1.0,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.grey.withOpacity(0.1),
@@ -410,9 +590,11 @@ class _CreateEventPageState extends State<CreateEventPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Flexible( // Use Flexible to allow text to wrap if necessary
+                  Flexible(
+                    // Use Flexible to allow text to wrap if necessary
                     child: Row(
-                      mainAxisSize: MainAxisSize.min, // Keep this row to its minimum size
+                      mainAxisSize:
+                          MainAxisSize.min, // Keep this row to its minimum size
                       children: [
                         SizedBox(
                           width: screenWidth * 0.06, // Responsive checkbox size
@@ -426,7 +608,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
                             },
                             activeColor: AppColors.primaryBlue,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(screenWidth * 0.01), // Responsive border radius
+                              borderRadius: BorderRadius.circular(
+                                screenWidth * 0.01,
+                              ), // Responsive border radius
                             ),
                             side: BorderSide(
                               color: AppColors.inputOutline,
@@ -434,12 +618,16 @@ class _CreateEventPageState extends State<CreateEventPage> {
                             ),
                           ),
                         ),
-                        SizedBox(width: screenWidth * 0.02), // Responsive spacing
-                        Flexible( // Ensure text itself is flexible
+                        SizedBox(
+                          width: screenWidth * 0.02,
+                        ), // Responsive spacing
+                        Flexible(
+                          // Ensure text itself is flexible
                           child: Text(
                             'Add Google Calendar Event(Optional)',
                             style: TextStyle(
-                              fontSize: checkboxTextFontSize, // Responsive font size
+                              fontSize:
+                                  checkboxTextFontSize, // Responsive font size
                               fontWeight: FontWeight.w400,
                               color: AppColors.textDark,
                               fontFamily: 'Poppins',
@@ -458,14 +646,21 @@ class _CreateEventPageState extends State<CreateEventPage> {
               ),
             ),
             SizedBox(height: inputFieldSpacing), // Responsive spacing
-
             // Ride needed for this event
             Container(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenWidth * 0.02), // Responsive padding
+              padding: EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.04,
+                vertical: screenWidth * 0.02,
+              ), // Responsive padding
               decoration: BoxDecoration(
                 color: AppColors.lightBlueBackground,
-                borderRadius: BorderRadius.circular(screenWidth * 0.03), // Responsive border radius
-                border: Border.all(color: AppColors.toggleButtonBorder, width: 1.0),
+                borderRadius: BorderRadius.circular(
+                  screenWidth * 0.03,
+                ), // Responsive border radius
+                border: Border.all(
+                  color: AppColors.toggleButtonBorder,
+                  width: 1.0,
+                ),
               ),
               child: Row(
                 children: [
@@ -481,7 +676,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
                       },
                       activeColor: AppColors.primaryBlue,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(screenWidth * 0.01), // Responsive border radius
+                        borderRadius: BorderRadius.circular(
+                          screenWidth * 0.01,
+                        ), // Responsive border radius
                       ),
                       side: BorderSide(
                         color: AppColors.inputOutline,
@@ -490,7 +687,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
                     ),
                   ),
                   SizedBox(width: screenWidth * 0.02), // Responsive spacing
-                  Flexible( // Ensure text itself is flexible
+                  Flexible(
+                    // Ensure text itself is flexible
                     child: Text(
                       'Ride needed for this event',
                       style: TextStyle(
@@ -512,6 +710,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
               child: ElevatedButton(
                 onPressed: () {
                   context.push('/up_coming_events');
+                  createEvent();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Create Event Tapped!')),
                   );
@@ -519,11 +718,16 @@ class _CreateEventPageState extends State<CreateEventPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryBlue,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(screenWidth * 0.03), // Responsive border radius
+                    borderRadius: BorderRadius.circular(
+                      screenWidth * 0.03,
+                    ), // Responsive border radius
                   ),
-                  padding: EdgeInsets.symmetric(vertical: screenWidth * 0.03), // Responsive padding
+                  padding: EdgeInsets.symmetric(
+                    vertical: screenWidth * 0.03,
+                  ), // Responsive padding
                 ),
-                child: FittedBox( // Use FittedBox to ensure text always fits
+                child: FittedBox(
+                  // Use FittedBox to ensure text always fits
                   fit: BoxFit.scaleDown,
                   child: Text(
                     'Create Event',
@@ -551,30 +755,43 @@ class _CreateEventPageState extends State<CreateEventPage> {
     required VoidCallback onTap,
   }) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final double toggleButtonTextFontSize = screenWidth * 0.038; // Responsive font size for toggle buttons
-    final double toggleButtonVerticalPadding = screenWidth * 0.03; // Responsive padding
+    final double toggleButtonTextFontSize =
+        screenWidth * 0.038; // Responsive font size for toggle buttons
+    final double toggleButtonVerticalPadding =
+        screenWidth * 0.03; // Responsive padding
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: toggleButtonVerticalPadding), // Responsive padding
+        padding: EdgeInsets.symmetric(
+          vertical: toggleButtonVerticalPadding,
+        ), // Responsive padding
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.toggleButtonActiveBg : AppColors.toggleButtonInactiveBg,
-          borderRadius: BorderRadius.circular(screenWidth * 0.02), // Responsive border radius
+          color: isSelected
+              ? AppColors.toggleButtonActiveBg
+              : AppColors.toggleButtonInactiveBg,
+          borderRadius: BorderRadius.circular(
+            screenWidth * 0.02,
+          ), // Responsive border radius
           border: Border.all(
-            color: isSelected ? AppColors.toggleButtonActiveBg : AppColors.toggleButtonBorder,
+            color: isSelected
+                ? AppColors.toggleButtonActiveBg
+                : AppColors.toggleButtonBorder,
             width: 1.0,
           ),
         ),
         child: Center(
-          child: FittedBox( // Ensures text fits
+          child: FittedBox(
+            // Ensures text fits
             fit: BoxFit.scaleDown,
             child: Text(
               text,
               style: TextStyle(
                 fontSize: toggleButtonTextFontSize, // Responsive font size
                 fontWeight: FontWeight.w500,
-                color: isSelected ? AppColors.toggleButtonActiveText : AppColors.toggleButtonInactiveText,
+                color: isSelected
+                    ? AppColors.toggleButtonActiveText
+                    : AppColors.toggleButtonInactiveText,
                 fontFamily: 'Poppins',
               ),
             ),

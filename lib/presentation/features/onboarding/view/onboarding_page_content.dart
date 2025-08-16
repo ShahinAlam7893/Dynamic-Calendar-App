@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_assets.dart'; // For checkmark icon
+// For checkmark icon
 
 class OnboardingPageContent extends StatelessWidget {
   final String illustrationPath;
@@ -56,7 +56,8 @@ class OnboardingPageContent extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: titleStyle ??
+              style:
+                  titleStyle ??
                   const TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -89,7 +90,8 @@ class OnboardingPageContent extends StatelessWidget {
             Text(
               description,
               textAlign: TextAlign.center,
-              style: descriptionStyle ??
+              style:
+                  descriptionStyle ??
                   const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -107,31 +109,31 @@ class OnboardingPageContent extends StatelessWidget {
                 children: bulletPoints!
                     .map(
                       (text) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.check_circle,
-                          color: AppColors.buttonPrimary,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            text,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textColorPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.check_circle,
+                              color: AppColors.buttonPrimary,
+                              size: 14,
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                text,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textColorPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                )
+                      ),
+                    )
                     .toList(),
               ),
 

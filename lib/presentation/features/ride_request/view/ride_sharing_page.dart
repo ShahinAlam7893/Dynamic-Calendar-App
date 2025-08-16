@@ -1,8 +1,10 @@
-import 'package:circleslate/core/constants/app_assets.dart';
 import 'package:circleslate/core/constants/app_colors.dart';
+import 'package:circleslate/core/network/endpoints.dart';
 import 'package:circleslate/presentation/features/ride_request/services/RideService.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RideRequest {
   final String requesterName;
@@ -12,7 +14,9 @@ class RideRequest {
   final String eventDate;
   final String eventTime;
   final String eventLocation;
-  final String status; // e.g., "Pending Response", "Accepted"
+  final String status;
+
+  final String id; // e.g., "Pending Response", "Accepted"
 
   const RideRequest({
     required this.requesterName,
@@ -23,6 +27,7 @@ class RideRequest {
     required this.eventTime,
     required this.eventLocation,
     required this.status,
+    required this.id,
   });
 
   // Factory constructor to create RideRequest from JSON (API response)
@@ -33,6 +38,7 @@ class RideRequest {
     String eventLocation,
   ) {
     return RideRequest(
+      id: json["id"],
       requesterName: json['requester']['full_name'] ?? 'Unknown',
       requestedBy: json['requester']['email'] ?? 'Unknown',
       requesterImageUrl:
@@ -148,18 +154,88 @@ class _RideSharingPageState extends State<RideSharingPage> {
     );
   }
 
+  static Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('accessToken');
+    print("🔑 Retrieved token from SharedPreferences: $token");
+    return token;
+  }
+
+  Future<void> acceptRide(String rideId) async {
+    final url =
+        'http://10.10.13.27:8000/api/event/ride-requests/$rideId/accept/';
+    print('API URL: $url');
+
+    // Await the token
+    final token = await _getToken();
+    print('Token: $token');
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json', // body is not required
+      },
+    );
+
+    print('Status Code: ${response.statusCode}');
+    print('Response Body: ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      print('Ride accepted successfully!');
+    } else {
+      print('Failed to accept ride.');
+    }
+  }
+
   Widget _buildRideRequestCard(RideRequest request) {
     Color statusBackgroundColor;
     Color statusTextColor;
     Widget? actionButton;
 
-    if (request.status == 'Pending Response') {
+    if (request.status == 'Pending') {
       statusBackgroundColor = Color(0xFFFFF8E1);
       statusTextColor = Color(0xCC1B1D2A);
-      actionButton = null; // No button for pending
+      actionButton = ElevatedButton.icon(
+        onPressed: () async {
+          await acceptRide(request.id); // Hit API
+          setState(() {
+            // Update the status locally after accepting
+            request = RideRequest(
+              requesterName: request.requesterName,
+              requestedBy: request.requestedBy,
+              requesterImageUrl: request.requesterImageUrl,
+              eventDate: request.eventDate,
+              eventTime: request.eventTime,
+              eventLocation: request.eventLocation,
+              status: 'Accepted', // Update status
+              id: request.id,
+            );
+          });
+        },
+        icon: Icon(Icons.check, size: 18, color: Color(0xFF5A8DEE)),
+        label: Text(
+          'Accept',
+          style: TextStyle(
+            fontSize: 14.0,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF1B1D2A),
+            fontFamily: 'Poppins',
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Color(0xFFD8ECFF),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30.0),
+          ),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+        ),
+      );
     } else if (request.status == 'Accepted') {
       statusBackgroundColor = Color(0x6636D399);
       statusTextColor = Color(0xCC1B1D2A);
+
       actionButton = ElevatedButton.icon(
         onPressed: () {
           context.push('/one-to-one-conversation');
@@ -208,12 +284,17 @@ class _RideSharingPageState extends State<RideSharingPage> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundImage: Image.asset(
-                    request.requesterImageUrl,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.person),
-                  ).image,
+                  backgroundImage: AssetImage(
+                    request.requesterImageUrl.isNotEmpty
+                        ? request.requesterImageUrl
+                        : 'assets/images/default_profile_picture.png', // your default image
+                  ),
+                  onBackgroundImageError: (_, __) {
+                    // Fallback in case asset path is wrong
+                    // Not needed if you always have a valid default image
+                  },
                 ),
+
                 const SizedBox(width: 12.0),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,14 +305,6 @@ class _RideSharingPageState extends State<RideSharingPage> {
                         fontSize: 16.0,
                         fontWeight: FontWeight.w600,
                         color: Color(0xE51B1D2A),
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                    Text(
-                      'Requested by ${request.requestedBy}',
-                      style: const TextStyle(
-                        fontSize: 12.0,
-                        color: Color(0x991B1D2A),
                         fontFamily: 'Poppins',
                       ),
                     ),
