@@ -878,9 +878,14 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
           ),
         );
       } else {
-        // Handle errors
+        // Decode the error response
+        final errorData = jsonDecode(response.body);
+
+        // If "detail" key exists, show it, otherwise fallback to whole body
+        final errorMessage = errorData['detail'] ?? response.body;
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send request: ${response.body}')),
+          SnackBar(content: Text('Failed to send request: \n$errorMessage')),
         );
       }
     } catch (error) {

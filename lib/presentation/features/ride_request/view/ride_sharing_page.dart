@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:circleslate/core/constants/app_colors.dart';
 import 'package:circleslate/core/network/endpoints.dart';
 import 'package:circleslate/presentation/features/ride_request/services/RideService.dart';
@@ -184,6 +186,15 @@ class _RideSharingPageState extends State<RideSharingPage> {
     if (response.statusCode == 200 || response.statusCode == 201) {
       print('Ride accepted successfully!');
     } else {
+      // Decode the error response
+      final errorData = jsonDecode(response.body);
+
+      // If "detail" key exists, show it, otherwise fallback to whole body
+      final errorMessage = errorData['detail'] ?? response.body;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to accept ride:\n$errorMessage')),
+      );
       print('Failed to accept ride.');
     }
   }

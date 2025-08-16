@@ -83,7 +83,7 @@ class _UpcomingEventsPageState extends State<UpcomingEventsPage> {
           }
           final events = snapshot.data ?? [];
 
-          final itemsToShow = events.length > 4 ? 4 : events.length;
+          //final itemsToShow = events.length > 4 ? 4 : events.length;
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
@@ -91,13 +91,13 @@ class _UpcomingEventsPageState extends State<UpcomingEventsPage> {
               children: [
                 Expanded(
                   child: ListView.builder(
-                    itemCount: itemsToShow,
+                    itemCount: events.length,
                     itemBuilder: (context, index) {
                       return _buildEventCard(context, events[index]);
                     },
                   ),
                 ),
-                if (events.length > 4) _buildViewMoreAndAddButton(context),
+                //if (events.length > 4) _buildViewMoreAndAddButton(context),
               ],
             ),
           );
