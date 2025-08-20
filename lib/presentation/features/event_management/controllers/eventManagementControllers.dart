@@ -121,10 +121,63 @@ class EventService {
       print("✅ Successfully decoded event details: $data");
       return Event.fromJson(data);
     } else {
+
       print("❌ Failed to load event details. Status: ${response.statusCode}");
       throw Exception(
         'Failed to load event details. Status: ${response.statusCode}, Body: ${response.body}',
       );
     }
+  }
+
+  /// Fetches events where the user has responded "Going"
+  static Future<List<Event>> fetchUserGoingEvents() async {
+    print("🔍 Starting fetchUserGoingEvents...");
+
+    final token = await _getToken();
+    print("🔑 Retrieved token: $token");
+
+    if (token == null) {
+      print("❌ No token found.");
+      throw Exception("No token found");
+    }
+
+    final url = Uri.parse('$baseUrl/event/events/');
+    print("🌐 Making GET request to $url");
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    print("📬 Response status: ${response.statusCode}");
+    print("📬 Response body: ${response.body}");
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      // Filter client-side for events where user is "going"
+      final userId = await _getUserId(); // Implement this to get current user ID
+      final goingEvents = data
+          .map((json) => Event.fromJson(json))
+          .where((event) => event.responses.any((resp) => resp.userId == userId && resp.responseDisplay == 'Going'))
+          .toList();
+      print("✅ Successfully fetched ${goingEvents.length} going events");
+      return goingEvents;
+    } else {
+      print("❌ Failed to load going events. Status: ${response.statusCode}");
+      throw Exception(
+        'Failed to load going events. Status: ${response.statusCode}, Body: ${response.body}',
+      );
+    }
+  }
+
+  /// Helper method to get current user ID from SharedPreferences or AuthProvider
+  static Future<String?> _getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('userId'); // Adjust key based on your app's storage
+    print("🔑 _getUserId returned: $userId");
+    return userId;
   }
 }

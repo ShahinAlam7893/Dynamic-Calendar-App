@@ -26,10 +26,7 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
     // Create a list for 7 days
     return List.generate(7, (index) {
       final date = startOfWeek.add(Duration(days: index));
-      return {
-        "day": _getDayName(date.weekday),
-        "date": date.day.toString(),
-      };
+      return {"day": _getDayName(date.weekday), "date": date.day.toString()};
     });
   }
 
@@ -48,7 +45,6 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
   int _currentMonth = DateTime.now().month;
   int _currentYear = DateTime.now().year;
 
-
   List<Map<String, String>> _days = [];
 
   @override
@@ -56,8 +52,10 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
     super.initState();
     _days = _generateCurrentWeekDays();
     // Load current month availability on page open
-    Provider.of<AvailabilityProvider>(context, listen: false)
-        .fetchMonthAvailabilityFromAPI(_currentYear, _currentMonth);
+    Provider.of<AvailabilityProvider>(
+      context,
+      listen: false,
+    ).fetchMonthAvailabilityFromAPI(_currentYear, _currentMonth);
   }
 
   void _goToNextMonth() {
@@ -69,8 +67,10 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
         _currentMonth++;
       }
     });
-    Provider.of<AvailabilityProvider>(context, listen: false)
-        .fetchMonthAvailabilityFromAPI(_currentYear, _currentMonth);
+    Provider.of<AvailabilityProvider>(
+      context,
+      listen: false,
+    ).fetchMonthAvailabilityFromAPI(_currentYear, _currentMonth);
   }
 
   void _goToPreviousMonth() {
@@ -82,11 +82,11 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
         _currentMonth--;
       }
     });
-    Provider.of<AvailabilityProvider>(context, listen: false)
-        .fetchMonthAvailabilityFromAPI(_currentYear, _currentMonth);
+    Provider.of<AvailabilityProvider>(
+      context,
+      listen: false,
+    ).fetchMonthAvailabilityFromAPI(_currentYear, _currentMonth);
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -276,7 +276,11 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
 
                       // ✅ Example: End date same as start date
                       // You can change Duration(days: X) if needed
-                      final endDateObj = DateTime(year, int.parse(month), int.parse(selectedDay));
+                      final endDateObj = DateTime(
+                        year,
+                        int.parse(month),
+                        int.parse(selectedDay),
+                      );
                       String endDate =
                           "${endDateObj.year}-${endDateObj.month.toString().padLeft(2, '0')}-${endDateObj.day.toString().padLeft(2, '0')}";
 
@@ -315,7 +319,7 @@ class _AvailabilityPageState extends State<AvailabilityPage> {
                       'Save',
                       style: TextStyle(color: Colors.white, fontSize: 14.0),
                     ),
-                  )
+                  ),
                 ),
               ],
             ),

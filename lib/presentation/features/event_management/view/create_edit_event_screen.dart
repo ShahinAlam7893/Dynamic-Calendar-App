@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart'; // Import go_router for navigation
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // For date formatting
+import 'package:url_launcher/url_launcher.dart'; // Added for Google Calendar URL launching
 
 // --- AppColors ---
 // Defined here for self-containment. In a real project, this would be a shared file.
@@ -169,28 +170,28 @@ class _AuthInputFieldState extends State<AuthInputField> {
             ), // Responsive padding
             suffixIcon: widget.isPassword
                 ? IconButton(
-                    icon: Icon(
-                      _obscureText ? Icons.visibility : Icons.visibility_off,
-                      color: AppColors.textColorSecondary,
-                      size: screenWidth * 0.05, // Responsive icon size
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureText = !_obscureText;
-                      });
-                    },
-                  )
+              icon: Icon(
+                _obscureText ? Icons.visibility : Icons.visibility_off,
+                color: AppColors.textColorSecondary,
+                size: screenWidth * 0.05, // Responsive icon size
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscureText = !_obscureText;
+                });
+              },
+            )
                 : (widget.suffixIcon != null
-                      ? SizedBox(
-                          width:
-                              screenWidth * 0.08, // Constrain suffix icon size
-                          height: screenWidth * 0.08,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: widget.suffixIcon,
-                          ),
-                        )
-                      : null),
+                ? SizedBox(
+              width:
+              screenWidth * 0.08, // Constrain suffix icon size
+              height: screenWidth * 0.08,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: widget.suffixIcon,
+              ),
+            )
+                : null),
           ),
         ),
       ],
@@ -237,10 +238,10 @@ class _CreateEventPageState extends State<CreateEventPage> {
     final invitesJson = InviteStorage().invitesJson;
     final List<int> invitees = invitesJson != null
         ? List<int>.from(
-            jsonDecode(invitesJson).map(
-              (item) => int.parse(item.toString()),
-            ), // Ensure each item is an int
-          )
+      jsonDecode(invitesJson).map(
+            (item) => int.parse(item.toString()),
+      ), // Ensure each item is an int
+    )
         : [];
 
     print(invitees);
@@ -251,7 +252,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
       "date": _dateController.text, // Ensure this is in 'yyyy-MM-dd' format
       "start_time": _timeController.text,
       "end_time":
-          _endtimeController.text, // Ensure this is in 'HH:mm:ss' format
+      _endtimeController.text, // Ensure this is in 'HH:mm:ss' format
       "location": _locationController.text,
       "description": _descriptionController.text,
 
@@ -392,6 +393,92 @@ class _CreateEventPageState extends State<CreateEventPage> {
       setState(() {
         _endtimeController.text = formattedEndTime; // Set formatted end time
       });
+    }
+  }
+
+  // Function to open Google Calendar with event details
+  Future<void> _openGoogleCalendar() async {
+    // Parse date and times from controllers
+    if (_dateController.text.isEmpty ||
+        _timeController.text.isEmpty ||
+        _endtimeController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill in date, start time, and end time")),
+      );
+      return;
+    }
+
+    try {
+      // Parse date and times
+      final DateTime? eventDate = DateFormat('yyyy-MM-dd').parse(_dateController.text);
+      final startTimeParts = _timeController.text.split(':');
+      final endTimeParts = _endtimeController.text.split(':');
+
+      final startDateTime = DateTime(
+        eventDate!.year,
+        eventDate.month,
+        eventDate.day,
+        int.parse(startTimeParts[0]),
+        int.parse(startTimeParts[1]),
+      );
+
+      final endDateTime = DateTime(
+        eventDate.year,
+        eventDate.month,
+        eventDate.day,
+        int.parse(endTimeParts[0]),
+        int.parse(endTimeParts[1]),
+      );
+
+      if (endDateTime.isBefore(startDateTime) || endDateTime.isAtSameMomentAs(startDateTime)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("End time must be after start time")),
+        );
+        return;
+      }
+
+      // Encode event details for URL
+      final String title = Uri.encodeComponent(
+          _eventTitleController.text.isEmpty ? "Event" : _eventTitleController.text);
+      final String details = Uri.encodeComponent(
+          _descriptionController.text.isEmpty ? "Details" : _descriptionController.text);
+      final String location = Uri.encodeComponent(
+          _locationController.text.isEmpty ? "Location" : _locationController.text);
+
+      // Format DateTime for Google Calendar: YYYYMMDDTHHMMSS
+      String formatDateTime(DateTime dateTime) {
+        return dateTime.toUtc()
+            .toIso8601String()
+            .replaceAll('-', '')
+            .replaceAll(':', '')
+            .split('.')
+            .first;
+      }
+
+      final String start = formatDateTime(startDateTime);
+      final String end = formatDateTime(endDateTime);
+
+      final Uri url = Uri.parse(
+        "https://calendar.google.com/calendar/u/0/r/eventedit"
+            "?text=$title"
+            "&details=$details"
+            "&location=$location"
+            "&dates=$start/$end",
+      );
+
+      try {
+        if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+          throw 'Could not open Google Calendar';
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error opening Google Calendar: $e")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error processing event details: $e")),
+      );
     }
   }
 
@@ -554,7 +641,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                     onTap: () {
                       setState(() {
                         _isOpenInvite =
-                            false; // Correctly set to false for Direct Invite
+                        false; // Correctly set to false for Direct Invite
                       });
                       context.push(RoutePaths.directInvite);
                     },
@@ -590,57 +677,30 @@ class _CreateEventPageState extends State<CreateEventPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Flexible(
-                    // Use Flexible to allow text to wrap if necessary
-                    child: Row(
-                      mainAxisSize:
-                          MainAxisSize.min, // Keep this row to its minimum size
-                      children: [
-                        SizedBox(
-                          width: screenWidth * 0.06, // Responsive checkbox size
-                          height: screenWidth * 0.06,
-                          child: Checkbox(
-                            value: _addToGoogleCalendar,
-                            onChanged: (bool? newValue) {
-                              setState(() {
-                                _addToGoogleCalendar = newValue!;
-                              });
-                            },
-                            activeColor: AppColors.primaryBlue,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                screenWidth * 0.01,
-                              ), // Responsive border radius
-                            ),
-                            side: BorderSide(
-                              color: AppColors.inputOutline,
-                              width: 1.0,
-                            ),
-                          ),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            screenWidth * 0.03,
+                          ), // Responsive border radius
                         ),
-                        SizedBox(
-                          width: screenWidth * 0.02,
-                        ), // Responsive spacing
-                        Flexible(
-                          // Ensure text itself is flexible
-                          child: Text(
-                            'Add Google Calendar Event(Optional)',
-                            style: TextStyle(
-                              fontSize:
-                                  checkboxTextFontSize, // Responsive font size
-                              fontWeight: FontWeight.w400,
-                              color: AppColors.textDark,
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
+                        padding: EdgeInsets.symmetric(
+                          vertical: screenWidth * 0.03,
+                        ), // Responsive padding
+                      ),
+                      onPressed: _openGoogleCalendar, // Updated to use new function
+                      child: const Text(
+                        'Add to Google Calendar',
+                        style: TextStyle(
+                          fontSize: 12, // Responsive font size
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontFamily: 'Poppins',
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                  Icon(
-                    Icons.calendar_today_outlined,
-                    color: AppColors.primaryBlue,
-                    size: screenWidth * 0.05, // Responsive icon size
                   ),
                 ],
               ),

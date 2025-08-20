@@ -5,9 +5,11 @@ import 'package:circleslate/presentation/common_providers/auth_provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import '../network/endpoints.dart';
+
 /// Utility class to handle user profile images
 class UserImageHelper {
-  static const String _baseUrl = 'http://10.10.13.27:8000';
+  static const String _baseUrl = '${Urls.baseUrl}';
   
   /// Get the current user's profile image URL
   static String? getCurrentUserImageUrl(BuildContext context) {

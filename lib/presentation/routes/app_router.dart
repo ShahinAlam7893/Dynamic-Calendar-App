@@ -1,5 +1,6 @@
 import 'package:circleslate/presentation/features/availability/view/availability_preview_page.dart';
 import 'package:circleslate/presentation/features/chat/view/chat_screen.dart';
+import 'package:circleslate/presentation/features/chat/view/samplechat.dart';
 import 'package:circleslate/presentation/features/event_management/view/create_edit_event_screen.dart';
 import 'package:circleslate/presentation/features/event_management/view/direct_invite_page.dart';
 import 'package:circleslate/presentation/features/event_management/view/event_details_screen.dart';
@@ -26,8 +27,10 @@ import 'package:circleslate/presentation/features/authentication/view/signup_scr
 import 'package:circleslate/presentation/features/onboarding/view/splash_screen.dart';
 import 'package:circleslate/presentation/features/onboarding/view/onboarding_screen.dart';
 import '../../data/datasources/shared_pref/local/entity/token_entity.dart';
+import '../features/authentication/view/forgot_password_reset_page.dart';
 import '../features/chat/group/view/create_group_page.dart';
 import '../features/chat/group/view/group_conversation_page.dart';
+import '../features/event_management/view/google_calendar_page.dart';
 import '../features/notification/notification_page.dart';
 import 'package:circleslate/presentation/routes/route_observer.dart';
 
@@ -42,6 +45,7 @@ class RoutePaths {
   static const String emailVerification = '/emailVerification';
   static const String OtpVerificationPage = '/otp_page';
   static const String resetPasswordPage = '/password_reset';
+  // static const String forgotpasswordresetPage = '/pass_cng_succussful';
   static const String passwordResetSuccessPage = '/pass_cng_succussful';
   static const String upcomingeventspage = '/up_coming_events';
   static const String createeventspage = '/create_event';
@@ -66,6 +70,7 @@ class RoutePaths {
   static const String termsAndConditions = '/terms-and-conditions';
   static const String deleteAccount = '/delete-account';
   static const String notification = '/notifications';
+  static const String googlecalendarevent = '/googlecalendarevent';
 }
 
 // --- AppRoutes Class ---
@@ -79,6 +84,7 @@ class AppRoutes {
   static const String emailVerification = 'emailVerification';
   static const String resetPasswordPage = 'resetPasswordPage';
   static const String passwordResetSuccessPage = 'passwordResetSuccessPage';
+  // static const String forgotpasswordresetPage = 'forgotpasswordresetPage';
   static const String upcomingeventspage = 'upcomingeventspage';
   static const String createeventpage = 'createeventpage';
   static const String chatlistpage = 'chatlistpage';
@@ -98,6 +104,7 @@ class AppRoutes {
   static const String termsAndConditions = 'termsAndConditions';
   static const String deleteAccount = 'deleteAccount';
   static const String notification = 'notification';
+  static const String googlecalendarevent = 'googlecalendarevent';
 }
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -163,6 +170,10 @@ class AppRouter {
         path: RoutePaths.resetPasswordPage,
         builder: (context, state) => const ResetPasswordPage(),
       ),
+      // GoRoute(
+      //   path: RoutePaths.forgotpasswordresetPage,
+      //   builder: (context, state) => const ForgotPasswordResetPage(),
+      // ),
       GoRoute(
         path: RoutePaths.passwordResetSuccessPage,
         builder: (context, state) => const PasswordResetSuccessPage(),
@@ -179,6 +190,15 @@ class AppRouter {
         builder: (context, state) =>
             const SmoothNavigationWrapper(initialIndex: 1),
       ),
+
+
+      // GoRoute(
+      //   path: RoutePaths.googlecalendarevent,
+      //   name: AppRoutes.googlecalendarevent,
+      //   builder: (context, state) => EventFormPage(),
+      // ),
+
+
       GoRoute(
         path: RoutePaths.chatlistpage,
         name: AppRoutes.chatlistpage,
@@ -201,6 +221,7 @@ class AppRouter {
         path: RoutePaths.createeventspage,
         builder: (context, state) => const CreateEventPage(),
       ),
+
       GoRoute(
         path: '${RoutePaths.eventDetails}/:id',
         builder: (context, state) {
@@ -228,11 +249,12 @@ class AppRouter {
       //     );
       //   },
       // ),
+
       GoRoute(
         path: RoutePaths.onetooneconversationpage,
         builder: (context, state) {
           final Map<String, dynamic>? extraData =
-              state.extra as Map<String, dynamic>?;
+          state.extra as Map<String, dynamic>?;
 
           final String chatPartnerName =
               extraData?['chatPartnerName'] ?? 'Unknown Chat Partner';
@@ -250,6 +272,32 @@ class AppRouter {
           );
         },
       ),
+
+
+
+      // GoRoute(
+      //   path: RoutePaths.onetooneconversationpage,
+      //   builder: (context, state) {
+      //     final Map<String, dynamic>? extraData =
+      //         state.extra as Map<String, dynamic>?;
+      //
+      //     final String chatPartnerName =
+      //         extraData?['chatPartnerName'] ?? 'Unknown Chat Partner';
+      //     final String currentUserId = extraData?['currentUserId'] ?? '';
+      //     final String chatPartnerId = extraData?['chatPartnerId'] ?? '';
+      //     final bool isGroupChat = extraData?['isGroupChat'] ?? false;
+      //     final bool isCurrentUserAdminInGroup =
+      //         extraData?['isCurrentUserAdminInGroup'] ?? " ";
+      //
+      //     return ChatScreen(
+      //       chatPartnerName: chatPartnerName,
+      //       currentUserId: currentUserId,
+      //       chatPartnerId: chatPartnerId,
+      //       conversationId: extraData?['conversationId'] ?? '',
+      //       isadmin: extraData?['isCurrentUserAdminInGroup'] ?? '',
+      //     );
+      //   },
+      // ),
       GoRoute(
         path: RoutePaths.groupManagement,
         builder: (context, state) {
@@ -257,7 +305,7 @@ class AppRouter {
           return GroupManagementPage(
             groupId: extra['groupId'] ?? '',
             currentUserId: extra['currentUserId'] ?? '',
-            isCurrentUserAdmin: extra['isCurrentUserAdmin'] ?? false,
+            isCurrentUserAdmin: extra['isCurrentUserAdminInGroup'] ?? false,
             conversationId: extra['conversationId'] ?? '',
           );
         },
@@ -329,7 +377,6 @@ class AppRouter {
         path: RoutePaths.notification,
         builder: (context, state) => const NotificationPage(),
       ),
-
 
       GoRoute(
         path: RoutePaths.editProfile,

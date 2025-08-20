@@ -20,7 +20,6 @@ class OnboardingPage2 extends StatelessWidget {
         fontFamily: 'Poppins',
         color: AppColors.primaryBlue,
       ),
-      // Apply the specific width and height here:
       imageWidth: 287.0,
       imageHeight: 176.0,
 

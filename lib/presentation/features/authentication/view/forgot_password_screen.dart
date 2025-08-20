@@ -97,10 +97,6 @@ class _AuthInputFieldState extends State<AuthInputField> {
   }
 }
 
-// For self-containment, AppAssets is defined here.
-class AppAssets {
-  static const String calendarIcon = 'assets/icons/calendar_icon.png';
-}
 
 class ForgotPasswordPage extends StatefulWidget {
   final bool isLoggedIn;

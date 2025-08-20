@@ -267,17 +267,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 4.0),
-                  const Text(
-                    'A secure platform for parents to coordinate children\'s activities',
-                    style: TextStyle(
-                      fontSize: 10.0,
-                      color: AppColors.textLight,
-                      fontWeight: FontWeight.w300,
-                      fontStyle: FontStyle.italic,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+
                   const SizedBox(height: 10.0),
                   Form(
                     key: _formKey,

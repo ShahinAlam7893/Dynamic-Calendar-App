@@ -1,11 +1,14 @@
 import 'dart:convert';
+import 'package:circleslate/core/network/endpoints.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/models/default_group_model.dart';
 
+
+
 class DefaultGroupService {
   static const String _baseUrl =
-      'http://127.0.0.1:8000/api/chat/default-groups/';
+      '${Urls.baseUrl}/chat/default-groups/';
 
   Future<List<DefaultGroup>> fetchDefaultGroups() async {
     print('Fetching default groups from $_baseUrl');

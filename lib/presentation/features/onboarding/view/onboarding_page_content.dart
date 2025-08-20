@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-// For checkmark icon
+
 
 class OnboardingPageContent extends StatelessWidget {
   final String illustrationPath;
@@ -60,6 +60,7 @@ class OnboardingPageContent extends StatelessWidget {
                   titleStyle ??
                   const TextStyle(
                     fontSize: 32,
+                    fontFamily: 'Poppins',
                     fontWeight: FontWeight.bold,
                     color: AppColors.textColorPrimary,
                   ),
@@ -67,7 +68,6 @@ class OnboardingPageContent extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Optional Logo Name
             if (onboardingWelcomeLogoName != null &&
                 onboardingWelcomeLogoName!.isNotEmpty)
               Column(
@@ -93,9 +93,10 @@ class OnboardingPageContent extends StatelessWidget {
               style:
                   descriptionStyle ??
                   const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0x991B1D2A),
+                    fontFamily: 'Poppins',
+                    fontSize: 14,
+                    // fontWeight: FontWeight.w500,
+                    color: AppColors.textColorPrimary,
                     height: 1.5,
                   ),
             ),
@@ -112,8 +113,7 @@ class OnboardingPageContent extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 4.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             const Icon(
                               Icons.check_circle,
@@ -125,6 +125,7 @@ class OnboardingPageContent extends StatelessWidget {
                               child: Text(
                                 text,
                                 style: const TextStyle(
+                                  fontFamily: 'Poppins',
                                   fontSize: 14,
                                   color: AppColors.textColorPrimary,
                                 ),

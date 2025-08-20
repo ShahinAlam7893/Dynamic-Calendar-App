@@ -16,9 +16,9 @@ class OnboardingPage3 extends StatelessWidget {
           final screenWidth = constraints.maxWidth;
           final screenHeight = constraints.maxHeight;
 
-          // Dynamic sizes
+
           double illustrationSize = screenWidth * 0.2;
-          double avatarSize = screenWidth * 0.09;
+          double avatarSize = screenWidth * 0.075;
           double titleFontSize = screenWidth * 0.075;
           double descriptionFontSize = screenWidth * 0.042;
 

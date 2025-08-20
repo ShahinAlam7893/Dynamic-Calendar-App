@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:circleslate/core/errors/exceptions.dart';
 
+import '../../core/network/endpoints.dart';
+
 class ApiBaseHelper {
-  final String _baseUrl = 'http://10.10.13.27:8000/api';
+  final String _baseUrl = '${Urls.baseUrl}';
 
   // This method now returns the raw http.Response object.
   Future<http.Response> post(String url, dynamic body) async {

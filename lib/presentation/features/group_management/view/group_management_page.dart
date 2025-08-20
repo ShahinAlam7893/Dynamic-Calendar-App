@@ -4,14 +4,16 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/network/endpoints.dart';
 import '../../../../data/models/group_model.dart';
 import '../../../routes/app_router.dart';
 
 class GroupManagementPage extends StatefulWidget {
-  final String groupId; // Not used in this page, but kept for consistency
+  final String groupId;
   final String conversationId;
   final String currentUserId;
   final bool isCurrentUserAdmin;
+
 
   const GroupManagementPage({
     super.key,
@@ -27,7 +29,7 @@ class GroupManagementPage extends StatefulWidget {
 
 class _GroupManagementPageState extends State<GroupManagementPage> {
   final TextEditingController _searchController = TextEditingController();
-  static const String _baseUrl = 'http://10.10.13.27:8000/api/chat/conversations/';
+  static const String _baseUrl = '${Urls.baseUrl}/chat/conversations/';
 
   bool _isLoading = false;
   bool _isActionLoading = false;
@@ -124,7 +126,6 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
           }
         }
 
-        // Map to GroupMember
         final fetchedMembers = membersJson.map<GroupMember>((m) {
           final id = (m['id'] ?? m['user_id'] ?? '').toString();
           final name = (m['name'] ?? m['full_name'] ?? m['username'] ?? '').toString();
@@ -133,6 +134,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
           final imageUrl = (m['avatar'] ?? m['image_url'] ?? m['profile_image'] ?? m['profile_photo_url'] ?? '').toString();
           final roleStr = (m['role'] ?? '').toString().toLowerCase();
           final isAdmin = roleStr == 'admin';
+          final isCurrentUserAdmin = id == widget.currentUserId && isAdmin;
 
           return GroupMember(
             id: id,
@@ -141,6 +143,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
             children: children,
             imageUrl: imageUrl.isNotEmpty ? imageUrl : null,
             role: isAdmin ? MemberRole.admin : MemberRole.member,
+            isCurrentUserAdmin: isCurrentUserAdmin,
           );
         }).toList();
 
@@ -303,96 +306,17 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     }
   }
 
-  Future<void> _removeMember(GroupMember member) async {
-    if (!widget.isCurrentUserAdmin) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Only admins can remove members.'))
-      );
-      return;
-    }
-
-    // Prevent removing yourself
-    if (member.id == widget.currentUserId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('You cannot remove yourself from the group.'))
-      );
-      return;
-    }
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Remove Member'),
-        content: Text('Are you sure you want to remove ${member.name} from this group?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Cancel')
-          ),
-          TextButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('Remove', style: TextStyle(color: Colors.red))
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    final token = await _getToken();
-    if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Authentication token missing.'))
-      );
-      return;
-    }
-
-    setState(() => _isActionLoading = true);
-    final url = Uri.parse('$_baseUrl${widget.conversationId}/remove-member/');
-    debugPrint('[GroupManagementPage] Removing member ${member.id} from $url');
-
-    try {
-      final resp = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({'user_id': int.tryParse(member.id) ?? member.id}),
-      );
-
-      debugPrint('[GroupManagementPage] Remove member response status: ${resp.statusCode}');
-      debugPrint('[GroupManagementPage] Remove member response body: ${resp.body}');
-
-      if (resp.statusCode == 200 || resp.statusCode == 204) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${member.name} has been removed from the group.'))
-        );
-        await _fetchGroupDetails();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to remove member: ${resp.statusCode}'))
-        );
-      }
-    } catch (e) {
-      debugPrint('[GroupManagementPage] Error removing member: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error removing member: $e'))
-      );
-    } finally {
-      setState(() => _isActionLoading = false);
-    }
-  }
-
   Future<void> _promoteToAdmin(GroupMember member) async {
     if (!widget.isCurrentUserAdmin) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Only admins can promote members.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Only admins can promote members.')));
       return;
     }
 
     final token = await _getToken();
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication token missing.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Authentication token missing.')));
       return;
     }
 
@@ -414,10 +338,15 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       debugPrint('[GroupManagementPage] Promote response body: ${resp.body}');
 
       if (resp.statusCode == 200 || resp.statusCode == 204) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${member.name} is now an admin.')));
+        final responseData = jsonDecode(resp.body);
+        final message = responseData['message'] ?? '${member.name} has been promoted to admin';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
         await _fetchGroupDetails();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to promote member: ${resp.statusCode}')));
+        final errorMessage = resp.body.isNotEmpty
+            ? jsonDecode(resp.body)['message'] ?? 'Failed to promote member: ${resp.statusCode}'
+            : 'Failed to promote member: ${resp.statusCode}';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
       }
     } catch (e) {
       debugPrint('[GroupManagementPage] Error promoting member: $e');
@@ -427,6 +356,77 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     }
   }
 
+  Future<void> _removeMember(GroupMember member) async {
+    if (!widget.isCurrentUserAdmin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Only admins can remove members.')));
+      return;
+    }
+
+    if (member.id == widget.currentUserId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You cannot remove yourself from the group.')));
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Remove Member'),
+        content: Text('Remove ${member.name} from the group?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(c, true),
+              child: const Text('Remove', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final token = await _getToken();
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Authentication token missing.')));
+      return;
+    }
+
+    setState(() => _isActionLoading = true);
+    final url = Uri.parse('$_baseUrl${widget.conversationId}/remove-member/');
+    debugPrint('[GroupManagementPage] Removing member ${member.id} from $url');
+
+    try {
+      final resp = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'user_id': int.tryParse(member.id) ?? member.id}),
+      );
+
+      debugPrint('[GroupManagementPage] Remove member response status: ${resp.statusCode}');
+      debugPrint('[GroupManagementPage] Remove member response body: ${resp.body}');
+
+      if (resp.statusCode == 200 || resp.statusCode == 204) {
+        final responseData = jsonDecode(resp.body);
+        final message = responseData['message'] ?? '${member.name} has been removed from the group';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        await _fetchGroupDetails();
+      } else {
+        final errorMessage = resp.body.isNotEmpty
+            ? jsonDecode(resp.body)['message'] ?? 'Failed to remove member: ${resp.statusCode}'
+            : 'Failed to remove member: ${resp.statusCode}';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
+      }
+    } catch (e) {
+      debugPrint('[GroupManagementPage] Error removing member: $e');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error removing member: $e')));
+    } finally {
+      setState(() => _isActionLoading = false);
+    }
+  }
   Future<void> _changeGroupName() async {
     if (!widget.isCurrentUserAdmin) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Only admins can change group name.')));
@@ -499,7 +499,11 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
   }
 
   Widget _buildMemberTile(GroupMember member) {
+    final isCurrentUserAdmin = widget.isCurrentUserAdmin;
+    final isCurrentUser = member.id == widget.currentUserId;
+    final isMember = member.role == MemberRole.member;
     final isAdmin = member.role == MemberRole.admin;
+    debugPrint('[GroupManagementPage] Building tile for member: ${member.name}, isAdmin: $isAdmin, isCurrentUser: $isCurrentUser, isCurrentUserAdmin: $isCurrentUserAdmin');
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
@@ -508,7 +512,6 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
               ? Image.network(member.imageUrl!).image
               : const AssetImage('assets/images/default_avatar.png'),
         ),
-
         title: Row(
           children: [
             Expanded(child: Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold))),
@@ -534,13 +537,15 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
         tileColor: isAdmin ? Colors.blue.withOpacity(0.04) : null,
         trailing: _isCurrentUserAdmin
             ? PopupMenuButton<String>(
-          onSelected: (v) async {
-            if (v == 'chat') {
-              context.push(RoutePaths.onetooneconversationpage,
-                  extra: {'name': member.name, 'id': member.id});
-            } else if (v == 'promote') {
+          onSelected: (value) async {
+            if (value == 'chat') {
+              context.push(
+                RoutePaths.onetooneconversationpage,
+                extra: {'name': member.name, 'id': member.id},
+              );
+            } else if (value == 'promote') {
               await _promoteToAdmin(member);
-            } else if (v == 'remove') {
+            } else if (value == 'remove') {
               await _removeMember(member);
             }
           },
@@ -550,11 +555,14 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
             ];
             if (!isAdmin) {
               items.add(const PopupMenuItem(
-                  value: 'promote', child: Text('Promote to Admin')));
-            }
-            items.add(const PopupMenuItem(
+                value: 'promote',
+                child: Text('Promote to Admin'),
+              ));
+              items.add(const PopupMenuItem(
                 value: 'remove',
-                child: Text('Remove', style: TextStyle(color: Colors.red))));
+                child: Text('Remove', style: TextStyle(color: Colors.red)),
+              ));
+            }
             return items;
           },
         )
@@ -562,6 +570,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
       ),
     );
   }
+
 
   Future<void> _onRefresh() async {
     await _fetchGroupDetails();
@@ -577,7 +586,7 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(_groupName.isNotEmpty ? '$_groupName' : 'Group Management',
-        style: const TextStyle(color: Colors.white)),
+            style: const TextStyle(color: Colors.white)),
         centerTitle: true,
       ),
       body: RefreshIndicator(
@@ -655,4 +664,3 @@ class _GroupManagementPageState extends State<GroupManagementPage> {
     );
   }
 }
-

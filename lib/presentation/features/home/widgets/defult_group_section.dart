@@ -123,7 +123,7 @@ class _JoinGroupsSectionState extends State<JoinGroupsSection> {
                   extra: {
                     'groupName': group.name,
                     'isGroupChat': true,
-                    'isCurrentUserAdminInGroup': false,
+                    'isCurrentUserAdminInGroup': true,
                     'currentUserId': context.read<AuthProvider>().currentUserId,
                     'conversationId': group.conversationId,
                     'groupId': group.id.toString(),

@@ -1,4 +1,5 @@
 import 'package:circleslate/presentation/common_providers/conversation_provider.dart';
+import 'package:circleslate/presentation/common_providers/user_events_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:circleslate/presentation/common_providers/auth_provider.dart';
@@ -40,6 +41,7 @@ Future<void> main() async {
             return conversationProvider!;
           },
         ),
+        ChangeNotifierProvider(create: (_) => UserEventsProvider()),
       ],
       child: const MyApp(),
     ),

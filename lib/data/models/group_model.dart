@@ -219,7 +219,7 @@ class GroupMember {
     required this.email,
     required this.children,
     this.imageUrl,
-    required this.role,
+    required this.role, required bool isCurrentUserAdmin,
   });
 
   factory GroupMember.fromJson(Map<String, dynamic> json) {
@@ -252,6 +252,7 @@ class GroupMember {
       children: (json['children'] ?? '').toString(),
       imageUrl: imageUrl,
       role: isAdmin ? MemberRole.admin : MemberRole.member,
+      isCurrentUserAdmin: false,
     );
   }
 }

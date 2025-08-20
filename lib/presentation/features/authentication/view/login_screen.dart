@@ -119,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 8.0),
                   const Text(
-                    'Sign in to continue organizing amazing activities',
+                    'Sign in to continue Circle activities',
                     style: TextStyle(
                       fontSize: 12.0,
                       color: AppColors.textColorSecondary,

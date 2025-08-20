@@ -21,12 +21,13 @@ class GroupConversationPage extends StatefulWidget {
   final String groupId;       // This is the unique group ID
   final String currentUserId; // Current logged-in user ID
   final String groupName;     // This is the display name of the group
-
+  final bool? isCurrentUserAdmin;
   const GroupConversationPage({
     super.key,
     required this.groupId,
     required this.currentUserId,
     required this.groupName,
+    this.isCurrentUserAdmin,
   });
 
   @override
@@ -39,16 +40,21 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
   final ScrollController _scrollController = ScrollController();
   final Uuid _uuid = const Uuid();
 
+  String? get currentUserId {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    return authProvider.currentUserId;
+  }
+
   late GroupChatSocketService _groupChatSocketService;
 
   bool _isLoading = true;
   bool _isConversationReady = false;
   bool _isTyping = false;
   bool _isSomeoneTyping = false;
-
+  
   // Store user images for better performance
   final Map<String, String?> _userImages = {};
-
+  
   // Group information
   String? _groupImageUrl;
   int _memberCount = 0;
@@ -60,6 +66,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
 
     _groupChatSocketService = GroupChatSocketService(
       onMessageReceived: _handleIncomingMessage,
+      onConversationMessages: _handleConversationMessages,
     );
 
     _initializeConversation();
@@ -100,9 +107,9 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('accessToken');
-
+      
       if (token == null) return;
-
+      
       final response = await http.get(
         Uri.parse('http://10.10.13.27:8000/api/chat/conversations/${widget.groupId}/'),
         headers: {
@@ -110,7 +117,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
           'Content-Type': 'application/json',
         },
       );
-
+      
       if (response.statusCode == 200) {
         final groupData = jsonDecode(response.body);
         setState(() {
@@ -153,7 +160,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
       debugPrint('[GroupConversationPage] Connecting to WebSocket...');
       await _groupChatSocketService.connect(widget.groupId, token);
       debugPrint('[GroupConversationPage] WebSocket connected successfully');
-
+      
       // Monitor connection status
       _groupChatSocketService.connectionStatusStream.listen((isConnected) {
         debugPrint('[GroupConversationPage] WebSocket connection status: $isConnected');
@@ -163,13 +170,16 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
           });
         }
       });
-
+      
+      // Request conversation messages from server via WebSocket
+      _requestConversationMessages();
+      
     } catch (e) {
       debugPrint('[GroupConversationPage] WebSocket connection failed: $e');
       setState(() {
         _isConversationReady = false;
       });
-
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -181,28 +191,115 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     }
   }
 
+  /// Request conversation messages from server
+  void _requestConversationMessages() {
+    try {
+      final request = {
+        'type': 'get_conversation_messages',
+        'conversation_id': widget.groupId,
+      };
+      _groupChatSocketService.sendRawMessage(jsonEncode(request));
+      debugPrint('[GroupConversationPage] Requested conversation messages');
+    } catch (e) {
+      debugPrint('[GroupConversationPage] Error requesting conversation messages: $e');
+    }
+  }
+
+  /// Handle conversation messages from server
+  void _handleConversationMessages(List<dynamic> messagesData) async {
+    debugPrint('[GroupConversationPage] Processing ${messagesData.length} conversation messages');
+    
+    try {
+      final List<StoredMessage> newMessages = [];
+      
+      for (var msgData in messagesData) {
+        try {
+          final message = Message.fromJson(msgData);
+          String? senderImageUrl = await _getUserImageUrl(message.senderId);
+          
+          final storedMessage = StoredMessage(
+            id: message.id,
+            text: message.content,
+            timestamp: DateTime.parse(message.timestamp),
+            senderId: message.senderId,
+            sender: message.senderId == widget.currentUserId ? MessageSender.user : MessageSender.other,
+            senderImageUrl: senderImageUrl,
+            status: MessageStatus.seen,
+            clientMessageId: null,
+          );
+          
+          newMessages.add(storedMessage);
+        } catch (e) {
+          debugPrint('[GroupConversationPage] Error processing message in conversation: $e');
+        }
+      }
+      
+      // Sort messages by timestamp
+      newMessages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      
+      // Save to local storage
+      await MessageStorageService.saveMessages(widget.groupId, newMessages);
+      
+      // Update UI
+      if (mounted) {
+        setState(() {
+          _messages.clear();
+          _messages.addAll(newMessages);
+        });
+        _scrollToBottom();
+      }
+      
+      debugPrint('[GroupConversationPage] Loaded ${newMessages.length} conversation messages');
+      
+    } catch (e) {
+      debugPrint('[GroupConversationPage] Error loading conversation messages: $e');
+    }
+  }
+
   void _handleIncomingMessage(Message message) async {
+    debugPrint('[GroupConversationPage] Handling incoming message: ${message.content} from ${message.senderId}');
+    
+    // Check if this message is from the current user (to avoid duplicates)
+    if (message.senderId == widget.currentUserId) {
+      debugPrint('[GroupConversationPage] Skipping own message in incoming handler');
+      return;
+    }
+    
     // Get real user image URL
     String? senderImageUrl = await _getUserImageUrl(message.senderId);
-
+    
     final storedMessage = StoredMessage(
       id: message.id,
       text: message.content,
       timestamp: DateTime.parse(message.timestamp),
       senderId: message.senderId,
-      sender: message.senderId == widget.currentUserId ? MessageSender.user : MessageSender.other,
+      sender: MessageSender.other, // Always other since we filtered out own messages
       senderImageUrl: senderImageUrl, // Use real user image
       status: MessageStatus.seen,
       clientMessageId: null,
     );
 
+    // Check if message already exists to avoid duplicates
+    final existingMessage = _messages.any((m) => m.id == message.id);
+    if (existingMessage) {
+      debugPrint('[GroupConversationPage] Message already exists, skipping: ${message.id}');
+      return;
+    }
+
     await MessageStorageService.addMessage(widget.groupId, storedMessage);
 
-    setState(() {
-      _messages.add(storedMessage);
-      _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-    });
-    _scrollToBottom();
+    if (mounted) {
+      setState(() {
+        _messages.add(storedMessage);
+        _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      });
+      _scrollToBottom();
+      
+      // Mark messages as read if they're from other users
+      _markMessagesAsRead();
+      
+      debugPrint('[GroupConversationPage] Message added to UI: ${storedMessage.text}');
+    }
   }
 
   void _handleTyping() {
@@ -215,7 +312,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     if (_userImages.containsKey(userId)) {
       return _userImages[userId];
     }
-
+    
     // Get from API
     String? imageUrl;
     if (userId == widget.currentUserId) {
@@ -223,12 +320,50 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
       imageUrl = UserImageHelper.getCurrentUserImageUrl(context);
     } else {
       // Other user - get from API
-      imageUrl = await UserImageHelper.getUserImageUrl(userId);
+      try {
+        imageUrl = await UserImageHelper.getUserImageUrl(userId);
+        debugPrint('[GroupConversationPage] Fetched image for user $userId: $imageUrl');
+      } catch (e) {
+        debugPrint('[GroupConversationPage] Error fetching image for user $userId: $e');
+        imageUrl = null;
+      }
     }
-
+    
     // Cache the result
     _userImages[userId] = imageUrl;
     return imageUrl;
+  }
+
+  /// Mark messages as read
+  void _markMessagesAsRead() async {
+    try {
+      final unreadMessages = _messages
+          .where((msg) =>
+              msg.sender == MessageSender.other &&
+              (msg.status == MessageStatus.sent || msg.status == MessageStatus.delivered))
+          .map((msg) => msg.id)
+          .toList();
+      
+      if (unreadMessages.isNotEmpty) {
+        debugPrint('[GroupConversationPage] Marking ${unreadMessages.length} messages as read');
+        for (var messageId in unreadMessages) {
+          await MessageStorageService.updateMessageStatus(widget.groupId, messageId, MessageStatus.seen);
+        }
+        
+        // Update UI
+        if (mounted) {
+          setState(() {
+            for (var message in _messages) {
+              if (unreadMessages.contains(message.id)) {
+                message = message.copyWith(status: MessageStatus.seen);
+              }
+            }
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('[GroupConversationPage] Error marking messages as read: $e');
+    }
   }
 
   void _sendMessage() async {
@@ -277,7 +412,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     } catch (e) {
       debugPrint('[GroupConversationPage] Failed to send message: $e');
       await MessageStorageService.updateMessageStatus(widget.groupId, message.id, MessageStatus.failed, clientMessageId: clientMessageId);
-
+      
       // Show error to user
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -374,39 +509,44 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
                 ? const Icon(Icons.wifi, color: Colors.green, size: 20)
                 : const Icon(Icons.wifi_off, color: Colors.red, size: 20),
           ),
+
           IconButton(
             icon: const Icon(Icons.manage_accounts, color: Colors.white),
             tooltip: 'Group Manager',
             onPressed: () {
               debugPrint("PRINT groupId: ${widget.groupId}");
               debugPrint("PRINT conversationId: ${widget.groupId}"); // Use groupId as conversationId
+
               context.push(RoutePaths.groupManagement, extra: {
                 'groupId': widget.groupId,
                 'conversationId': widget.groupId, // Use groupId as conversationId since they should be the same
                 'currentUserId': widget.currentUserId,
-                'isCurrentUserAdmin': true, // You can replace with actual admin check
+                'isCurrentUserAdmin': widget.isCurrentUserAdmin ?? false,
+
               });
             },
           ),
           const SizedBox(width: 8),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _messages.isEmpty
-                ? const Center(child: Text('No messages yet. Start the conversation!', style: TextStyle(color: Colors.grey, fontSize: 16)))
-                : ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16.0),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) => _buildMessageBubble(_messages[index]),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _messages.isEmpty
+                  ? const Center(child: Text('No messages yet. Start the conversation!', style: TextStyle(color: Colors.grey, fontSize: 16)))
+                  : ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16.0),
+                itemCount: _messages.length,
+                itemBuilder: (context, index) => _buildMessageBubble(_messages[index]),
+              ),
             ),
-          ),
-          _buildMessageInput(),
-        ],
+            _buildMessageInput(),
+          ],
+        ),
       ),
     );
   }
@@ -492,7 +632,7 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
 
   Widget _buildMessageInput() {
     final bool canSend = _isConversationReady && _messageController.text.trim().isNotEmpty;
-
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       decoration: BoxDecoration(
@@ -560,7 +700,5 @@ class _GroupConversationPageState extends State<GroupConversationPage> with Widg
     );
   }
 }
-
-
 
 

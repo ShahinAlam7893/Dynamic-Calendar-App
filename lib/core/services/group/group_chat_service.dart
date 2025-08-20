@@ -3,9 +3,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/models/group_model.dart';
+import '../../network/endpoints.dart';
 
 class GroupChatService {
-  static const String baseUrl = 'http://10.10.13.27:8000/api/chat/conversations/';
+  static const String baseUrl = '${Urls.baseUrl}/chat/conversations/';
 
   static Future<List<GroupChat>> fetchGroupChats() async {
     final prefs = await SharedPreferences.getInstance();

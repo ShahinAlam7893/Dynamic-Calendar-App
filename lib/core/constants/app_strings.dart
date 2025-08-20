@@ -9,15 +9,15 @@ class AppStrings {
   static const String onboardingWelcomeDesc1 = 'The fun and safe way to plan\nactivities, coordinate playdates, and build\nstronger communities together.';
   static const String onboardingWelcomeBullet1 = 'Plan amazing playdates effortlessly';
   static const String onboardingWelcomeBullet2 = 'Never miss fun activities again';
-  static const String onboardingWelcomeBullet3 = 'Connect with trusted families';
+  static const String onboardingWelcomeBullet3 = 'Connect with trusted friends';
 
-  static const String onboardingCalendarTitle = 'Smart Calendar';
-  static const String onboardingCalendarDesc = 'See when friends are available for playdates!\nGreen means ready for fun, red means busy.\nPerfect timing, every time!';
+  static const String onboardingCalendarTitle = 'Circle Calendar';
+  static const String onboardingCalendarDesc = 'See when friends are available for activities!\nGreen means ready for fun, red means busy.\nPerfect timing, every time!';
 
   static const String onboardingCirclesTitle = 'Friend Circles';
-  static const String onboardingCirclesDesc = 'See when friends are available for play dates!';
+  static const String onboardingCirclesDesc = 'See when friends are available for activities!';
   static const String onboardingTrustedNetwork = 'Your trusted friend network';
-  static const String onboardingPrivateSecure = 'Private & Secure through';
+  static const String onboardingPrivateSecure = 'Private & Secure';
 
   static const String onboardingReadyTitle = 'Ready for Fun?';
   static const String onboardingReadyDesc = 'Join your friends who are already using\nCircleSlate to create amazing memories\nand build stronger community connections.';
